@@ -50,7 +50,7 @@ def main():
       SUBJECT += " on " + PgLOG.PGLOG['HOSTNAME']
       PgLOG.set_email("{}: {}".format(SUBJECT, TOPMSG), PgLOG.EMLTOP)
       if ACTSTR: SUBJECT = "{} for {}".format(ACTSTR, SUBJECT)
-      if PgSIG.PGSIG['PPID'] > 1: SUBJECT += " in CPID {}".format(PGSIG['PID'])
+      if PgSIG.PGSIG['PPID'] > 1: SUBJECT += " in CPID {}".format(PgSIG.PGSIG['PID'])
       if PgLOG.PGLOG['ERRCNT'] > 0: SUBJECT += " With Error"
       if PgLOG.PGLOG['DSCHECK']:
          PgDBI.build_customized_email("dscheck", "einfo", "cindex = {}".format(PgLOG.PGLOG['DSCHECK']['cindex']),
@@ -352,7 +352,7 @@ def set_local_info():
       else:
          pgrec = None
 
-      if 'RO' in PgOPT.params: PgOPT.params['XO'][i] = get_next_exec_order(PgOPT.params['DS'])
+      if 'RO' in PgOPT.params: PgOPT.params['XO'][i] = PgUpdt.get_next_exec_order(PgOPT.params['DS'], 0)
       record = PgOPT.build_record(flds, pgrec, tname, i)
       if record:
          if 'cindex' in record and record['cindex'] and not PgDBI.pgget("dcupdt", "", "cindex = {}".format(record['cindex'])):
@@ -368,7 +368,7 @@ def set_local_info():
          else:
             record['dsid'] = PgOPT.params['DS']
             if 'specialist' not in record: record['specialist'] = PgOPT.params['LN']
-            if 'execorder' not in record: record['execorder'] = get_next_exec_order(PgOPT.params['DS'], 1)
+            if 'execorder' not in record: record['execorder'] = PgUpdt.get_next_exec_order(PgOPT.params['DS'], 1)
             addcnt += PgDBI.pgadd(tname, record, PgOPT.PGOPT['errlog']|PgLOG.DODFLT)
       elif lidx: # unlock
          PgLock.lock_update(lidx, None, 0, PgOPT.PGOPT['errlog'])
@@ -775,7 +775,7 @@ def file_update(locrec, logact, caching = 0):
          lfile = PgUpdt.replace_pattern(locrec['locfile'], edate, ehour, tempinfo['FQ'])
          locinfo = "{}-L{}-{}".format(locrec['dsid'], lindex, lfile)
          if ecnt > 1: locinfo += ", {} Update Periods".format(ecnt)
-         PgLOG.pglog("CPID {} for 'dsupdt {}' of {}".format(pname2cpid(pname), PgOPT.PGOPT['CACT'], locinfo), PgOPT.PGOPT['emllog'])
+         PgLOG.pglog("CPID {} for 'dsupdt {}' of {}".format(PgSIG.pname2cpid(pname), PgOPT.PGOPT['CACT'], locinfo), PgOPT.PGOPT['emllog'])
          return 1   # no further action in non-daemon program
 
    if PgLock.lock_update(lindex, locinfo, 1, PgOPT.PGOPT['emllog']) <= 0: return 0
@@ -855,9 +855,10 @@ def file_update(locrec, logact, caching = 0):
             dr = 1 if PgOPT.PGOPT['ACTS']&PgOPT.OPTS['PB'][0] else 0
             if linfo and PgOPT.PGOPT['CACT'] == "BL" and not tempinfo['prcmd']: dr = 0 # skip download for BL only
             if dr:
+               dfiles = None
                for j in range(rcnt):   # processs each remote record
                   pgrec = PgUtil.onerecord(rmtrecs, j)
-                  if j and dfiles and pgrec['remotefile'] == rfile and not PgOPT.PGOPT['mcnt']:
+                  if dfiles and pgrec['remotefile'] == rfile and not PgOPT.PGOPT['mcnt']:
                      continue  # skip
                   rfile = pgrec['remotefile']
                   act = 0 if locrec['action'] == 'AQ' else PgOPT.PGOPT['ACTS']&PgOPT.OPTS['DR'][0]
@@ -1690,9 +1691,9 @@ def get_tempinfo(locrec, locinfo, eidx = 0):
             else:
                tempinfo['AQ'] = 'Web'
          else:
-            return PgLOG.pglog("{}: MISS -ST or -WT to backup {}".format(options, rfile), PgOPT.PGOPT['emlerr'])
+            return PgLOG.pglog("{}: MISS -ST or -WT to backup {}".format(options, locinfo), PgOPT.PGOPT['emlerr'])
       else:
-         return PgLOG.pglog("Set -ST or -WT in Options to backup {}".format(rfile), PgOPT.PGOPT['emlerr'])
+         return PgLOG.pglog("Set -ST or -WT in Options to backup {}".format(locinfo), PgOPT.PGOPT['emlerr'])
    if (options and re.search(r'(^|\s)-GX(\s|$)', options, re.I) and
        not re.search(r'(^|\s)-RS(\s|$)', options, re.I)):
       tempinfo['RS'] = 0   # set to 1 if need pass -RS to dsarch 
@@ -2035,11 +2036,11 @@ def check_agetime(dcmd, sfile, atime):
    if PgUtil.diffdatehour(PgOPT.params['CD'], PgOPT.params['CH'], adate, ahour) >= 0:
       return 1
 
-   if hour is None:
+   if ahour is None:
       PgLOG.pglog(("{}: original {} file ready by {}\n".format(sfile, info['ftype'], info['date_modified']) +
                    "but NOT aged enough for retrieving yet by " + PgOPT.params['CD']), PgOPT.PGOPT['emllog'])
    else:
-      PgLOG.pglog(("{}: original {} file ready by {}:{:02}\n".format(sfile, info['ftype'], info['date_modified'], hour) +
+      PgLOG.pglog(("{}: original {} file ready by {}:{:02}\n".format(sfile, info['ftype'], info['date_modified'], ahour) +
                    "but NOT aged enough for retrieving yet by {}:{:02}".format(PgOPT.params['CD'], PgOPT.params['CH'])), PgOPT.PGOPT['emllog'])
 
    return 0   # otherwise server file is not aged enough
@@ -2433,7 +2434,7 @@ def move_archived_file(ainfo, archived):
             if not PgDBI.pgget("sfile", "", "dsid = '{}' AND sfile = '{}'".format(PgOPT.params['DS'], tofile), PgOPT.PGOPT['extlog']):
                break
             i += 1
-         stat = PgLOG.pgsystem("dsarch {} MV -RF {} -OT {} -SF {} -ST V".format(PgOPT.params['DS'], fromfile, type, file), PgOPT.PGOPT['emerol'], 5)
+         stat = PgLOG.pgsystem("dsarch {} MV -RF {} -OT {} -SF {} -ST V".format(PgOPT.params['DS'], fromfile, type, tofile), PgOPT.PGOPT['emerol'], 5)
 
    if stat:
       PgOPT.PGOPT['vcnt'] += 1
