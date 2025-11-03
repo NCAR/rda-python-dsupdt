@@ -41,7 +41,7 @@ DEFTYPES = {'WT' : 'D', 'ST' : 'P', 'QT' : 'B'}
 #
 def main():
 
-   global SUBJECT, ACTSTR
+   global SUBJECT
    PgOPT.parsing_input('dsupdt')
    PgUpdt.check_enough_options(PgOPT.PGOPT['CACT'], PgOPT.PGOPT['ACTS'])
    start_action()
