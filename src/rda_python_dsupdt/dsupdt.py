@@ -2129,7 +2129,9 @@ def change_workdir(wdir, locinfo, edate, ehour, FQ):
    if not wdir:
       return PgLOG.pglog(locinfo + ": MISS working directory", PgOPT.PGOPT['emlerr'])
    else:
-      if wdir.find('$') > -1: wdir = PgLOG.replace_environments(wdir, PgLOG.PGLOG['UPDTWKP'], PgOPT.PGOPT['emlerr'])
+      ms = re.seaarch(r'$(\w+)', wdir)
+      if ms and ms.group(1) in PgLOG.PGLOG:
+         wdir = PgLOG.replace_environments(wdir, PgLOG.PGLOG[ms.group(1)], PgOPT.PGOPT['emlerr'])
       wdir = PgUpdt.replace_pattern(wdir, edate, ehour, FQ)
       if not PgFile.change_local_directory(wdir, PgOPT.PGOPT['emllog']): return 0
 
