@@ -1606,7 +1606,7 @@ class DsUpdt(PgUpdt):
             else:
                path = self.get_group_field_path(locrec['gindex'], dsid, 'webpath')
             if path: afile = self.join_paths(path, afile)
-         wrec = PgSplit.pgget_wfile(dsid, "*", "{} AND type = '{}' AND wfile = '{}'".format(gcnd, type, afile), self.PGOPT['extlog'])
+         wrec = self.pgget_wfile(dsid, "*", "{} AND type = '{}' AND wfile = '{}'".format(gcnd, type, afile), self.PGOPT['extlog'])
          if wrec:
             ainfo['wfile'] = wrec['wfile']
             adate = ainfo['adate'] = str(wrec['date_modified'])

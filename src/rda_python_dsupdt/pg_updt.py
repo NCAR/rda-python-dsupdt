@@ -723,15 +723,6 @@ class PgCheck(PgOPT, PgCMD):
          (date, hour) = self.adddatehour(date, hour, intv[0], intv[1], intv[2], intv[3])
       return rfiles
 
-   # adjust date by skip Feb. 29 for leap year
-   @staticmethod
-   def adjust_leap(date):
-      (syr, smn, sdy) = re.split('-', date)
-      if PgUtil.is_leapyear(int(syr)):
-         sdy = '28'
-         date = "{}-{}-{}", syr, smn, sdy
-      return date
-
    # get one hash array for a single remote file name
    def one_remote_filename(self, fname, date, hour, tempinfo, intv, bdate, bhour):
       if tempinfo['NX']:
@@ -1135,7 +1126,7 @@ class PgCheck(PgOPT, PgCMD):
             obuf = ms.group(2)
             wbuf = ms.group(3)
             sfile = op.basename(wbuf)
-            slow_web_access(wbuf)
+            self.slow_web_access(wbuf)
             type = "WGET"
             docheck = 0
             if not obuf or not re.search(r'\s-N\s', obuf): dcmd = re.sub(r'wget', 'wget -N', dcmd, 1)
