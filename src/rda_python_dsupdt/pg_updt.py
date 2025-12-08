@@ -21,7 +21,7 @@ from os import path as op
 from rda_python_common.pg_cmd import PgCMD
 from rda_python_common.pg_opt import PgOPT
 
-class PgCheck(PgOPT, PgCMD):
+class PgUpdt(PgOPT, PgCMD):
 
    def __init__(self):
       super().__init__()  # initialize parent class
