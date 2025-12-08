@@ -1,6 +1,6 @@
-# test_hello_world.py
-
+# test_dsupdt.py
 import pytest
 
 def test_dsupdt():
-   pass
+   import rda_python_dsupdt.pg_updt
+   import rda_python_dsupdt.dsupdt
