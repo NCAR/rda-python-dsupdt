@@ -18,8 +18,9 @@ import os
 import re
 from os import path as op
 from .pg_updt import PgUpdt
+from rda_python_common.pg_split import import PgSplit
 
-class DsUpdt(PgUpdt):
+class DsUpdt(PgUpdt, PgSplit):
    def __init__(self):
       super().__init__()  # initialize parent class
       self.TEMPINFO = {}
@@ -1333,7 +1334,7 @@ class DsUpdt(PgUpdt):
       if tempinfo['gotnew'] and not re.search(r'(^|\s)-OE(\s|$)', options, re.I): acmd += " -OE"
       if 'VS' in self.params:
          acmd += " -VS {}".format(self.params['VS'])
-         if 'VS' in tempinfo: options = re.sub('-VS\s+\d+(\s+|$)', '', options, flags=re.I)
+         if 'VS' in tempinfo: options = re.sub(r'-VS\s+\d+(\s+|$)', '', options, flags=re.I)
       if tempinfo['RS'] == 1: acmd += " -RS"
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
@@ -1705,7 +1706,7 @@ class DsUpdt(PgUpdt):
          return onote
       if pcnt == 2:   # replace start time
          if onote:   # get start time from existing note
-            replace = "{}{}{}".format(seps[0], patterns[0], seps[1])
+            replace = r"{}{}{}".format(seps[0], patterns[0], seps[1])
             ms = re.match(r'^(.*){}(.*){}'.format(replace, self.params['PD'][0]), note)
             if ms:
                init = ms.group(1)
