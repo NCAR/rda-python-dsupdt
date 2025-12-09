@@ -1071,7 +1071,7 @@ class PgUpdt(PgOPT, PgCMD):
          ms = re.match(r'^(-\w+)', buf)
          while ms:
             flg = ms.group(1)
-            buf = re.sub('^-\w+\s+'.format(flg), '', buf, 1)   # remove options
+            buf = re.sub(r'^-\w+\s+'.format(flg), '', buf, 1)   # remove options
             if flg != "-r":   # no option value
                m = re.match(r'^(\S+)\s', buf)
                if not m: break
