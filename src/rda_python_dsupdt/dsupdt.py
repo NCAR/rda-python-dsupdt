@@ -34,8 +34,8 @@ class DsUpdt(PgUpdt):
          self.parsing_input(aname)
          self.check_enough_options(self.PGOPT['CACT'], self.PGOPT['ACTS'])
 
-   # start action of dsupdt
-   def start_action(self):
+   # start actions of dsupdt
+   def start_actions(self):
       if self.PGOPT['ACTS']&self.OPTS['CU'][0]:
          if 'CI' in self.params:
             if self.cache_update_control(self.params['CI'][0], 1):
