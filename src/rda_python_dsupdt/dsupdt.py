@@ -18,7 +18,7 @@ import os
 import re
 from os import path as op
 from .pg_updt import PgUpdt
-from rda_python_common.pg_split import import PgSplit
+from rda_python_common.pg_split import PgSplit
 
 class DsUpdt(PgUpdt, PgSplit):
    def __init__(self):
