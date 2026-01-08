@@ -1,16 +1,16 @@
 #
 ###############################################################################
 #
-#     Title : pg_updt.py
-#    Author : Zaihua Ji,  zji@ucar.edu
-#      Date : 09/23/2020
+#     Title: pg_updt.py
+#    Author: Zaihua Ji,  zji@ucar.edu
+#      Date: 09/23/2020
 #             2025-02-07 transferred to package rda_python_dsupdt from
 #             https://github.com/NCAR/rda-shared-libraries.git
 #             2025-12-08 transfer to class PgUpdt
-#   Purpose : python library module to help rountinely updates of new data 
+#   Purpose: python library module to help rountinely updates of new data 
 #             for one or multiple datasets
 #
-#    Github : https://github.com/NCAR/rda-python-dsupdt.git
+#    Github: https://github.com/NCAR/rda-python-dsupdt.git
 #
 ###############################################################################
 #
@@ -27,226 +27,224 @@ class PgUpdt(PgOPT, PgCMD):
       super().__init__()  # initialize parent class
       self.CORDERS = {}
       self.OPTS.update({
-         'DR' : [0x00010, 'DownloadRemote',2],
-         'BL' : [0x00020, 'BuildLocal',    2],
-         'PB' : [0x00030, 'ProcessBoth',   2], # DR & BL
-         'AF' : [0x00040, 'ArchiveFile',   2],
-         'CF' : [0x00080, 'CleanFile',     2],
-         'UF' : [0x000F0, 'UpdateFile',    2], # DR & BL & AF & CF
-         'CU' : [0x00200, 'CheckUpdate',   0],
-         'GC' : [0x00400, 'GetControl',    0],
-         'GL' : [0x00800, 'GetLocalFile',  0],
-         'GR' : [0x01000, 'GetRemoteFile', 0],
-         'GA' : [0x01C00, 'GetALL',        0], # GC & GL & GR
-         'SC' : [0x02000, 'SetControl',    1],
-         'SL' : [0x04000, 'SetLocalFile',  1],
-         'SR' : [0x08000, 'SetRemoteFile', 1],
-         'SA' : [0x0E000, 'SetALL',        4], # SC & SL & SR
-         'DL' : [0x20000, 'Delete',        1],
-         'UL' : [0x40000, 'UnLock',        1],
-         'AW' : [0, 'AnyWhere'],
-         'BG' : [0, 'BackGround'],
-         'CA' : [0, 'CheckAll'],
-         'CN' : [0, 'CheckNew'],
-         'CP' : [0, 'CurrrentPeriod'],
-         'EE' : [0, 'ErrorEmail'],   # send email when error happens only
-         'FO' : [0, 'FormatOutput'],
-         'FU' : [0, 'FutureUpdate'],
-         'GZ' : [0, 'GMTZone'],
-         'HU' : [0, 'HourlyUpdate'],
-         'IE' : [0, 'IgnoreError'],
-         'KR' : [0, 'KeepRemote'],
-         'KS' : [0, 'KeepServer'],
-         'LO' : [0, 'LogOn'],
-         'MD' : [0, 'PgDataset'],
-         'MO' : [0, 'MissedOnly'],
-         'MU' : [0, 'MultipleUpdate'],
-         'NC' : [0, 'NewControl'],
-         'NE' : [0, 'NoEmail'],
-         'NL' : [0, 'NewLocfile'],
-         'NY' : [0, 'NoLeapYear'],
-         'QE' : [0, 'QuitError'],
-         'RA' : [0, 'RetryArchive'],
-         'RD' : [0, 'RetryDownload'],
-         'RE' : [0, 'ResetEndTime'],
-         'RO' : [0, 'ResetOrder'],
-         'SE' : [0, 'SummaryEmail'],   # send summary email only
-         'UB' : [0, 'UseBeginTime'],
-         'UT' : [0, 'UpdateTime'],
-         'AO' : [1, 'ActOption',     1],  # default to <!>
-         'CD' : [1, 'CurrentDate', 256],  # used this instead of curdate()
-         'CH' : [1, 'CurrentHour',  16],  # used this instead of (localtime)[2]
-         'DS' : [1, 'Dataset',       0],
-         'DV' : [1, 'Divider',       1],  # default to <:>
-         'ES' : [1, 'EqualSign',     1],  # default to <=>
-         'FN' : [1, 'FieldNames',    0],
-         'LN' : [1, 'LoginName',     1],
-         'OF' : [1, 'OutputFile',    0],
-         'ON' : [1, 'OrderNames',    0],
-         'PL' : [1, 'ProcessLimit', 17],
-         'VS' : [1, 'ValidSize',    17],  # default to self.PGLOG['MINSIZE']
-         'AN' : [2, 'ActionName',      1],
-         'AT' : [2, 'AgeTime',         1],
-         'BC' : [2, 'BuildCommand',    1],
-         'BP' : [2, 'BatchProcess',    0, ''],
-         'BT' : [2, 'BeginTime',       1],
-         'CC' : [2, 'CarbonCopy',      0],
-         'CI' : [2, 'ControlIndex',   16],
-         'CL' : [2, 'CleanCommand',    1],
-         'CO' : [2, "ControlOffset",   1],
-         'CT' : [2, 'ControlTime',     32+356],
-         'DB' : [2, 'Debug',           0],
-         'DC' : [2, 'DownloadCommand', 1],
-         'DE' : [2, 'Description',    64],
-         'DO' : [2, 'DownloadOrder',  16],
-         'DT' : [2, 'DataTime',       1+32+256],
-         'EC' : [2, 'ErrorControl',    1, "NIQ"],
-         'ED' : [2, 'EndDate',       257],
-         'EH' : [2, 'EndHour',        33],
-         'EP' : [2, 'EndPeriod',       1],
-         'ET' : [2, 'EndTime',        33],
-         'FA' : [2, 'FileArchived',    0],
-         'FQ' : [2, 'Frequency',       1],
-         'GP' : [2, 'GenericPattern',  0],
-         'HN' : [2, "HostName",        1],
-         'HO' : [2, 'HourOffset',     17],
-         'ID' : [2, 'ControlID',       0],
-         'IF' : [2, 'InputFile',       0],
-         'KF' : [2, 'KeepFile',        1, "NRSB"],
-         'LF' : [2, 'LocalFile',       0],
-         'LI' : [2, 'LocalIndex',     17],
-         'MC' : [2, 'EMailControl',    1, "ASNEB"],
-         'MR' : [2, 'MissRemote',    128, "NY"],
-         'DI' : [2, 'DueInterval',     1],
-         'OP' : [2, 'Options',         1],
-         'PD' : [2, 'PatternDelimiter', 2], # pattern delimiters, default to ["<", ">"]
-         'PI' : [2, 'ParentIndex',    17],
-         'PR' : [2, 'ProcessRemote',   1],
-         'QS' : [2, 'QSubOptions',     0],
-         'RF' : [2, 'RemoteFile',      0],
-         'RI' : [2, 'RetryInterval',   1],
-         'SB' : [2, 'SBatchOptions',   1],
-         'SF' : [2, 'ServerFile',      0],
-         'SN' : [2, 'Specialist',      1],
-         'TI' : [2, 'TimeInterval',    1],
-         'UC' : [2, 'UpdateControl',   1],
-         'VI' : [2, 'ValidInterval',   1],
-         'WD' : [2, 'WorkDir',         1],
-         'XC' : [2, 'ExecuteCommand',  1],
-         'XO' : [2, 'ExecOrder',      16],
+         'DR': [0x00010, 'DownloadRemote',2],
+         'BL': [0x00020, 'BuildLocal',    2],
+         'PB': [0x00030, 'ProcessBoth',   2], # DR & BL
+         'AF': [0x00040, 'ArchiveFile',   2],
+         'CF': [0x00080, 'CleanFile',     2],
+         'UF': [0x000F0, 'UpdateFile',    2], # DR & BL & AF & CF
+         'CU': [0x00200, 'CheckUpdate',   0],
+         'GC': [0x00400, 'GetControl',    0],
+         'GL': [0x00800, 'GetLocalFile',  0],
+         'GR': [0x01000, 'GetRemoteFile', 0],
+         'GA': [0x01C00, 'GetALL',        0], # GC & GL & GR
+         'SC': [0x02000, 'SetControl',    1],
+         'SL': [0x04000, 'SetLocalFile',  1],
+         'SR': [0x08000, 'SetRemoteFile', 1],
+         'SA': [0x0E000, 'SetALL',        4], # SC & SL & SR
+         'DL': [0x20000, 'Delete',        1],
+         'UL': [0x40000, 'UnLock',        1],
+         'AW': [0, 'AnyWhere'],
+         'BG': [0, 'BackGround'],
+         'CA': [0, 'CheckAll'],
+         'CN': [0, 'CheckNew'],
+         'CP': [0, 'CurrrentPeriod'],
+         'EE': [0, 'ErrorEmail'],   # send email when error happens only
+         'FO': [0, 'FormatOutput'],
+         'FU': [0, 'FutureUpdate'],
+         'GZ': [0, 'GMTZone'],
+         'HU': [0, 'HourlyUpdate'],
+         'IE': [0, 'IgnoreError'],
+         'KR': [0, 'KeepRemote'],
+         'KS': [0, 'KeepServer'],
+         'LO': [0, 'LogOn'],
+         'MD': [0, 'PgDataset'],
+         'MO': [0, 'MissedOnly'],
+         'MU': [0, 'MultipleUpdate'],
+         'NC': [0, 'NewControl'],
+         'NE': [0, 'NoEmail'],
+         'NL': [0, 'NewLocfile'],
+         'NY': [0, 'NoLeapYear'],
+         'QE': [0, 'QuitError'],
+         'RA': [0, 'RetryArchive'],
+         'RD': [0, 'RetryDownload'],
+         'RE': [0, 'ResetEndTime'],
+         'RO': [0, 'ResetOrder'],
+         'SE': [0, 'SummaryEmail'],   # send summary email only
+         'UB': [0, 'UseBeginTime'],
+         'UT': [0, 'UpdateTime'],
+         'AO': [1, 'ActOption',     1],  # default to <!>
+         'CD': [1, 'CurrentDate', 256],  # used this instead of curdate()
+         'CH': [1, 'CurrentHour',  16],  # used this instead of (localtime)[2]
+         'DS': [1, 'Dataset',       0],
+         'DV': [1, 'Divider',       1],  # default to <:>
+         'ES': [1, 'EqualSign',     1],  # default to <=>
+         'FN': [1, 'FieldNames',    0],
+         'LN': [1, 'LoginName',     1],
+         'OF': [1, 'OutputFile',    0],
+         'ON': [1, 'OrderNames',    0],
+         'PL': [1, 'ProcessLimit', 17],
+         'VS': [1, 'ValidSize',    17],  # default to self.PGLOG['MINSIZE']
+         'AN': [2, 'ActionName',      1],
+         'AT': [2, 'AgeTime',         1],
+         'BC': [2, 'BuildCommand',    1],
+         'BP': [2, 'BatchProcess',    0, ''],
+         'BT': [2, 'BeginTime',       1],
+         'CC': [2, 'CarbonCopy',      0],
+         'CI': [2, 'ControlIndex',   16],
+         'CL': [2, 'CleanCommand',    1],
+         'CO': [2, "ControlOffset",   1],
+         'CT': [2, 'ControlTime',     32+356],
+         'DB': [2, 'Debug',           0],
+         'DC': [2, 'DownloadCommand', 1],
+         'DE': [2, 'Description',    64],
+         'DO': [2, 'DownloadOrder',  16],
+         'DT': [2, 'DataTime',       1+32+256],
+         'EC': [2, 'ErrorControl',    1, "NIQ"],
+         'ED': [2, 'EndDate',       257],
+         'EH': [2, 'EndHour',        33],
+         'EP': [2, 'EndPeriod',       1],
+         'ET': [2, 'EndTime',        33],
+         'FA': [2, 'FileArchived',    0],
+         'FQ': [2, 'Frequency',       1],
+         'GP': [2, 'GenericPattern',  0],
+         'HN': [2, "HostName",        1],
+         'HO': [2, 'HourOffset',     17],
+         'ID': [2, 'ControlID',       0],
+         'IF': [2, 'InputFile',       0],
+         'KF': [2, 'KeepFile',        1, "NRSB"],
+         'LF': [2, 'LocalFile',       0],
+         'LI': [2, 'LocalIndex',     17],
+         'MC': [2, 'EMailControl',    1, "ASNEB"],
+         'MR': [2, 'MissRemote',    128, "NY"],
+         'DI': [2, 'DueInterval',     1],
+         'OP': [2, 'Options',         1],
+         'PD': [2, 'PatternDelimiter', 2], # pattern delimiters, default to ["<", ">"]
+         'PI': [2, 'ParentIndex',    17],
+         'PR': [2, 'ProcessRemote',   1],
+         'QS': [2, 'QSubOptions',     0],
+         'RF': [2, 'RemoteFile',      0],
+         'RI': [2, 'RetryInterval',   1],
+         'SF': [2, 'ServerFile',      0],
+         'SN': [2, 'Specialist',      1],
+         'TI': [2, 'TimeInterval',    1],
+         'UC': [2, 'UpdateControl',   1],
+         'VI': [2, 'ValidInterval',   1],
+         'WD': [2, 'WorkDir',         1],
+         'XC': [2, 'ExecuteCommand',  1],
+         'XO': [2, 'ExecOrder',      16],
       })
       self.ALIAS.update({
-         'AN' : ['Action', "AC"],
-         'AT' : ['FileAge', "FileAgeTime"],
-         'BC' : ['BuildCmd'],
-         'BG' : ['b'],
-         'BL' : ['BuildLocalfile'],
-         'BP' : ['d', 'DelayedMode'],
-         'BT' : ['IT', 'InitialTime'],
-         'CI' : ['UpdateControlIndex'],
-         'CL' : ['CleanFile'],
-         'CN' : ['CheckNewFile'],
-         'DC' : ['Command', 'Download'],
-         'DE' : ['Desc', 'Note', 'FileDesc', 'FileDescription'],
-         'DI' : ['NextDue'],
-         'DL' : ['RM', 'Remove'],
-         'DR' : ['DownloadRemoteFile'],
-         'DS' : ['Dsid', 'DatasetID'],
-         'DV' : ['Delimiter', 'Separator'],
-         'ED' : ['UpdateEndDate'],
-         'EH' : ['UpdateEndHour'],
-         'EP' : ['EndPeriodDay'],
-         'FA' : ['SF', 'WF', 'QF'],
-         'FQ' : ['UpdateFrequency'],
-         'FU' : ["ForceUpdate"],
-         'GC' : ['GetUpdateControl'],
-         'GL' : ['GetLocal'],
-         'GN' : ['GroupID'],
-         'GP' : ['GeneralPattern'],
-         'GR' : ['GetRemote'],
-         'GZ' : ['GMT', 'GreenwichZone', 'UTC'],
-         'HN' : ['HostMachine'],
-         'KR' : ['KeepRemoteFile'],
-         'KS' : ['KeepServerFile'],
-         'LF' : ['LocalFileIndex'],
-         'LI' : ['LocIndex', "UpdateIndex"],
-         'LO' : ['LoggingOn'],
-         'OP' : ['DsarchOption'],
-         'NC' : ['NewUpdateControl'],
-         'NL' : ['NewLocalFile'],
-         'PD' : ['TD', 'TemporalDelimiter'],
-         'QE' : ['QuitOnError'],
-         'QS' : ['PBSOptions'],
-         'RD' : ['Redownlaod'],
-         'RO' : ['Reorder'],
-         'SB' : ['SlurmOptions'],
-         'SC' : ['SetUpdateControl'],
-         'SL' : ['SetLocal'],
-         'SN' : ['SpecialistName'],
-         'SR' : ['SetRemote'],
-         'TI' : ['Interval'],
-         'UL' : ["UnLockUpdate"],
-         'XC' : ['ExecCmd'],
-         'XO' : ['ExecuteOrder']
+         'AN': ['Action', "AC"],
+         'AT': ['FileAge', "FileAgeTime"],
+         'BC': ['BuildCmd'],
+         'BG': ['b'],
+         'BL': ['BuildLocalfile'],
+         'BP': ['d', 'DelayedMode'],
+         'BT': ['IT', 'InitialTime'],
+         'CI': ['UpdateControlIndex'],
+         'CL': ['CleanFile'],
+         'CN': ['CheckNewFile'],
+         'DC': ['Command', 'Download'],
+         'DE': ['Desc', 'Note', 'FileDesc', 'FileDescription'],
+         'DI': ['NextDue'],
+         'DL': ['RM', 'Remove'],
+         'DR': ['DownloadRemoteFile'],
+         'DS': ['Dsid', 'DatasetID'],
+         'DV': ['Delimiter', 'Separator'],
+         'ED': ['UpdateEndDate'],
+         'EH': ['UpdateEndHour'],
+         'EP': ['EndPeriodDay'],
+         'FA': ['SF', 'WF', 'QF'],
+         'FQ': ['UpdateFrequency'],
+         'FU': ["ForceUpdate"],
+         'GC': ['GetUpdateControl'],
+         'GL': ['GetLocal'],
+         'GN': ['GroupID'],
+         'GP': ['GeneralPattern'],
+         'GR': ['GetRemote'],
+         'GZ': ['GMT', 'GreenwichZone', 'UTC'],
+         'HN': ['HostMachine'],
+         'KR': ['KeepRemoteFile'],
+         'KS': ['KeepServerFile'],
+         'LF': ['LocalFileIndex'],
+         'LI': ['LocIndex', "UpdateIndex"],
+         'LO': ['LoggingOn'],
+         'OP': ['DsarchOption'],
+         'NC': ['NewUpdateControl'],
+         'NL': ['NewLocalFile'],
+         'PD': ['TD', 'TemporalDelimiter'],
+         'QE': ['QuitOnError'],
+         'QS': ['PBSOptions'],
+         'RD': ['Redownlaod'],
+         'RO': ['Reorder'],
+         'SC': ['SetUpdateControl'],
+         'SL': ['SetLocal'],
+         'SN': ['SpecialistName'],
+         'SR': ['SetRemote'],
+         'TI': ['Interval'],
+         'UL': ["UnLockUpdate"],
+         'XC': ['ExecCmd'],
+         'XO': ['ExecuteOrder']
       })
       # single letter short names for option 'FN' (Field Names) to retrieve info
       # from RDADB; only the fields can be manipulated by this application are listed
       #  SHORTNM KEYS(self.OPTS) DBFIELD
       self.TBLHASH['dlupdt'] = {      # condition flag, 0-int, 1-string, -1-exclude
-         'L' : ['LI', "lindex",        0],
-         'F' : ['LF', "locfile",       1],
-         'A' : ['AN', "action",        1],     # dsarch action
-         'I' : ['CI', "cindex",        0],
-         'U' : ['FA', "archfile",      1],
-         'X' : ['XO', "execorder",     1],
-         'S' : ['SN', "specialist",    1],
-         'M' : ['MR', "missremote",    1],
-         'W' : ['WD', "workdir",       1],
-         'O' : ['OP', "options",       1],
-         'C' : ['DC', "download",      1],
-         'Q' : ['FQ', "frequency",     1],
-         'E' : ['EP', "endperiod",     0],
-         'J' : ['ED', "enddate",       1],
-         'K' : ['EH', "endhour",       0],
-         'N' : ['DI', "nextdue",       1],
-         'V' : ['VI', "validint",      1],
-         'T' : ['AT', "agetime",       1],
-         'R' : ['PR', "processremote", 1],
-         'B' : ['BC', "buildcmd",      1],
-         'Z' : ['CL', "cleancmd",      1],
-         'D' : ['DE', "note",          1],
+         'L': ['LI', "lindex",        0],
+         'F': ['LF', "locfile",       1],
+         'A': ['AN', "action",        1],     # dsarch action
+         'I': ['CI', "cindex",        0],
+         'U': ['FA', "archfile",      1],
+         'X': ['XO', "execorder",     1],
+         'S': ['SN', "specialist",    1],
+         'M': ['MR', "missremote",    1],
+         'W': ['WD', "workdir",       1],
+         'O': ['OP', "options",       1],
+         'C': ['DC', "download",      1],
+         'Q': ['FQ', "frequency",     1],
+         'E': ['EP', "endperiod",     0],
+         'J': ['ED', "enddate",       1],
+         'K': ['EH', "endhour",       0],
+         'N': ['DI', "nextdue",       1],
+         'V': ['VI', "validint",      1],
+         'T': ['AT', "agetime",       1],
+         'R': ['PR', "processremote", 1],
+         'B': ['BC', "buildcmd",      1],
+         'Z': ['CL', "cleancmd",      1],
+         'D': ['DE', "note",          1],
       }
       self.TBLHASH['drupdt'] = {
-         'L' : ['LI', "lindex",      0],   # same as dlupdt.lindex
-         'F' : ['RF', "remotefile",  1],
-         'D' : ['DO', "dindex",      0],
-         'S' : ['SF', "serverfile",  1],
-         'C' : ['DC', "download",    1],
-         'B' : ['BT', "begintime",   1],
-         'E' : ['ET', "endtime",     1],
-         'T' : ['TI', "tinterval",   1],
+         'L': ['LI', "lindex",      0],   # same as dlupdt.lindex
+         'F': ['RF', "remotefile",  1],
+         'D': ['DO', "dindex",      0],
+         'S': ['SF', "serverfile",  1],
+         'C': ['DC', "download",    1],
+         'B': ['BT', "begintime",   1],
+         'E': ['ET', "endtime",     1],
+         'T': ['TI', "tinterval",   1],
       }
       self.TBLHASH['dcupdt'] = {
-         'C' : ['CI', "cindex",     0],
-         'L' : ['ID', "cntlid",     1],
-         'N' : ['SN', "specialist", 1],
-         'P' : ['PI', "pindex",     0],   # if not 0, refer to another dcupdt.cindex
-         'A' : ['AN', "action",     1],   # dsupdt action
-         'F' : ['FQ', "frequency",  1],
-         'O' : ['CO', "cntloffset", 1],
-         'T' : ['CT', "cntltime",   1],
-         'R' : ['RI', "retryint",   1],
-         'V' : ['VI', "validint",   1],
-         'U' : ['UC', "updtcntl",   1],
-         'J' : ['MC', "emailcntl",  1],
-         'E' : ['EC', "errorcntl",  1],
-         'K' : ['KF', "keepfile",   1],
-         'Z' : ['HO', "houroffset", 1],
-         'D' : ['DT', "datatime",   1],
-         'H' : ['HN', "hostname",   1],
-         'Q' : ['QS', "qoptions",   1],
-         'Y' : ['CC', "emails",     1],
-         'X' : ['XC', "execcmd",    1],
+         'C': ['CI', "cindex",     0],
+         'L': ['ID', "cntlid",     1],
+         'N': ['SN', "specialist", 1],
+         'P': ['PI', "pindex",     0],   # if not 0, refer to another dcupdt.cindex
+         'A': ['AN', "action",     1],   # dsupdt action
+         'F': ['FQ', "frequency",  1],
+         'O': ['CO', "cntloffset", 1],
+         'T': ['CT', "cntltime",   1],
+         'R': ['RI', "retryint",   1],
+         'V': ['VI', "validint",   1],
+         'U': ['UC', "updtcntl",   1],
+         'J': ['MC', "emailcntl",  1],
+         'E': ['EC', "errorcntl",  1],
+         'K': ['KF', "keepfile",   1],
+         'Z': ['HO', "houroffset", 1],
+         'D': ['DT', "datatime",   1],
+         'H': ['HN', "hostname",   1],
+         'Q': ['QS', "qoptions",   1],
+         'Y': ['CC', "emails",     1],
+         'X': ['XC', "execcmd",    1],
       }
       # global info to be used by the whole application
       self.PGOPT['updated'] = 0
@@ -278,7 +276,7 @@ class PgUpdt(PgOPT, PgCMD):
       self.PGOPT['uwcnt'] = self.PGOPT['udcnt'] = self.PGOPT['uncnt'] = self.PGOPT['rdcnt'] = 0
       self.PGOPT['lindex'] = 0   # the current lindex is under updating
       self.WSLOWS = {
-         'nomads.ncep.noaa.gov' : 8
+         'nomads.ncep.noaa.gov': 8
       }
        # set default parameters
       self.params['PD'] = ["<" , ">"]   # temporal pattern delimiters
@@ -396,8 +394,8 @@ class PgUpdt(PgOPT, PgCMD):
       pcnt = len(patterns)
       if pcnt == 0: return fname   # return original name if no pattern
       if limit and pcnt > limit: pcnt = limit
-      mps = {'b' : r'^B(.+)B$', 'c': r'^C(.+)C$', 'd' : r'(\d+)$', 'm' : r'^M([NC])M$',
-             'n' : r'^N(H+|D+)N$', 'p' : r'^P(\d+)$', 's' : r'^S[\d:]+S$', 'w' : r'^W(.+)W$'}
+      mps = {'b': r'^B(.+)B$', 'c': r'^C(.+)C$', 'd': r'(\d+)$', 'm': r'^M([NC])M$',
+             'n': r'^N(H+|D+)N$', 'p': r'^P(\d+)$', 's': r'^S[\d:]+S$', 'w': r'^W(.+)W$'}
       for i in range(pcnt):
          pattern = patterns[i]
          replace = "{}{}{}".format(seps[0], pattern, seps[1])
@@ -815,7 +813,7 @@ class PgUpdt(PgOPT, PgCMD):
          (date, hour) = self.addfrequency(date, hour, tempinfo['FQ'], 1)
          date = self.enddate(date, tempinfo['EP'], tempinfo['QU'], tempinfo['FQ'][6])
       if 'UT' in self.params or not locrec['enddate'] or self.diffdatehour(date, hour, locrec['enddate'], locrec['endhour']) > 0:
-         record = {'enddate' : date}
+         record = {'enddate': date}
          if hour != None:
             record['endhour'] = hour
             einfo = "end data date:hour {}:{:02}".format(date, hour)
@@ -1538,7 +1536,7 @@ class PgUpdt(PgOPT, PgCMD):
    # reset updated data time
    def reset_data_time(self, qu, ddate, dhour, lidx):
       pgrec = self.PGOPT['UCNTL']
-      record = {'chktime' : int(time.time())}
+      record = {'chktime': int(time.time())}
       if ddate:
          if dhour is None: dhour = 0 if qu == 'H' else 23
          dtime = "{} {:02}:59:59".format(ddate, dhour)
