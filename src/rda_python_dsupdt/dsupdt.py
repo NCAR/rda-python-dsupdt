@@ -26,7 +26,7 @@ class DsUpdt(PgUpdt, PgSplit):
       self.TEMPINFO = {}
       self.TOPMSG = self.SUBJECT = self.ACTSTR = None
       self.ALLCNT = 0
-      self.DEFTYPES = {'WT' : 'D', 'ST' : 'P', 'QT' : 'B'}
+      self.DEFTYPES = {'WT': 'D', 'ST': 'P', 'QT': 'B'}
 
    # main function to run dsupdt
    def read_parameters(self):
@@ -387,7 +387,7 @@ class DsUpdt(PgUpdt, PgSplit):
    # get update info of local and remote files owned by login name
    def get_update_info(self):
       if 'DS' in self.params:
-         dsids = {'dsid' : [self.params['DS']]}
+         dsids = {'dsid': [self.params['DS']]}
          dscnt = 1
       else:
          tname = "dlupdt"
@@ -639,7 +639,7 @@ class DsUpdt(PgUpdt, PgSplit):
             return self.pglog("{}: NO remote file record matched for {}".format(locinfo, rcnd), self.PGOPT['emlerr'])
          # create a empty record remote file
          rcnt = 1
-         rmtrecs = {'lindex' : [lindex], 'dindex' : [0]}
+         rmtrecs = {'lindex': [lindex], 'dindex': [0]}
          rflds = ['remotefile', 'serverfile', 'download', 'begintime', 'endtime', 'tinterval']
          for rfld in rflds: rmtrecs[rfld] = [None]
       if rcnt == 1:
@@ -1291,7 +1291,7 @@ class DsUpdt(PgUpdt, PgSplit):
          if ainfo['vindex']: growing = self.is_growing_file(locrec['locfile'], tempinfo['FQ'])
          tempinfo['ainfo'] = None   # clean the archive info recorded earlier
       else:
-         ainfo = {'archived' : 0, 'note' : None}   # reference to empty hash
+         ainfo = {'archived': 0, 'note': None}   # reference to empty hash
       self.pglog("{}: start {} for {}".format(lfile, locrec['action'], tempinfo['einfo']), self.PGOPT['emllog'])
       options = locrec['options'] if locrec['options'] else ""
       act = locrec['action']
@@ -1428,9 +1428,9 @@ class DsUpdt(PgUpdt, PgSplit):
          val = self.PGOPT['UCNTL']['validint']
       else:
          val = None
-      tempinfo = {'AT' : None, 'DC' : None, 'ED' : [], 'EH' : [], 'VI' : None,
-                  'VD' : None, 'VH' : None, 'CVD' : None, 'NX' : None, 'FQ' : None,
-                  'QU' : None, 'EP' : 0, 'RS' : -1, 'AQ' : None}
+      tempinfo = {'AT': None, 'DC': None, 'ED': [], 'EH': [], 'VI': None,
+                  'VD': None, 'VH': None, 'CVD': None, 'NX': None, 'FQ': None,
+                  'QU': None, 'EP': 0, 'RS': -1, 'AQ': None}
       if val: val = self.get_control_time(val, "Valid Internal")
       if val:
          tempinfo['VI'] = val
@@ -1506,7 +1506,7 @@ class DsUpdt(PgUpdt, PgSplit):
             dhour = self.diffdatehour(vdate, vhour, locrec['missdate'], locrec['misshour'])
             if dhour > 0:
                if dhour > 240:
-                  record = {'missdate' : None, 'misshour' : None}
+                  record = {'missdate': None, 'misshour': None}
                   self.pgupdt("dlupdt", record, "lindex = {}".format(locrec['lindex']))
                else:
                   vdate = locrec['missdate']
@@ -1576,7 +1576,7 @@ class DsUpdt(PgUpdt, PgSplit):
       if tempinfo['ainfo'] != None: return tempinfo['ainfo']
       edate = tempinfo['edate']
       ehour = tempinfo['ehour']
-      ainfo = {'archcnt' : 0, 'archived' : 0, 'present' : 0, 'vindex' : 0, 'types' : {}, 'note' : None}
+      ainfo = {'archcnt': 0, 'archived': 0, 'present': 0, 'vindex': 0, 'types': {}, 'note': None}
       growing = self.is_growing_file(locrec['locfile'], tempinfo['FQ'])
       if growing:
          if tempinfo['NX']:
@@ -1790,8 +1790,8 @@ class DsUpdt(PgUpdt, PgSplit):
          finfo = self.check_local_file(cfile, 33, self.PGOPT['wrnlog'])
          if not finfo: return 3   # download if can not check newer
       else:
-         finfo = {'isfile' : 0, 'checksum' : ainfo['chksm'], 'data_size' : ainfo['asize'],
-                  'date_modified' : ainfo['adate'], 'time_modified' : ainfo['atime']}
+         finfo = {'isfile': 0, 'checksum': ainfo['chksm'], 'data_size': ainfo['asize'],
+                  'date_modified': ainfo['adate'], 'time_modified': ainfo['atime']}
       cinfo = self.check_server_file(dcmd, 33, cfile)
       if not cinfo:
          sact = self.get_download_action(dcmd)
@@ -1938,7 +1938,7 @@ class DsUpdt(PgUpdt, PgSplit):
          if rcnd and self.pgget("drupdt", "", loccnd):
             return self.pglog("{}: NO remote file record matched for {}".format(locinfo, rcnd), self.PGOPT['emlerr'])
          rcnt = 1   # create a empty record remote file
-         rmtrecs = {'lindex' : locrec['lindex'], 'remotefile' : None, 'serverfile' : None}
+         rmtrecs = {'lindex': locrec['lindex'], 'remotefile': None, 'serverfile': None}
       if rcnt == 1:
          if 'RF' in self.params and len(self.params['RF']) == 1 and not (rmtrecs['remotefile'][0] and self.params['RF'][0] == rmtrecs['remotefile'][0]):
             rmtrecs['remotefile'][0] = self.params['RF'][0]

@@ -275,7 +275,7 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   D      -(DT|DataTime)         time data updated to, format: YYY-MM-DD HH:NN:SS
   H      -(HN|HostName)         hostnames this cindex can/cannot be processed on
   S      -(SB|SBatchOptions)    additional PBS batch options
-  Q      -(QS|QSubOptions)      additional SLURM batch options
+  Q      -(QS|QSubOptions)      additional PBS batch options
   Y      -(CC|CarbonCopy)       carbon copies for additional email addresses
   X      -(XC|ExecuteCommand)   Command to be executed after successful update
  
@@ -687,7 +687,6 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
           [-(VS|ValidSize) MinSizeForValidFile]
           [-(PL|ProcessLimit) MaxNumberOfChildProcesses]
           [-(HO|HourOffset) TimeZoneHourOffset]
-          [-(SB|SbatchOptions)  SlurmBatchOptions]
           [-(QS|QsubOptions)  PBSBatchOptions]
           [-(BP|BatchProcess) [BatchProcessHosts]]
           [-(CC|CarbonCopy) Cc'dEmailAddresses]
@@ -811,7 +810,6 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(VS|ValidSize) MinSizeForValidFile]
          [-(PL|ProcessLimit) MaxNumberOfChildProcesses]
          [-(HO|HourOffset) TimeZoneHourOffset]
-         [-(SB|SbatchOptions)  SlurmBatchOptions]
          [-(QS|QsubOptions)  PBSBatchOptions]
          [-(BP|BatchProcess) [BatchProcessHosts]]
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
@@ -883,7 +881,6 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CH|CurrentHour) CurrentHour]  # provide if different than current
          [-(VS|ValidSize) MinSizeForValidFile]
          [-(PL|ProcessLimit) MaxNumberOfChildProcesses]
-         [-(SB|SbatchOptions)  SlurmBatchOptions]
          [-(QS|QsubOptions)  PBSBatchOptions]
          [-(BP|BatchProcess) [BatchProcessHosts]]
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
@@ -959,7 +956,6 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CH|CurrentHour) CurrentHour]  # provide if different than current
          [-(VS|ValidSize) MinSizeForValidFile]
          [-(PL|ProcessLimit) MaxNumberOfChildProcesses]
-         [-(SB|SbatchOptions)  SlurmBatchOptions]
          [-(QS|QsubOptions)  PBSBatchOptions]
          [-(BP|BatchProcess) [BatchProcessHosts]]
          [-(HO|HourOffset) TimeZoneHourOffset]
@@ -1024,7 +1020,6 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CH|CurrentHour) CurrentHour]  # provide if different than current
          [-(VS|ValidSize) MinSizeForValidFile]
          [-(PL|ProcessLimit) MaxNumberOfChildProcesses]
-         [-(SB|SbatchOptions)  SlurmBatchOptions]
          [-(QS|QsubOptions)  PBSBatchOptions]
          [-(BP|BatchProcess) [BatchProcessHosts]]
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
@@ -1087,7 +1082,6 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CD|CurrentDate) CurrentDate]  # provide if different than current
          [-(CH|CurrentHour) CurrentHour]  # provide if different than current
          [-(PL|ProcessLimit) MaxNumberOfChildProcesses]
-         [-(SB|SbatchOptions)  SlurmBatchOptions]
          [-(QS|QsubOptions)  PBSBatchOptions]
          [-(BP|BatchProcess) [BatchProcessHosts]]
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
@@ -1717,10 +1711,6 @@ Information options are used to pass information, one or multiple values, into
   actions -SL (-SetLocalFile). Another way of reordering the local files is to
    provide explicitly order index values per Info option -XO (-ExecOrder).
 
-  -SB or -SbatchOptions, (Alias: -SlurmOptions), specifies options to execute dsupdt
-  as a batch job via sbatch on SLURM nodes. The sbatch options must be quoted when
-  prsented on command line, such as, -QS '-t 24:00:00'.
-  
   -SF or -ServerFile, only used to set file names on Remote servers when they
   are different from the remote file names.
 
