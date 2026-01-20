@@ -1361,12 +1361,25 @@ class DsUpdt(PgUpdt, PgSplit):
          if locrec['cleancmd']: options = re.sub(r'(^-NW\s+|\s+-NW$)', '', options, 1, re.I)
          acmd += " " + self.replace_pattern(options, tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
       ret = self.pgsystem(acmd, self.PGOPT['emerol'], 69)   # 1 + 4 + 64
-      if gcmd: self.pgsystem(gcmd, self.PGOPT['emerol'], 5)
+      if gcmd: self.call_gatherxml(gcmd)
       if fnote: self.pgsystem("rm -f " + fnote, self.PGOPT['emerol'], 4)
       tempinfo['ainfo'] = self.file_archive_info(lfile, locrec, tempinfo)
       note = self.count_update_files(ainfo, tempinfo['ainfo'], ret, tempinfo['RS'])
       self.pglog("{}: UPDATED({}) for {}".format(lfile, locrec['action'], tempinfo['einfo']), self.PGOPT['emlsum'])
       return ret
+
+   # call gatherxml
+   def call_gatherxml(self, gcmd):
+      logfile = self.PGLOG['LOGFILE']
+      errfile = self.PGLOG['ERRFILE']
+      self.PGLOG['LOGFILE'] = "gatherxml.log"
+      self.PGLOG['ERRFILE'] = "gatherxml.err"
+      self.PGLOG['ERR2STD'] = ["Warning: ", "already up-to-date","process currently running",
+                               "rsync", "No route to host", "''*'"]
+      self.pgsystem(gcmd, self.PGOPT['emerol'], 5)
+      self.PGLOG['LOGFILE'] = logfile
+      self.PGLOG['ERRFILE'] = errfile
+      self.PGLOG['ERR2STD'] = []
 
    # count files updated
    def count_update_files(self, oinfo, ninfo, success, rsopt):
