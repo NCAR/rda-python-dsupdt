@@ -1324,6 +1324,7 @@ class DsUpdt(PgUpdt, PgSplit):
       else:
          ifopt = 'LF'
       acmd = "dsarch {} {} -{} {}".format(self.params['DS'], act, ifopt, lfile)
+      gcmd = None
       if 'wfile' in ainfo: acmd += " -WF " + ainfo['wfile']
       if 'sfile' in ainfo: acmd += " -SF " + ainfo['sfile']
       if 'bfile' in ainfo: acmd += " -QF " + ainfo['bfile']
@@ -1334,8 +1335,16 @@ class DsUpdt(PgUpdt, PgSplit):
       if tempinfo['gotnew'] and not re.search(r'(^|\s)-OE(\s|$)', options, re.I): acmd += " -OE"
       if 'VS' in self.params:
          acmd += " -VS {}".format(self.params['VS'])
-         if 'VS' in tempinfo: options = re.sub(r'-VS\s+\d+(\s+|$)', '', options, flags=re.I)
-      if tempinfo['RS'] == 1: acmd += " -RS"
+         if 'VS' in tempinfo: options = re.sub(r'-VS\s+\d+\s*', '', options, flags=re.I)
+      if re.search(r'(^|\s)-GX(\s|$)', options, re.I):
+         wfile = ainfo['wfile'] if 'wfile' in ainfo else ainfo['afile']
+         ms = re.search(r'(^|\s)-DF (\w+)(\s|$)', options, re.I)
+         fmt = ms.ms.group(2).lower() if ms else None
+         if wfile and fmt:
+            if fmt == "netcdf": fmt = "cf" + fmt
+            rs = " -R -S" if tempinfo['RS'] == 1 else ''
+            gcmd = "gatherxml -d {} -f {}{} {}".format(self.params['DS'], fmt, rs, wfile)
+            options = re.sub(r'-GX\s*', '', options, flags=re.I)
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
          note = self.build_data_note(ainfo['note'], lfile, locrec, tempinfo)
@@ -1352,6 +1361,7 @@ class DsUpdt(PgUpdt, PgSplit):
          if locrec['cleancmd']: options = re.sub(r'(^-NW\s+|\s+-NW$)', '', options, 1, re.I)
          acmd += " " + self.replace_pattern(options, tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
       ret = self.pgsystem(acmd, self.PGOPT['emerol'], 69)   # 1 + 4 + 64
+      if gcmd: self.pgsystem(gcmd, self.PGOPT['emerol'], 5)
       if fnote: self.pgsystem("rm -f " + fnote, self.PGOPT['emerol'], 4)
       tempinfo['ainfo'] = self.file_archive_info(lfile, locrec, tempinfo)
       note = self.count_update_files(ainfo, tempinfo['ainfo'], ret, tempinfo['RS'])
@@ -1576,7 +1586,7 @@ class DsUpdt(PgUpdt, PgSplit):
       if tempinfo['ainfo'] != None: return tempinfo['ainfo']
       edate = tempinfo['edate']
       ehour = tempinfo['ehour']
-      ainfo = {'archcnt': 0, 'archived': 0, 'present': 0, 'vindex': 0, 'types': {}, 'note': None}
+      ainfo = {'archcnt': 0, 'archived': 0, 'present': 0, 'vindex': 0, 'types': {}, 'note': None, 'afile' : None}
       growing = self.is_growing_file(locrec['locfile'], tempinfo['FQ'])
       if growing:
          if tempinfo['NX']:
@@ -1607,6 +1617,7 @@ class DsUpdt(PgUpdt, PgSplit):
             else:
                path = self.get_group_field_path(locrec['gindex'], dsid, 'webpath')
             if path: afile = self.join_paths(path, afile)
+         ainfo['afile'] = afile
          wrec = self.pgget_wfile(dsid, "*", "{} AND type = '{}' AND wfile = '{}'".format(gcnd, type, afile), self.PGOPT['extlog'])
          if wrec:
             ainfo['wfile'] = wrec['wfile']
