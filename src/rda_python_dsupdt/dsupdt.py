@@ -1339,7 +1339,7 @@ class DsUpdt(PgUpdt, PgSplit):
       if re.search(r'(^|\s)-GX(\s|$)', options, re.I):
          wfile = ainfo['wfile'] if 'wfile' in ainfo else ainfo['afile']
          ms = re.search(r'(^|\s)-DF (\w+)(\s|$)', options, re.I)
-         fmt = ms.ms.group(2).lower() if ms else None
+         fmt = ms.group(2).lower() if ms else None
          if wfile and fmt:
             if fmt == "netcdf": fmt = "cf" + fmt
             rs = " -R -S" if tempinfo['RS'] == 1 else ''
