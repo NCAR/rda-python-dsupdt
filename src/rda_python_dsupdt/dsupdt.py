@@ -1343,7 +1343,7 @@ class DsUpdt(PgUpdt, PgSplit):
          if wfile and fmt:
             if fmt == "netcdf": fmt = "cf" + fmt
             rs = " -R -S" if tempinfo['RS'] == 1 else ''
-            gcmd = "gatherxml -d {} -f {}{} {}".format(self.params['DS'], fmt, rs, wfile)
+            gcmd = "{}/bin/gatherxml -d {} -f {}{} {}".format(self.PGLOG['LOCHOME'], self.params['DS'], fmt, rs, wfile)
             options = re.sub(r'-GX\s*', '', options, flags=re.I)
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
