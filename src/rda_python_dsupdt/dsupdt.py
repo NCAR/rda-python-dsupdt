@@ -845,7 +845,7 @@ class DsUpdt(PgUpdt, PgSplit):
             self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 5)
          else:
             for tidx in self.PGOPT['wtidx']:
-               self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 5)
+               self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1029)  # 5 + 1024
          self.PGOPT['wtidx'] = {}
 
    # retrieve remote files# act: > 0 - create filenames and get data files physically; 0 - create filenames only
@@ -1343,7 +1343,7 @@ class DsUpdt(PgUpdt, PgSplit):
          if wfile and fmt:
             if fmt == "netcdf": fmt = "cf" + fmt
             rs = " -R -S" if tempinfo['RS'] == 1 else ''
-            gcmd = "{}/bin/gatherxml -d {} -f {}{} {}".format(self.PGLOG['LOCHOME'], self.params['DS'], fmt, rs, wfile)
+            gcmd = "gatherxml -d {} -f {}{} {}".format(self.params['DS'], fmt, rs, wfile)
             options = re.sub(r'-GX\s*', '', options, flags=re.I)
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
@@ -1376,7 +1376,7 @@ class DsUpdt(PgUpdt, PgSplit):
       self.PGLOG['ERRFILE'] = "gatherxml.err"
       self.PGLOG['ERR2STD'] = ["Warning: ", "already up-to-date","process currently running",
                                "rsync", "No route to host", "''*'"]
-      self.pgsystem(gcmd, self.PGOPT['emerol'], 5)
+      self.pgsystem(gcmd, self.PGOPT['emerol'], 1029)  # 1 + 4 + 1024
       self.PGLOG['LOGFILE'] = logfile
       self.PGLOG['ERRFILE'] = errfile
       self.PGLOG['ERR2STD'] = []
