@@ -27,6 +27,8 @@ class DsUpdt(PgUpdt, PgSplit):
       self.TOPMSG = self.SUBJECT = self.ACTSTR = None
       self.ALLCNT = 0
       self.DEFTYPES = {'WT': 'D', 'ST': 'P', 'QT': 'B'}
+      self.gm = None
+      self.sm = None
 
    # main function to run dsupdt
    def read_parameters(self):
@@ -839,13 +841,15 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # refresh the gathered metadata with speed up option -R and -S
    def refresh_metadata(self, dsid):
-      sx = "{} -d {} -r".format(self.PGOPT['scm'], dsid)
+      if self.sm is None: self.sm = self.valid_command(self.PGOPT['scm'], self.PGOPT['emlerr'])
       if self.PGOPT['wtidx']:
-         if 0 in self.PGOPT['wtidx']:
-            self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 5)
-         else:
-            for tidx in self.PGOPT['wtidx']:
-               self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1029)  # 5 + 1024
+         if self.sm:
+            sx = "{} -d {} -r".format(self.sm, dsid)
+            if 0 in self.PGOPT['wtidx']:
+               self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 1029) # 1+4+1024
+            else:
+               for tidx in self.PGOPT['wtidx']:
+                  self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1029)  # 1+4+1024
          self.PGOPT['wtidx'] = {}
 
    # retrieve remote files# act: > 0 - create filenames and get data files physically; 0 - create filenames only
@@ -1343,7 +1347,8 @@ class DsUpdt(PgUpdt, PgSplit):
          if wfile and fmt:
             if fmt == "netcdf": fmt = "cf" + fmt
             rs = " -R -S" if tempinfo['RS'] == 1 else ''
-            gcmd = "gatherxml -d {} -f {}{} {}".format(self.params['DS'], fmt, rs, wfile)
+            if self.gm is None: self.gm = self.valid_command(self.PGOPT['gatherxml'], self.PGOPT['emlerr'])
+            if self.gm: gcmd = "{} -d {} -f {}{} {}".format(self.gm, self.params['DS'], fmt, rs, wfile)
             options = re.sub(r'-GX\s*', '', options, flags=re.I)
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
@@ -1376,7 +1381,7 @@ class DsUpdt(PgUpdt, PgSplit):
       self.PGLOG['ERRFILE'] = "gatherxml.err"
       self.PGLOG['ERR2STD'] = ["Warning: ", "already up-to-date","process currently running",
                                "rsync", "No route to host", "''*'"]
-      self.pgsystem(gcmd, self.PGOPT['emerol'], 1029)  # 1 + 4 + 1024
+      self.pgsystem(gcmd, self.PGOPT['emerol'], 1029)  # 1+4+1024
       self.PGLOG['LOGFILE'] = logfile
       self.PGLOG['ERRFILE'] = errfile
       self.PGLOG['ERR2STD'] = []
