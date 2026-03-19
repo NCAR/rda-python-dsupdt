@@ -2058,7 +2058,7 @@ class DsUpdt(PgUpdt, PgSplit):
       if not ('CI' in self.params or 'DS' in self.params):
          self.set_default_value("SN", self.params['LN'])
       condition = ("(pid = 0 OR lockhost = '{}') AND cntltime <= '{}'".format(self.PGLOG['HOSTNAME'], ctime) +
-                   self.self.get_hash_condition('dcupdt') + " ORDER BY hostname DESC, cntltime")
+                   self.get_hash_condition('dcupdt') + " ORDER BY hostname DESC, cntltime")
       pgrecs = self.pgmget("dcupdt", "*", condition, self.PGOPT['extlog'])
       self.ALLCNT = len(pgrecs['cindex']) if pgrecs else 0
       if self.ALLCNT == 0:
