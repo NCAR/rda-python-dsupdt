@@ -1,131 +1,119 @@
 
 1 INTRODUCTION
 
-Program 'dsupdt' is a utility for periodic dataset updates by calling 'dsarch'
-to archive data onto CISL Research Data Archive (RDA) Servers.
- 
-This application is implemented to:
-  - Configure update information of controls/local files/remote files for a dataset
-  - Download/retrieve data files on remote servers or other local machines 
-  - Call specialist-defined routines to validate/convert the downloaded remote
+'dsupdt' is a utility for performing periodic dataset updates by calling 'dsarch'
+to archive data onto CISL Geoscience Data Exchange (GDEX) Servers.
+
+This application supports the following functions:
+  - Configure update information for a dataset's update controls, local files,
+    and remote files
+  - Download or retrieve data files from remote servers or other local machines
+  - Call specialist-defined routines to validate and convert downloaded remote
     data files
-  - Build local files based on the remote files, tar and/or compress actions
-    are automatically applied if necessary
-  - Archive local files onto RDA Servers by calling 'dsarch'
-  - Clean the local files and/or other temporary files after the data files
-    are archived successfully
+  - Build local files from remote files, applying tar and/or compress operations
+    automatically as needed
+  - Archive local files onto GDEX Servers by calling 'dsarch'
+  - Remove local and temporary files after data files have been archived
+    successfully
   - Check availability of files on remote servers
-  - Start update actions via a centralized daemon 'dscheck', via cron job,
+  - Initiate update actions via the centralized daemon 'dscheck', via cron job,
     or manually
 
-A dataset must be set to work with 'dsarch' before it can be configured for
-periodic update by 'dsupdt'. Check help document of 'dsarch' for information
-of setting dataset under control of 'dsarch'.
+A dataset must be configured to work with 'dsarch' before it can be set up for
+periodic updates by 'dsupdt'. See the 'dsarch' help document for information
+on placing a dataset under 'dsarch' control.
 
-With update information being configured into RDADB for data files, 'dsupdt'
-downloads and archives data as in the following steps:
+Once update information is configured in GDEXDB, 'dsupdt' downloads and archives
+data in the following steps:
  Server Files on remote server or at other local area =========DOWNLOAD/COPY=>
  Remote Files at local working area ========================VALIDATE/CONVERT=>
- Remote Files ready for building Local Files =============TAR/COMPRESS/BUILD=> 
- Local Files ready for archive =======================================DSARCH=> 
- Files on RDA Servers
+ Remote Files ready for building Local Files =============TAR/COMPRESS/BUILD=>
+ Local Files ready for archive =======================================DSARCH=>
+ Files on GDEX Servers
 
-If not given explicitly, a server file name is the same as remote file name.
-For cases of one-to-one matching between remote files and local files, a
-remote file name defaults to given local file name if it is not specified.
+If not specified explicitly, the server file name defaults to the remote file name.
+For one-to-one matches between remote and local files, the remote file name
+defaults to the local file name if not otherwise specified.
 
-A local file update record is the minimal configuration to update data files
-for a given dataset. Add remote file configuration records for situations that
-the remote file name is different from the local file name or multiple remote
-files are involved for building a single local file. 
+A local file update record is the minimum configuration required to update data
+files for a given dataset. Add remote file configuration records when the remote
+file name differs from the local file name, or when multiple remote files are
+needed to build a single local file.
 
-Set update control records to start update actions on, or not on, specified
-data process computers, or on all available ones. Without update control
-record, an update action can be started routinely via cron jabs manually on
-a specified computer.
+Update control records determine which data processing computers may run update
+actions. Without an update control record, updates must be started manually or
+via cron jobs on a specific computer.
 
-To prevent a DSS specialist from executing 'dsupdt' accidentally to update
-data files via update configuration records owned by other specialists, only
-the specialist who owns a update record can execute 'dsupdt' against it to
-update data. Validation procedures are also added to prevent DSS specialists
-from setting up 'dsupdt' configuration on a wrong dataset. If an input file is
-used to hold option information for setting up update configuration of a given
-dataset, the input file name must start with the dataset number, as in format of
-'dsnnn.n.*'; the wildcard '*' matches one or multiple characters valid for file
-names. Another validation is to check if a specialist is allowed to execute
-'dsupdt' on a given dataset.  Action stops if a specialist is not listed as
-a owner, unless a Mode option -MD (-MyDataset) is present. The option -MD tells
-'dsupdt' to go ahead finish an Action forcefully.
+To prevent specialists from accidentally updating data files using configuration
+records owned by others, only the owning specialist can execute 'dsupdt' against
+a given update record. Validation is also performed to prevent configuration on
+the wrong dataset: any input file used for update configuration must begin with
+the dataset number in the format 'dNNNNNN.*', where '*' matches one or more
+valid filename characters. Additionally, 'dsupdt' verifies that the specialist
+is authorized for the given dataset. Execution stops if the specialist is not
+listed as an owner, unless Mode option -MD (-MyDataset) is present, which forces
+'dsupdt' to proceed with the action regardless.
 
-Update procedure of an individual data file is skipped if error occurs during
-updating; but execution of 'dsupdt' continues to finish all the other available
-updates. Restarting of 'dsupdt' picks up where it was left for the update files
-unfinished previously. An email notice is sent to the specialist who starts
-update actions of 'dsupdt'. As default, the email includes detail information
-of successful updates, and error messages if any.
+If an error occurs while updating an individual data file, that file's update is
+skipped and 'dsupdt' continues with the remaining updates. Restarting 'dsupdt'
+resumes from where it left off for any previously unfinished files. An email
+notice is sent to the specialist who initiated the update. By default, the email
+includes detailed information on successful updates along with any error messages.
 
-In the following sections, general usage of 'dsupdt' is described first; and 
-detail descriptions of different options are given next; and examples are
-interspersed through out the document.
+The following sections first describe general usage of 'dsupdt', then provide
+detailed descriptions of each option, with examples interspersed throughout.
 
 
 2 GENERAL DSUPDT USAGE
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] [Action Option] [Mode Options] [Info Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] [Action Option] [Mode Options] [Info Options]
       or
   dsupdt [-(IF|InputFile)] InputFileNames
 
-Quotes [] indicate optional. A pipeline '|' in parentheses as in format (A|B)
-means either A or B can be used. The options applied to 'dsupdt' are divided
-into three categories, Action, Mode, and Information (Info for short) options. 
-Action options are used to specify what tasks this utility to execute; Mode
-options are used to modify behaviors of the actions; and the Info options 
-are used to pass information, one or multiple values, to run 'dsupdt'. An option
-can be given in form of either short name or long name, -DS or -Dataset for
-example. Some options have alias names for convenience. Option names can be
-given in either upper or lower cases, while the values following Info options
-are case sensitive. 
+Brackets [] indicate optional elements. A pipe '|' within parentheses, as in
+(A|B), means either A or B may be used. Options are divided into three
+categories: Action, Mode, and Information (Info) options. Action options specify
+what tasks to execute; Mode options modify action behavior; and Info options pass
+one or more values to 'dsupdt'. Each option may be given in either its short or
+long form (e.g., -DS or -Dataset). Some options have alias names for convenience.
+Option names are case-insensitive, but the values following Info options are
+case-sensitive.
 
-Option -DS is an Info option which is used to specify a dataset number. If a
-dataset number is given as the first option following 'dsupdt' the option name
--DS (-Dataset) can be omitted. Some actions are allowed to be executed without
-dataset number, which means that the actions are applied on all available update
-control or file records of different datasets.
+Option -DS specifies a dataset number. If provided as the first argument
+following 'dsupdt', the -DS (-Dataset) option name may be omitted. Some actions
+can run without a dataset number, in which case they apply to all available
+update control or file records across all datasets.
 
-Specify one of the Action options each time to execute 'dsupdt'. Based on what
-Action is chosen, some of the Info options are mandatory and others are optional
-and certain Mode options can be applied to alter the behaviors of the Actions.
+Specify exactly one Action option per execution. Depending on the chosen Action,
+certain Info options are mandatory, others are optional, and specific Mode options
+may be applied to alter the action's behavior.
 
-All options, except Info option -IF (-InputFile), can be given either on command
-line or in input files. Input file names are presented per Info option -IF and
-can only be provided on command line. Check description of Info option -IF for
-detail on how to present options in input files.  One or multiple input files,
-combined with options on command line, are allowed to run 'dsupdt'. The option
-name, -IF (-InputFile), itself can be omitted if a single input file is given on
-command line, and action and additional option information are all provided
-inside the input file.
- 
-When information of update controls/local files/remote files are retrieved,
-Info options are used to specify conditions for querying information from
-RDADB. Some special signs can be used to further confine the information with
-special and complicated conditions; they are '!', '<', '>' and '<>'.  These
-special signs, if provided on command line,  must be quoted or escaped to avoid
-of being interpreted by computer OS. The '!', or \!, means exclusion to the
-following value(s) and it must be the first item following an Info option name,
-while '<' or '>' mean greater or less than the following value, and '<>' means
-condition between the following two values. Combine '!' and '<', as syntax "'!'
-'<' OptionValue", to make a condition of 'large than or equal to OptionValue'.
+All options except -IF (-InputFile) may be provided either on the command line
+or in input files. Input file names are specified via -IF and can only be given
+on the command line. See the -IF option description for details on how to
+format options in input files. One or more input files may be combined with
+command-line options. The -IF option name itself may be omitted when a single
+input file is given on the command line and all action and option information is
+contained within that file.
 
-Description of an individual option is displayed if 'dsupdt' is issued on 
-command line as
+When retrieving update control, local file, or remote file information, Info
+options specify query conditions. The special characters '!', '<', '>', and
+'<>' can be used for more specific filtering. When supplied on the command line,
+these characters must be quoted or escaped to avoid OS interpretation. '!' (or
+\!) denotes exclusion and must appear immediately after the option name.
+'<' and '>' denote less-than and greater-than comparisons on the following value.
+'<>' denotes a range between two values. Combining '!' and '<' as "'!' '<'
+OptionValue" creates a 'greater than or equal to OptionValue' condition.
+
+The description of an individual option is displayed when 'dsupdt' is run as
 
   dsupdt [Option] -(h|help) [Option]
 
-A description is displayed for an option given either before or after -(h|help).
-If no option is specified or 'dsupdt' is issued by itself, this whole document
-is displayed per UNIX utility 'more'. A hard copy of this help document can be
-printed from the saved file: $DSSHOME/dssdb/prog_usage/dsupdt.usg; $DSSHOME is
-an environment variable for DSS home directory setup on individual computers.
+The description is shown for the option placed either before or after -(h|help).
+If no option is given, or 'dsupdt' is run without arguments, the full document
+is displayed using the UNIX 'more' utility. A printed copy of this document is
+available at $DSSHOME/dssdb/prog_usage/dsupdt.usg, where $DSSHOME is the
+environment variable for the DSS home directory.
 
 #The online HTML version of this document is available at
 #http://dss.ucar.edu/internal/docs/dsupdt/
@@ -133,34 +121,33 @@ an environment variable for DSS home directory setup on individual computers.
 
 3 ACTION OPTIONS
 
-Action options are used to specify what tasks 'dsupdt' executes. No values
-are allowed to follow Action options. Multiple tasks may be processed with a
-single execution of 'dsupdt' depending on what Action option is chosen. Some of
-the comprehensive actions include automatically other simpler actions as
-default; and others include additional actions when certain Mode options are
-present. Execute 'dsupdt' for one Action as a time, and multiple Action options
-provided simultaneously are blocked.
+Action options specify what tasks 'dsupdt' executes. No values follow Action
+options. Depending on the chosen Action, multiple tasks may be processed in a
+single execution. Some comprehensive actions automatically include simpler
+actions by default; others include additional actions when certain Mode options
+are present. Only one Action option may be specified per execution; providing
+multiple Action options simultaneously is not permitted.
 
-Some actions are setting information into and some getting information from
-RDADB for a given dataset, and others are allowed to work on multiple datasets 
-if dataset number is omitted.
+Some actions write information to GDEXDB; others retrieve it. Most actions target
+a single dataset, but some can operate across all datasets when no dataset
+number is provided.
 
-Based on the information being manipulated, the actions are divided into three 
-categories:
+Actions are grouped into three categories based on the type of information they
+handle:
   Configuration Actions - create, delete, modify and retrieve information of
-                          update controls, local files and remote files in RDADB,
+                          update controls, local files and remote files in GDEXDB,
                           of a specified dataset
 All Information Actions - modify and retrieve information of update controls,
                           local files and remote files of a specified dataset
                           all together
          Update Actions - download remote files, build local files, archive local
-                          files onto RDA Servers, clean the temporary data files,
+                          files onto GDEX Servers, clean the temporary data files,
                           check update status of files on remote servers, and
                           unlock update controls or local files that are locked
                           by aborted update processes.
 
 3.1 Configuration Actions
-   Update control,  local file and remote file information can be created,
+   Update control, local file and remote file information can be created,
    modified, viewed or deleted via Actions in this section:
       Set Update Controls - create or modify information of update control
                             records for a given dataset
@@ -174,21 +161,20 @@ All Information Actions - modify and retrieve information of update controls,
                             for a given dataset
          Get Remote Files - retrieve information of remote file records
                             for one or all datasets
-Delete Update Information - delete update control and local/remote file records 
+Delete Update Information - delete update control and local/remote file records
 
 3.1.1 Set Update Controls
   -SC or -SetControl (Alias: -SetUpdateControl), creates or modifies update
-  control information into RDADB for a given dataset. These configuration records
-  are used to schedule data update actions and the actions are automatically
-  started via a centralized daemon 'dscheck'. One or multiple control records can
-  be set each time for a given dataset.
+  control records in GDEXDB for a given dataset. These records schedule data
+  update actions that are started automatically by the daemon 'dscheck'. One or
+  more control records may be set per execution.
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(SC|SetControl) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(SC|SetControl) [Mode Options]
           -(CI|ControlIndex) UpdateControlIndices
          [-(ID|ControlID) ControlIdString]
          [-(SN|Specialist) DSSSpecialist]
-         [-(PI|ParentIndex) ParentControlIndedices]
-         [-(AN|ActionName) DSUPDTActionNames]           # UF, DR, BL, PB, CL, CU 
+         [-(PI|ParentIndex) ParentControlIndices]
+         [-(AN|ActionName) DSUPDTActionNames]           # UF, DR, BL, PB, CL, CU
          [-(FQ|Frequency) UpdateControlFrequencies]    # i.e., 1W, 1M
          [-(CO|ControlOffset) UpdateControlOffsets]
          [-(CT|ControlTime) UpdateControlTimes]
@@ -201,22 +187,22 @@ Delete Update Information - delete update control and local/remote file records
          [-(HO|HourOffset) TimeZoneOffsets]
          [-(DT|DataTime) DataUpdatedTimes]
          [-(HN|HostName) HostNames]
-         [-(XC|ExecuteCoomand) CoomandAfterUpdate]
+         [-(XC|ExecuteCommand) CommandAfterUpdate]
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for setting local file action:
-   -(MD|MyDataset) - sets information into RDADB no matter the specialist who
-                     runs 'dsupdt' owns the dataset or not
-  -(NC|NewControl) - sets a new update control record into RDADB
- 
-  If information of an update control exists already in RDADB, the control record
-  is modified. A new update control record is added if control index is 0 and Mode
-  option -NC (-NewControl) is present. A dataset name via Info option -DS is
-  only mandatory when a new control record is added.
-  
-  For example, set three new update control local files of d277000 via
-  input file 'd277000.cntl'
+  Mode options that can be specified for this action:
+   -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
+                     ownership
+  -(NC|NewControl) - adds a new update control record to GDEXDB
+
+  If an update control record already exists in GDEXDB, it is modified. A new
+  record is added only when the control index is 0 and Mode option -NC
+  (-NewControl) is present. The dataset name via -DS is required only when adding
+  a new control record.
+
+  For example, to set three new update control records for d277000 using
+  input file 'd277000.cntl':
 
   dsupdt SC -NC -IF d277000.cntl
 
@@ -229,62 +215,60 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
 
 3.1.2 Get Update Controls
   -GC or -GetControl (Alias: -GetUpdateControl), retrieves update control
-  information for a given dataset.
+  records for a given dataset.
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(GC|GetControl) [Mode Option]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(GC|GetControl) [Mode Option]
          [-(FN|FieldNames) FieldNameString]
          [-(CI|ControlIndex) UpdateControlIndices]
          [-(ID|ControlID) ControlIdString]
          [-(SN|Specialist) DSSSpecialist]
-         [-(PI|ParentIndex) ParentControlIndedices]
-         [-(AN|ActionName) DSUPDTActionNames]          # UF, DR, BL, PB, CL, CU 
+         [-(PI|ParentIndex) ParentControlIndices]
+         [-(AN|ActionName) DSUPDTActionNames]          # UF, DR, BL, PB, CL, CU
          [-(FQ|Frequency) UpdateControlFrequencies]    # i.e., 1W, 1M
          [-(CO|ControlOffset) UpdateControlOffsets]
          [-(CT|ControlTime) UpdateControlTimes]
-         [-(OF|OutputFile) OutputFileName] 
+         [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for getting update control Action:
-  -(FO|FormatOutput) - format the column output with a fix width for all values
-                       of a given field
+  Mode option that can be specified for this action:
+  -(FO|FormatOutput) - formats each column to a uniform fixed width
 
-  Use Info option -FN (-FieldNames) to specify what control fields to be
-  retrieved. It defaults to 'CLNPAFOTRVUJEKZ' if option -FN is not provided.
+  Use Info option -FN (-FieldNames) to specify which control fields to
+  retrieve. It defaults to 'CLNPAFOTRVUJEKZ' if option -FN is not provided.
   Update information of all available fields is retrieved if -FN ALL is given.
 
   Valid field names of update controls and their corresponding Info option names:
 
   Names  Info Options           Descriptions
-  C      -(CI|ControlIndex)     index of update control record 
+  C      -(CI|ControlIndex)     index of update control record
   L      -(ID|ControlID)        descriptive id for a control record
   N      -(SN|Specialist)       DSS specialist who owns the control record
   P      -(PI|ParentIndex)      parent index, refers to a dcupdt.cindex if not 0
   A      -(AN|ActionName)       Update action name for 'dsupdt'
   F      -(FQ|Frequency)        frequency of update control, i.e., 1W, 1M
-  O      -(CO|ControlOffset)    time offset for next process, i.e. 2D10H, 3H15N
-  T      -(CT|ControlTime)      time to run dsupdt, format: YYY-MM-DD HH:NN:SS
-  R      -(RI|RetryInterval)    retry interval for failed dsupdt, i.e. 1M2D, 2H
+  O      -(CO|ControlOffset)    time offset for next process, i.e., 2D10H, 3H15N
+  T      -(CT|ControlTime)      time to run dsupdt, format: YYYY-MM-DD HH:NN:SS
+  R      -(RI|RetryInterval)    retry interval for failed dsupdt, i.e., 1M2D, 2H
   V      -(VI|ValidInterval)    update valid interval, i.e., 2D, 1M
   U      -(UC|UpdateControl)    any of B-Begin,C-Current,E-Reset End Date/Time,
                                 F-Future,G-GMT,M-Multi,N-New,O-Miss,
-                                Y-Skip Feb. 29,Z-Allow Zero Filesize                                
+                                Y-Skip Feb. 29,Z-Allow Zero Filesize
   J      -(MC|EMailControl)     one of A-All, E-Error, N-No, S-Summary, B-Summary when error
   E      -(EC|ErrorControl)     one of I-Ignore Error, Q-Quit on Error, N-Neither
   K      -(KF|KeepFile)         one of S-Server File, R-Remote file, B-Keep Both, N-Neither
-  Z      -(HO|HourOffsset)      time zone hour offset, hours ahead of local time
-  D      -(DT|DataTime)         time data updated to, format: YYY-MM-DD HH:NN:SS
+  Z      -(HO|HourOffset)       time zone hour offset, hours ahead of local time
+  D      -(DT|DataTime)         time data updated to, format: YYYY-MM-DD HH:NN:SS
   H      -(HN|HostName)         hostnames this cindex can/cannot be processed on
   S      -(SB|SBatchOptions)    additional PBS batch options
   Q      -(QS|QSubOptions)      additional PBS batch options
   Y      -(CC|CarbonCopy)       carbon copies for additional email addresses
   X      -(XC|ExecuteCommand)   Command to be executed after successful update
- 
-  If dataset number is missed, update control information is displayed for all
-  available control records, of different datasets, owned by the specialist who
-  runs 'dsupdt'.
 
-  For example, to get the update control information of d277000 for default
-  fields
+  If no dataset number is given, update control information is displayed for all
+  available control records across all datasets owned by the specialist running
+  'dsupdt'.
+
+  For example, to retrieve the default update control fields for d277000:
 
   dsupdt d277000 GC
 
@@ -296,23 +280,23 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
 3<:>zji<:>0<:>UF<:>1M<:>2D15H<:>2011-11-03 15:00:00<:>1D<:><:>A<:>N<:>N<:>0<:>
 
 3.1.3 Set Local Files
-  -SL or -SetLocalFile (Alias: -SetLocal), creates or modifies update information
-  of local files into RDADB for a given dataset. One or multiple records can be
-  processed each time.
+  -SL or -SetLocalFile (Alias: -SetLocal), creates or modifies local file update
+  records in GDEXDB for a given dataset. One or more records may be processed per
+  execution.
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(SL|SetLocalFile) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(SL|SetLocalFile) [Mode Options]
           -(LI|LocalIndex) LocalFileIndices
          [-(LF|LocalFile) LocalFileNames]
          [-(CI|ControlIndex) UpdateControlIndices]
-         [-(PI|ParentIndex) ParentLocalIndedices]
+         [-(PI|ParentIndex) ParentLocalIndices]
          [-(FA|FileArchived) ArchivedFileNames]  # auto generated if missed
          [-(DC|DownloadCommand) DownloadCommand]
          [-(AN|ActionName) DSARCHActionNames]          # AS, AW or AQ
          [-(OP|Options) DSARCHOptions]
          [-(XO|ExecOrder) ExecuteOrderIndices]
          [-(FQ|Frequency) DataFrequencies]    # i.e., 1W, 1M
-         [-(EP|EndPeriod) PerirodEndAt]       # 0=Sunday/EndMonth if FQ=1W/1M
-         [-(DI|DueInternval) DataDueInterval]    # i.e., 1M2D
+         [-(EP|EndPeriod) PeriodEndAt]        # 0=Sunday/EndMonth if FQ=1W/1M
+         [-(DI|DueInterval) DataDueInterval]     # i.e., 1M2D
          [-(ED|EndDate) NextDataEndDate]
          [-(EH|EndHour) NextDataEndHour]
          [-(VI|ValidInterval) UpdateValidInterval]  # i.e., 1D, 2D, 1M
@@ -320,42 +304,33 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
          [-(WD|WorkDir) WorkingDirectory]
          [-(CL|CleanCommand) FileCleaningCommand]
          [-(MR|MissRemote) AllowMissRemote]          # 'Y' or 'N'
-         [-(PR|ProcessRemote) AdditionalRemoteFilePrecess]  # user defined
-         [-(BC|BuildCommand) CoomandBuildLocalFile]  # user defined
+         [-(PR|ProcessRemote) AdditionalRemoteFileProcess]  # user defined
+         [-(BC|BuildCommand) CommandBuildLocalFile]  # user defined
          [-(SN|Specialist) DSSSpecialist]
          [-(DE|Description) FileDescription]  # note, include temporal patterns
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for setting local file action:
-   -(MD|MyDataset) - sets information into RDADB no matter the specialist who
-                     runs 'dsupdt' owns the dataset or not
-  -(NL|NewLocfile) - sets a new  update record into RDADB
-  -(RO|ResetOrder) - resets the executing order indices of the local file
-                     records according to the order as they are given.
- 
-  If information of a local file exists already in RDADB for a given local file
-  index, the update record is modified. A new local file record is added if
-  local file index is 0 and Mode option -NL (-NewLocfile) is present. A dataset
-  name via Info option -DS is only mandatory when a new control record is added.
+  Mode options that can be specified for this action:
+   -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
+                     ownership
+  -(NL|NewLocfile) - adds a new local file update record to GDEXDB
+  -(RO|ResetOrder) - resets execution order indices to match the order in
+                     which records are provided
 
-  Patterns quoted by delimiters can be set in local file names per -LF
-  (-LocalFile), remote file names per -RF (-RemoteFile), download command per
-  -DC (-DownloadCommand) and archive file note per -DE (-Description). The
-  default delimiters are '<' and '>', which can be set differently per Info
-  option -PD (-PatternDelimiter). A pattern is use for place holder of 
-  temporal or generic matching information of data files and later can be
-  dynamically replaced with given values during update actions. The pattern
-  <YYYYMM> is a place holder for a 4-digital year and a 2-digital month. For
-  example, a local file name is given as 'filename.<YYYYMM>.ext', and the year
-  and month are replaced by year value 2007 and month value 10 if the data file
-  is updated to end date of 2007-10-31. Replacing <YYYYMM> with 200710 to get
-  the local file name as 'filename.200710.ext'.
-  
-  An local file configuration for a dataset is linked to an existing update
-  control record for the same dataset, if the Control Index is set into
-  the local file record via Info option -CI (-ControlIndex). With this setup,
-  the update action set in the update control record is scheduled to process 
-  automatically against this local file configuration.
+  If a local file record already exists in GDEXDB for the given index, it is
+  modified. A new record is created when the index is 0 and -NL (-NewLocfile)
+  is present. The dataset name via -DS is required only when adding a new record.
+
+  Temporal or generic patterns enclosed by delimiters (default '<' and '>') may
+  be embedded in local file names (-LF), remote file names (-RF), download
+  commands (-DC), and file descriptions (-DE). Delimiters can be changed via
+  -PD (-PatternDelimiter). Patterns act as placeholders substituted with real
+  values at update time. For example, <YYYYMM> represents a 4-digit year and
+  2-digit month. A file named 'filename.<YYYYMM>.ext' updated to end date
+  2007-10-31 becomes 'filename.200710.ext'.
+
+  Linking a local file record to an update control record (via -CI) causes the
+  control record's scheduled action to run automatically against that local file.
 
   For example, set update information of two new local files of d744004 via
   input file 'd744004.loc'
@@ -369,37 +344,35 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
 0<:>curl.<YYYYMM>.bln<:>AB<:>2<:>0<:><:>cp -p /huron/ftp/rossby/upload/morzel/<:>-GI 12 -DF BINARY<:>1M<:><:>2009-08-31<:><:>$UPDTDATA/zji/BLNWIND<:>rm -f __FN__<:>
 
 3.1.4 Get Local Files
-  -GL or -GetLocalFile (Alias: -GetLocal), retrieves local file update
-  information for a given dataset. Update information of specified local
-  files are retrieved if the local file indices or names are provided.
- 
-  dsupdt [[-(DS|Dataset] dsnnn.n] -(GL|GetLocalFile) [Mode Option]
+  -GL or -GetLocalFile (Alias: -GetLocal), retrieves local file update records
+  for a given dataset. If local file indices or names are provided, only those
+  records are returned.
+
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(GL|GetLocalFile) [Mode Option]
          [-(FN|FieldNames) FieldNameString]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(AN|ActionName) DSARCHActionName]
          [-(XO|ExecOrder) ExecOrderIndex]
          [-(FQ|Frequency) DataFrequencies]    # i.e., 1W, 1M
-         [-(OF|OutputFile) OutputFileName] 
+         [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for getting local file Action:
-  -(FO|FormatOutput) - format the column output with a fix width for all values
-                       of a given field
+  Mode option that can be specified for this action:
+  -(FO|FormatOutput) - formats each column to a uniform fixed width
 
-  Use Info option -FN (-FieldNames) to specify what local file fields to be
-  retrieved. It defaults to 'LFAIUCOQJNVWZ' if option -FN is not provided.
-  Update information of all available fields is retrieved if -FN ALL is given.
+  Use -FN (-FieldNames) to specify which local file fields to retrieve. Defaults
+  to 'LFAIUCOQJNVWZ'. Use -FN ALL to retrieve all available fields.
 
   Valid field names of local files and their corresponding Info option names:
 
   Names  Info Options           Descriptions
-  L      -(LI|LocalIndex)       index of  update record 
-  F      -(LF|LocalFile)        local, original or source file names 
+  L      -(LI|LocalIndex)       index of update record
+  F      -(LF|LocalFile)        local, original or source file names
   A      -(AN|ActionName)       Action name for 'dsarch'
   I      -(CI|ControlIndex)     update control indices
   P      -(PI|ParentIndex)      parent index, refers to a dlupdt.lindex if not 0
-  U      -(FA|FileArchived)     archived file names on RDA Servers
+  U      -(FA|FileArchived)     archived file names on GDEX Servers
   C      -(DC|DownloadCommand)  command for download Remote file
   O      -(OP|Options)          options following the Action
   X      -(XO|ExecOrder)        order indices for update execution
@@ -418,15 +391,14 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   S      -(SN|Specialist)       DSS specialist who owns the local file record
   D      -(DE|Description)      File description, include temporal patterns
 
-  Local file update information can be retrieved for specified local file
-  names per option -LF (-LocalFile). Info option -LF accepts wildcard input
-  of '%' for matching any number of characters. 
+  Specific local files can be filtered by name using -LF (-LocalFile), which
+  accepts the '%' wildcard to match any number of characters.
 
-  If dataset number is missed, update information is displayed for all available
-  local files, of different datasets, owned by the specialist who runs 'dsupdt'.
+  If no dataset number is given, update information is displayed for all available
+  local files across all datasets owned by the specialist running 'dsupdt'.
 
-  For example, to get the local file information of d744004 for default fields for
-  local file indices 33 and 34
+  For example, to retrieve the default local file fields for d744004, local file
+  indices 33 and 34:
 
   dsupdt d744004 GL -LI 33 34
 
@@ -437,80 +409,73 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
 34<:>curl.<YYYYMM>.bln<:>Aw<:>2<:>0<:><:>cp -p /huron/ftp/rossby/upload/morzel/<:>-GI 12 -DF BINARY<:>1M<:><:>2009-08-31<:><:>$UPDTDATA/zji/BLNWIND<:>rm -f __FN__<:>
 
 3.1.5 Set Remote Files
-  -SR or -SetRemoteFile (Alias: -SetRemote), creates and modifies update
-  information of remote files into RDADB for given dataset and local
-  file(s). One or multiple remote files can be processed each time.
+  -SR or -SetRemoteFile (Alias: -SetRemote), creates or modifies remote file
+  update records in GDEXDB for a given dataset and local file. One or more
+  remote file records may be processed per execution.
 
-  dsupdt [-(DS|Dataset)] dsnnn.n -(SR|SetRemoteFile) [Mode Option]
+  dsupdt [-(DS|Dataset)] dNNNNNN -(SR|SetRemoteFile) [Mode Option]
           -(LI|LocalIndex) LocalFileIndices
           -(RF|RemoteFile) RemoteFileNames
-         [-(DO|DownloadOrder) DownloadOrderIndecies]
-         [-(DC|DownloadCommand) DownloadCommand]  # override the one for 
+         [-(DO|DownloadOrder) DownloadOrderIndices]
+         [-(DC|DownloadCommand) DownloadCommand]  # override the one for
          [-(SF|ServerFile) FileNamesOnRemoteServer]
          [-(BT|BeginTime) BeginningDay/Hour]  # ':' delimited for multiple ones
          [-(ET|EndTime) EndingDay/Hour]  # ':' delimited for multiple ones
-         [-(TI|TimeInterval) TimeInterval]    # i.e., 2H, 5D 
+         [-(TI|TimeInterval) TimeInterval]    # i.e., 2H, 5D
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action include:
-   -(MD|MyDataset) - sets information into RDADB no matter the specialist who
-                     runs 'dsupdt' owns the dataset or not
+  Mode option that can be specified for this action:
+   -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
+                     ownership
 
-  Set update information of remote files only when they are needed. For
-  simple situation that remote and local file names are identical, information
-  of the local file record is enough to process data update. A remote file
-  update record is only required if the remote file is different from local
-  file, including situations that multiple remote files are downloaded and
-  tarred for a single local file, or a single remote file may be available from
-  multiple servers.
+  Configure remote file update information only when needed. When remote and
+  local file names are identical, the local file record alone is sufficient for
+  data update. A remote file record is required only when the remote file differs
+  from the local file, when multiple remote files are downloaded and tarred into
+  a single local file, or when a single remote file is available from multiple
+  servers.
 
   Local file indices and remote file names must be provided per options -LI
-  (-LocalIndex) and -RF (-RemoteFile), respectively, for this action to work.  
+  (-LocalIndex) and -RF (-RemoteFile), respectively, for this action to work.
 
-  If a download command is specified per Info option -DC (-DownloadCommand) in 
-  the remote file record, it is used for downloading remote file rather than
-  the one specified in the local file record.
+  If -DC (-DownloadCommand) is set in the remote file record, it takes
+  precedence over the download command in the local file record.
 
-  Set file name on the remote server per Info option -SF (-ServerFile) if it
-  is different from the remote file name. If a server file name is not
-  set for a remote file record, it is assumed to be the same as the remote
-  file name.
+  Use -SF (-ServerFile) to specify the file's name on the remote server when
+  it differs from the remote file name. If not set, the server file name is
+  assumed to match the remote file name.
 
-  Data files downloaded remotely or generated via local processes are temporarily
-  staged on a local disk. They are called remote files until they are further
-  validated and converted into local files.
-  
-  Set download order indices per Info option -DO (-DownloadOrder) if a
-  remote file is accessible from multiple remote servers. Remote file download
-  action tries the web server with the lowest download index first; and, if
-  fails, it tries the other servers with higher indices until successful
-  download.
-  
+  Files downloaded from a server or generated locally are staged on disk as
+  remote files until they are validated and converted into local files.
+
+  If a remote file is available from multiple servers, use -DO (-DownloadOrder)
+  to set download order indices. The server with the lowest index is tried first;
+  if it fails, servers are tried in ascending index order until one succeeds.
+
 3.1.6 Get Remote Files
-  -GR or -GetRemoteFile (Alias: -GetRemote), gets remote file update
-  information for given condition.
+  -GR or -GetRemoteFile (Alias: -GetRemote), retrieves remote file update
+  records matching the specified conditions.
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(GR|GetRemotefile) [Mode Option]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(GR|GetRemoteFile) [Mode Option]
          [-(FN|FieldNames) FieldNameString]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(RF|RemoteFile) RemoteFileNames]
          [-(DO|DownloadOrder) DownloadOrderIndices]
          [-(SF|ServerFile) ServerFileNames]
-         [-(OF|OutputFile) OutputFileName] 
+         [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for getting remote file Action:
-  -(FO|FormatOutput) - format the column output with a fix width for all values
-                       of a given field
+  Mode option that can be specified for this action:
+  -(FO|FormatOutput) - formats each column to a uniform fixed width
 
-  Use Info option -FN (-FieldNames) to specify what remote file fields to 
-  retrieve. It defaults to 'LFDSCBET' if option -FN is not provided.
+  Use -FN (-FieldNames) to specify which remote file fields to retrieve.
+  Defaults to 'LFDSCBET'.
 
   Valid remote file field names and their corresponding Info options:
 
   Names  Info Options           Descriptions
-  L      -(LI|LocalIndex)       indices of  records
+  L      -(LI|LocalIndex)       indices of records
   F      -(RF|RemoteFile)       remote file names
   D      -(DO|DownloadOrder)    download order indices
   S      -(SF|ServerFile)       file names on remote server
@@ -519,78 +484,72 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   E      -(ET|EndTime)          for remote file names, 0 - the last day/hour
   T      -(TI|TimeInterval)     for remote file names, i.e., 2H, 5D
 
-  Update information of all remote files from different datasets, owned by the
-  specialist who runs 'dsupdt', may be viewed at the same time if dataset number
-  is omitted.
+  If no dataset number is given, update information for all remote files across
+  all datasets owned by the specialist running 'dsupdt' may be viewed together.
 
-3.1.7 Delete Update Information 
-  -DL or -Delete, (Alias: -RM|-Remove), deletes one or multiple update 
-  control, local file or remote file records from RDADB.
+3.1.7 Delete Update Information
+  -DL or -Delete (Alias: -RM|-Remove), deletes one or more update control,
+  local file, or remote file records from GDEXDB.
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(DL|Delete) [Mode Option]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(DL|Delete) [Mode Option]
          -(CI|ControlIndex) UpdateControlIndices
          [-(DB|Debug) DebugModeInfo]
       or
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(DL|Delete) [Mode Option]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(DL|Delete) [Mode Option]
          -(LI|LocalIndex) LocalFileIndices
          [-(DB|Debug) DebugModeInfo]
       or
 
-  dsupdt [[-(DS|Dataset)] dsnnn.n] -(DL|Delete) [Mode Option]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(DL|Delete) [Mode Option]
          -(LI|LocalIndex) LocalFileIndices
          -(RF|RemoteFile) RemoteFileNames
          [-(DO|DownloadOrder) DownloadOrderIndices]
          [-(DB|Debug) DebugModeInfo]
 
-   Mode option that can be specified for deleting update information Action:
-   -(MD|MyDataset) - delete records no matter the specialist who runs 'dsupdt'
-                     owns the dataset or not
+  Mode option that can be specified for this action:
+   -(MD|MyDataset) - deletes records regardless of dataset ownership
 
-  Use this action to delete update information. Control index must be given
-  to delete an update control record. Local file index must be given to delete
-  both local file and remote file records, while remote file name must be also
-  provided to delete a remote file record. Remote file records associated with a
-  local file record are all removed if the local file record is deleted.
+  Provide a control index to delete an update control record. Provide a local
+  file index to delete a local file record and all its associated remote file
+  records. To delete only a specific remote file record, provide both the local
+  file index and the remote file name.
 
 
 3.2 All Information Actions
 
-  For convenient, all update information configured for a dataset can be created,
-  modified or viewed together via comprehensive actions of:
-  Get All Information - retrieve configuration information of update controls,
-                        local files and remote files for a dataset
-  Set All Information - modify configuration information of update controls,
-                        local files and remote files for a dataset
+  For convenience, all update configuration for a dataset can be managed
+  together using two comprehensive actions:
+  Get All Information - retrieve all update control, local file, and remote
+                        file records for a dataset
+  Set All Information - create or modify all update control, local file, and
+                        remote file records for a dataset
 
 3.2.1 Get All Information
-  -GA or -GetAll, retrieves update control, local file and remote file information
-  for a given dataset. This is a comprehensive action, combining three Get actions,
-  -GC (-GetControl), -GL (-GetLocalFile) and -GR (-GetRemoteFile).
- 
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(GA|GetAll) [Mode Option]
+  -GA or -GetAll, retrieves all update control, local file, and remote file
+  records for a given dataset. It combines -GC (-GetControl), -GL (-GetLocalFile),
+  and -GR (-GetRemoteFile) into a single action.
+
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(GA|GetAll) [Mode Option]
          [-(CI|ControlIndex) UpdateControlIndices]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(RF|RemoteFile) RemoteFileNames]
-         [-(OF|OutputFile) OutputFileName] 
+         [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for getting all Action:
-  -(FO|FormatOutput) - format the column output with a fix width for all values
-                       of a given field
+  Mode option that can be specified for this action:
+  -(FO|FormatOutput) - formats each column to a uniform fixed width
 
-  Section headers are generated as [DCUPDT] for update controls, [DLUPDT] for
-  local files and [DRUPDT] for remote files.
+  Output is sectioned under [DCUPDT] for update controls, [DLUPDT] for local
+  files, and [DRUPDT] for remote files.
 
-  Info option -OF (-OutputFile) is normally used to specify a file name to
-  save the retrieved information for later usage. Result of this action is
-  displayed on screen if no output file is provided. The output file can be
-  edited and treated as a input file to save the changes back to RDADB per
-  action -SA (-SetAll).
+  Use -OF (-OutputFile) to save the retrieved information to a file. Without
+  it, results are printed to screen. The output file can be edited and fed back
+  into 'dsupdt' via -SA (-SetAll) to apply changes to GDEXDB.
 
-  For example, to get all update control, local file and remote file information
-  of d277000 for control index 1 with all fields
+  For example, to retrieve all update control, local file, and remote file
+  information for d277000 at control index 2:
 
   dsupdt d277000 GA -CI 2 -OF d277000.c1
 
@@ -606,66 +565,55 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
 LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>DownloadCommand<:>BeginTime<:>EndTime<:>TimeInterval<:>
 51<:>oisst.<YYYY>.asc.gz<:>oisst.<YYYY>.asc.Z<:>1<:>0<:><:><:><:><:><:>
 
-  This example shows a weekly update of a local file with remote file name 
+  This example shows a weekly update of a local file with remote file name
   different from the local file name.
 
 3.2.2 Set All Information
-  -SA or -SetAll, and creates and modifies update control, local file and remote
-  file information for a given dataset number. This is a comprehensive action,
-  combining three Set actions, -SC (-SetControl), -SL (-SetLocalFile) and
-  -SR (-SetRemoteFile).
+  -SA or -SetAll, creates and modifies all update control, local file, and
+  remote file records for a given dataset. It combines -SC (-SetControl),
+  -SL (-SetLocalFile), and -SR (-SetRemoteFile) into a single action.
 
-  dsupdt [-(DS|dataset)] dsnnn.n -(SA|SetAll) [Mode Options]
-          -(IF|InputFile) Input Files 
+  dsupdt [-(DS|dataset)] dNNNNNN -(SA|SetAll) [Mode Options]
+          -(IF|InputFile) Input Files
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action include:
-   -(MD|MyDataset) - sets information into RDADB no matter the specialist who
-                     runs 'dsupdt' owns the dataset or not
-  -(NC|NewControl) - sets a new update control record into RDADB
-  -(NL|NewLocfile) - sets a new  update record into RDADB
+  Mode option that can be specified for this action:
+   -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
+                     ownership
+  -(NC|NewControl) - sets a new update control record into GDEXDB
+  -(NL|NewLocfile) - sets a new  update record into GDEXDB
   -(RO|ResetOrder) - resets the executing order indices of the local file
                      records according to the order as they are given per
                      option -LF (-LocalFile)
 
-  At least one input file is need to execute this action since section headers
-  can be specified in an input file only. One way of creating an input file is
-  to get one per action -GA (-GetAll) for a dataset. The output file then
-  can be edited and used as an input file to set the update information back
-  to RDADB. 
+  At least one input file is required, since section headers can only be
+  specified in an input file. A convenient way to create one is to run -GA
+  (-GetAll) and edit the output file before passing it back with -SA.
 
 
 3.3 Update Actions
 
-  Data update activities can be accomplished through either separate Actions
-  or one comprehensive Action -UF (-UpdateFile). Actions included in this
-  section are:
-      Update Data Files - a comprehensive action to download/convert remote
-                          files, build up local files, archive data files onto
-                          RDA servers, and clean temporary data files. It
-                          combines the following four actions
-  Download Remote Files - download data files from remote server, process data
-                          files locally to generate new files or do both
-      Build Local Files - build local files from given remote files
-     Process Both Files - a comprehensive action to download remote files and 
-                          validate/convert them and build up local files
-    Archive Local Files - archive local files onto RDA Servers via utility
-                          program 'dsarch'
-  Clean Temporary Files - remove the temporary data files involved in the update
-                          procedure
-     Unlock Local Files - unlock one or multiple  records for them
-                          to be re-updated on a different host
-    Check Update Status - checks update status of local files via looking at if
-                          remote files are available for retrieving on remote
-                          servers.
+  Data updates can be run as one comprehensive action (-UF) or as individual
+  steps. This section covers the following actions:
+      Update Data Files - end-to-end action: download, validate, build, archive,
+                          and clean. Combines the four actions below
+  Download Remote Files - download or copy server files to local working disk
+      Build Local Files - validate, convert, and build local files from remote
+                          files
+     Process Both Files - download and build in one step
+    Archive Local Files - archive local files to GDEX Servers via 'dsarch'
+  Clean Temporary Files - remove temporary files from the working area
+     Unlock Local Files - release locks so records can be re-processed on a
+                          different host
+    Check Update Status - check whether remote files are available for retrieval
 
 3.3.1 Update Data Files
-  -UF or -UpdateFile, comprehensive action to download/copy server files, 
-  validate/convert the server files into remote files, build up local files from
-  available remote files, archive local files onto RDA server, and clean
-  the temporary data files generated during the update procedure.
+  -UF or -UpdateFile, a comprehensive action that downloads and copies server
+  files, validates and converts them into remote files, builds local files from
+  the available remote files, archives local files to the GDEX server, and cleans
+  up temporary data files generated during the update procedure.
 
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(UF|UpdateFile) [Mode Options]
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(UF|UpdateFile) [Mode Options]
           [-(CI|ControlIndex) UpdateControlIndex]
           [-(LI|LocalIndex) LocalFileIndices]
           [-(LF|LocalFile) LocalFileNames]
@@ -680,7 +628,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
           [-(WD|WorkDir) WorkingDirectory]
           [-(MR|MissRemote) AllowMissRemoteFile]
           [-(FQ|Frequency) DataFrequency]
-          [-(PR|ProcessRemote) AdditionalRemoteFilePrecess]  # user defined
+          [-(PR|ProcessRemote) AdditionalRemoteFileProcess]  # user defined
           [-(BC|BuildCommand) CommandBuildLocalFile]  # user defined
           [-(CD|CurrentDate) CurrentDate]  # provide if different than current
           [-(CH|CurrentHour) CurrentHour]  # provide if different than current
@@ -692,104 +640,85 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
           [-(CC|CarbonCopy) Cc'dEmailAddresses]
           [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for updating file Action:
-        -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
-                         the recorded "dsupdt' command be started anywhere.
-      -(BG|BackGround) - background process to turn off screen display for both 
-                         standard outputs and errors
-      -(CN|CheckNewer) - for server file is locally, checks if the file is changed
-                         on Server; downloads it again if changed.
-   -(CP|CurrentPeriod) - allows update of the end date/hour beyond the current
-                         date/hour if the current date/hour lands in the current
-                         update period
-                         a single update if this Mode option is not present;
-      -(EE-ErrorEmail) - sends email only when error happens during file updates
-     -(FU|ForceUpdate) - if present, force update at lease for one end data/time,
-                         although the update is not due yet;
-    -(HU|HourlyUpdate) - forces update of time to hours after successful file
-                         update action
+  Mode options that can be specified for this action:
+        -(AW|AnyWhere) - works with -BP (-BatchProcess) to allow the recorded
+                         'dsupdt' command to start from any directory
+      -(BG|BackGround) - runs in background; suppresses screen output and errors
+      -(CN|CheckNewer) - when the server file is available locally, checks if
+                         it has changed on the server and re-downloads if so
+   -(CP|CurrentPeriod) - allows the end date/hour to be processed even if it
+                         falls within the current update period
+      -(EE|ErrorEmail) - sends email only when an error occurs during updates
+     -(FU|ForceUpdate) - forces update for at least one end date/time, even
+                         if the update is not yet due
+    -(HU|HourlyUpdate) - advances time tracking to hours after a successful
+                         file update
      -(IE|IgnoreError) - works with Mode option -MU (-MultipleUpdate) to skip
-                         the error updates and continue finish the later 
+                         failed updates and continue processing the remaining
                          updates
-      -(KR|KeepRemote) - keep remote file on local disk by copying it to local
-                         file instead of moving
-      -(KS|KeepServer) - keep server file on local disk by copying it to remove
-                         file instead of moving
-           -(LO|LogOn) - turn detail logging on if option -PL is present
-      -(MO|MissedOnly) - update data file only if it is not archived yet
-  -(MU|MultipleUpdate) - allows multiple updates if multiple data update
-                         periods are available; it defaults to process
-                         a single update if this Mode option is not present;
-         -(NE|NoEmail) - does not send email to the specialist after update
-      -(NY|NoLeapYear) - skips February 29 for leap years
-       -(QE|QuitError) - quits processing update of a dataset when an error
-                         happens, instead of continuing on other update local files
-    -(RA|RetryArchive) - force archive of local files by passing option -RA
-                         to 'dsarch'
-   -(RD|RetryDownload) - retry download the remote file if it is local already
-    -(RE|ResetEndTime) - if present, reset end datae/hour according to the local file
-                         timestamp;
+      -(KR|KeepRemote) - copies rather than moves the remote file to the local
+                         file location, preserving the remote file on disk
+      -(KS|KeepServer) - copies rather than moves the server file to the remote
+                         file location, preserving the server file on disk
+           -(LO|LogOn) - enables detailed logging when -PL is present
+      -(MO|MissedOnly) - processes only files that have not yet been archived
+  -(MU|MultipleUpdate) - processes all available update periods; without this
+                         option, only the most recent period is processed
+         -(NE|NoEmail) - suppresses post-update email notification
+      -(NY|NoLeapYear) - skips February 29 in leap years
+       -(QE|QuitError) - stops all update processing for the dataset on the
+                         first error, rather than skipping and continuing
+    -(RA|RetryArchive) - forces re-archiving by passing -RA to 'dsarch'
+   -(RD|RetryDownload) - re-downloads the remote file even if it already
+                         exists locally
+    -(RE|ResetEndTime) - if present, resets end date/hour based on the local file
+                         timestamp
     -(SE|SummaryEmail) - send a summary email to the specialist after update
                          without detail logging information
-    -(UB|UseBeginTime) - when present, use the beginning time of update period
-                         for replace temporal pattern of end time in file names
-                         and download commands
-       -UT|UpdateTime) - forces to update the data end time and next due or
+    -(UB|UseBeginTime) - uses the period's beginning time instead of end time
+                         when substituting temporal patterns
+      -(UT|UpdateTime) - forces an update of the data end time and next due
                          update times
-  
-  Dataset number is provided per Info option -DS (-Dataset) to process data 
-  update of a single dataset. Some Info options as listed can be provided at 
-  the update running time to identify specified update records and others to
-  override the update information saved in RDADB. Two special Info options -CD
-  (-CurrentDate) and -CH (-CurrentHour) can only be proved at run time to 
-  specify current date/hour rather than the default current time.
- 
-  Multiple update periods may be processed if more than one update frequency
-  periods exist between the data end date/hour and the current date/hour and
-  the Mode option -MU (-MultipleUpdate) is present at the run time of update
-  actions.
-  
-  As mentioned in the introduction section, an individual data file update
-  is interrupted if any error encountered during the update process. Error of
-  download a remote file is, however, allowed if value 'Y' is set for the update
-  record in RDADB via option -MR (-MissRemote) for situation that a local file
-  is built from multiple remote files. That means a partial update is allowed.
-  The partial update behaviors differently if a valid period is set for a update
-  record in RDADB via option -VI (-ValidInterval). The partial update will be put
-  on hold until the the remote data file are still not available beyond the valid
-  period.
-  
-  If Info Option -PL is present with a value larger than 1, the update actions
-  of 'dsupdt' forks multiple child processes to process one update record in
-  each process. This helps dataset update with many time consuming independent
-  update records.
 
-  Additional one or multiple email addresses for notification of update result
-  can be specified by the Info option -CC (-CarbonCopy). For DSS specialist,
-  login user names themselves are acceptable, '-CC zji schuster' for example.
+  Provide a dataset number via -DS to restrict updates to a single dataset.
+  Runtime Info options can identify specific records or override GDEXDB values.
+  -CD (-CurrentDate) and -CH (-CurrentHour) are runtime-only options that
+  substitute a different date or hour for the system default.
 
-  This action, -UF (-UpdateFile) can be executed on command line or per cron
-  jobs to update files configured in the local file records on a specified
-  computer. The local file records can also be linked to update control record
-  for this action to be executed via a centralized daemon 'dscheck'. Instead of
-  adding Mode options at run time for complicated update actions against local
-  file records, most of the Mode options can be pre-configured into update
-  control records.
+  When -MU (-MultipleUpdate) is present, all elapsed update periods between
+  the data end date/hour and the current date/hour are processed.
 
-  Other than this comprehensive update action, simple actions, -DR
-  (-DownloadRemote), -BL (-BuildLocal), -AF(-ArchiveFile) or -CF (-CleanFile)
-  can be used to do step by step for a download/archive procedure. Their 
-  command line syntaxes are similar to Action -UF(-UpdateFile) and are described
-  following.
+  As noted in the introduction, an error during an individual file's update
+  stops that file's processing. However, remote file download errors are tolerated
+  when -MR (-MissRemote) is 'Y' for records where a local file is built from
+  multiple remote files, permitting a partial update. If -VI (-ValidInterval) is
+  also set, the partial update is held open until the missing files arrive or
+  the valid period expires.
+
+  If Info option -PL is set to a value greater than 1, 'dsupdt' forks multiple
+  child processes, each handling one update record. This improves performance
+  for datasets with many time-consuming independent update records.
+
+  Additional notification recipients can be added via -CC (-CarbonCopy).
+  DSS specialists may use login names directly, e.g., '-CC zji schuster'.
+
+  -UF can be run from the command line, via cron job, or through the daemon
+  'dscheck' when local file records are linked to an update control record.
+  Rather than supplying Mode options at run time, most can be pre-configured
+  in the update control record.
+
+  Alternatively, the individual actions -DR (-DownloadRemote), -BL (-BuildLocal),
+  -AF (-ArchiveFile), and -CF (-CleanFile) can be used to step through the
+  download/archive procedure. Their command-line syntax is similar to -UF
+  (-UpdateFile) and is described in the following sections.
 
 3.3.2 Download Remote Files
-  -DR or -DownloadRemote (Alias: -DownloadRemoteFile), an action to download or
-  copy server files onto local working disk, or process data locally to 
-  generate new data files. These data files that are downloaded/copied/generated
-  are called remote files and they are further validated/converted to local files
-  via Action -BL (-BuildLocal).
+  -DR or -DownloadRemote (Alias: -DownloadRemoteFile), downloads or copies server
+  files to local working disk, or generates new data files via local processing.
+  The resulting files are called remote files and are later validated and
+  converted to local files by -BL (-BuildLocal).
 
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(DR|DownloadRemote) [Mode Options]
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(DR|DownloadRemote) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -798,7 +727,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(DO|DownloadOrder) DownloadOrderIndices]
          [-(XO|ExecOrder) ExecOrderIndex]
          [-(DC|DownloadCommand) DownloadCommand]
-         [-(PR|ProcessRemote) AdditionalRemoteFilePrecess] # user defined
+         [-(PR|ProcessRemote) AdditionalRemoteFileProcess] # user defined
          [-(ED|EndDate) NextDataEndDate]
          [-(EH|EndHour) NextDataEndHour]
          [-(GP|GenericPattern) GenericPatterns]
@@ -815,57 +744,54 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for downloading file Action:
-        -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
-                         the recorded "dsupdt' command be started anywhere.
-      -(BG|BackGround) - background process to turn off screen display for both 
-                         standard outputs and errors
-      -(CN|CheckNewer) - for server file is locally, checks if the file is changed
-                         on Server; downloads it again if changed.
-   -(CP|CurrentPeriod) - allows action of the end date/hour beyond the current
-                         date/hour if the current date/hour lands in the current
+  Mode options that can be specified for this action:
+        -(AW|AnyWhere) - works with -BP (-BatchProcess) to allow the recorded
+                         'dsupdt' command to start from any directory
+      -(BG|BackGround) - runs in background; suppresses screen output and errors
+      -(CN|CheckNewer) - when the server file is available locally, checks if
+                         the file has changed on the server and re-downloads
+                         it if so
+   -(CP|CurrentPeriod) - allows the end date/hour to be processed beyond the
+                         current date/hour if it falls within the current
                          update period
-      -(EE-ErrorEmail) - sends email only whne error happens during retrieving
-                         remote files
-     -(FU|ForceUpdate) - if present, force download at lease for one end data/time,
-                         although the update is not due yet;
+      -(EE|ErrorEmail) - sends email only when an error occurs during retrieval
+                         of remote files
+     -(FU|ForceUpdate) - forces download for at least one end date/time, even
+                         if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
-    -(HU|HourlyUpdate) - forces update of time to hours after successful remote
-                         file download
-     -(IE|IgnoreError) - works with Mode option -MU (-MultipleUpdate) to skip
-                         the errors for download remote files and continue
-                         download the later remote files 
-      -(KS|KeepServer) - keep server file on local disk by copying it to remove
-                         file instead of moving
-           -(LO|LogOn) - turn detail logging on if option -PL is present
-      -(MO|MissedOnly) - download remote file only if it is not archived yet
-  -(MU|MultipleUpdate) - allows multiple downloads/copies if multiple data update
-                         periods are available; it defaults to download/copy
-                         a single remote file if this Mode option is not present
-         -(NE|NoEmail) - does not send email to the specialist after download
+    -(HU|HourlyUpdate) - advances time tracking to hours after a successful
+                         remote file download
+     -(IE|IgnoreError) - works with -MU (-MultipleUpdate) to skip download
+                         errors and continue with remaining remote files
+      -(KS|KeepServer) - keeps server file on local disk by copying it to the
+                         remote file location instead of moving it
+           -(LO|LogOn) - turns on detail logging when option -PL is present
+      -(MO|MissedOnly) - downloads remote file only if it has not been archived yet
+  -(MU|MultipleUpdate) - downloads across all available update periods; without
+                         this option, only one period is processed
+         -(NE|NoEmail) - suppresses post-download email notification
       -(NY|NoLeapYear) - skips February 29 for leap years
-       -(QE|QuitError) - quits downloading remote files of a dataset when an
-                         error happens, instead of continuing for other
-                         remote files
-   -(RD|RetryDownload) - retry download the remote file if it is local already
-    -(SE|SummaryEmail) - send a summary email to the specialist after update
-                         without detail logging information
-    -(UB|UseBeginTime) - when present, use the beginning time of update period
-                         for replace temporal pattern of end time in file names
-                         and download commands
-  
-  If a remote file is on the local disk already, the download action for this
-  remote file is skipped; the existing remote file must removed manually or Mode
-  option -RD (-RetryDownload) is present if download/copy is needed again.
-  
-  A server file is the original data file on remote server. It is specified only
-  when it is named different from the remote file name.
+       -(QE|QuitError) - stops all downloads for the dataset on the first
+                         error, rather than skipping and continuing
+   -(RD|RetryDownload) - re-downloads the remote file even if it already
+                         exists locally
+    -(SE|SummaryEmail) - sends a summary-only email after the action, without
+                         detailed log information
+    -(UB|UseBeginTime) - uses the period's beginning time instead of end time
+                         when substituting temporal patterns
+
+  If a remote file already exists on local disk, the download action is skipped.
+  To re-download, either remove the existing file manually or use Mode option
+  -RD (-RetryDownload).
+
+  A server file is the original file on the remote server. Specify it only
+  when its name differs from the remote file name.
 
 3.3.3 Build Local Files
-  -BL or -BuildLocal (Alias: -BuildLocalFile), an action to validate/convert
-  remote files and build up local files.
-   
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(BL|BuildLocal) [Mode Options]
+  -BL or -BuildLocal (Alias: -BuildLocalFile), an action to validate and convert
+  remote files and build local files.
+
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(BL|BuildLocal) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -886,56 +812,48 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for building local file Action:
-        -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
-                         the recorded "dsupdt' command be started anywhere.
-      -(BG|BackGround) - background process to turn off screen display for both 
-                         standard outputs and errors
-   -(CP|CurrentPeriod) - allows action of the end date/hour beyond the current
-                         date/hour if the current date/hour lands in the current
-                         update period
-      -(EE-ErrorEmail) - sends email only when error happens during building
-                         local files 
-     -(FU|ForceUpdate) - if present, force build at lease for one end data/time,
-                         although the update is not due yet;
+  Mode options that can be specified for this action:
+        -(AW|AnyWhere) - works with -BP (-BatchProcess) to allow the recorded
+                         'dsupdt' command to start from any directory
+      -(BG|BackGround) - runs in background; suppresses screen output and errors
+   -(CP|CurrentPeriod) - allows the end date/hour to be processed even if it
+                         falls within the current update period
+      -(EE|ErrorEmail) - sends email only when an error occurs during local
+                         file building
+     -(FU|ForceUpdate) - if present, forces build for at least one end date/time,
+                         even if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
-    -(HU|HourlyUpdate) - forces update of time to hours after successful action
-                         of building local file
-     -(IE|IgnoreError) - works with Mode option -MU (-MultipleUpdate) to skip
-                         the errors for the action and continue build later
-                         local files 
-      -(KR|KeepRemote) - keep remote file on local disk by copying it to local
-                         file instead of moving
-           -(LO|LogOn) - turn detail logging on if option -PL is present
-      -(MO|MissedOnly) - build local file only if it is not archived yet
-  -(MU|MultipleUpdate) - allows building multiple local files if multiple data
-                         update periods are available; it defaults to build 
-                         a single local file if this Mode option is not present
-         -(NE|NoEmail) - does not send email to the specialist after build
-      -(NY|NoLeapYear) - skips February 29 for leap years
-       -(QE|QuitError) - quits building local files of a dataset when an
-                         error happens, instead of continuing for other
-                         local files
-    -(UB|UseBeginTime) - when present, use the beginning time of update period
-                         for replace temporal pattern of end time in file names
-                         and download commands
-  
-  The additional routines of data validation and conversion for the remote files
-  are called by this action if the routines are provided. Nothing is done by
-  this action if the local files are simply the same as the remote files.
-  Utilities of compress/uncompress and tar/untar are used to convert remote
-  files to local files as one to one, multiple to one, or one to multiple.
-  Local files are the files in their final states ready to be archived.
+    -(HU|HourlyUpdate) - advances time tracking to hours after a successful
+                         local file build
+     -(IE|IgnoreError) - works with -MU (-MultipleUpdate) to skip build errors
+                         and continue with remaining local files
+      -(KR|KeepRemote) - copies rather than moves the remote file to the local
+                         file location, preserving the remote file on disk
+           -(LO|LogOn) - enables detailed logging when -PL is present
+      -(MO|MissedOnly) - builds only files that have not yet been archived
+  -(MU|MultipleUpdate) - builds across all available update periods; without
+                         this option, only one period is processed
+         -(NE|NoEmail) - suppresses post-build email notification
+      -(NY|NoLeapYear) - skips February 29 in leap years
+       -(QE|QuitError) - stops all builds for the dataset on the first error,
+                         rather than skipping and continuing
+    -(UB|UseBeginTime) - uses the period's beginning time instead of end time
+                         when substituting temporal patterns
 
-  If a local file is on the local disk already, the build local file action for
-  this local file is skipped; the existing local file must removed manually if
-  rebuild is needed.
+  If specialist-defined validation and conversion routines are configured, this
+  action invokes them. If local and remote files are identical, no action is
+  taken. Otherwise, standard compress/uncompress and tar/untar utilities handle
+  one-to-one, many-to-one, or one-to-many conversions. Local files are the
+  final, archive-ready output.
+
+  If a local file already exists on disk, the build action for that file is
+  skipped. To rebuild, remove the existing local file manually.
 
 3.3.4 Process Both Files
-  -PB or -ProcessBoth, a comprehensive action to download remote files and 
-  validate/convert them and build up local files.
+  -PB or -ProcessBoth, downloads remote files then validates, converts, and
+  builds local files in a single action.
 
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(PB|ProcessBoth) [Mode Options]
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(PB|ProcessBoth) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileName]
@@ -944,7 +862,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(SF|ServerFile) ServerFileNames]
          [-(DO|DownloadOrder) DownloadOrderIndices]
          [-(DC|DownloadCommand) DownloadCommand]
-         [-(PR|ProcessRemote) AdditionalRemoteFilePrecess] # user defined
+         [-(PR|ProcessRemote) AdditionalRemoteFileProcess] # user defined
          [-(BC|BuildCommand) CommandBuildLocalFile] # user defined
          [-(ED|EndDate) NextDataEndDate]
          [-(EH|EndHour) NextDataEndHour]
@@ -962,51 +880,50 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for downloading file Action:
+  Mode options that can be specified for the process-both-files Action:
         -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
-                         the recorded "dsupdt' command be started anywhere.
-      -(BG|BackGround) - background process to turn off screen display for both 
-                         standard outputs and errors
-      -(CN|CheckNewer) - for server file is locally, checks if the file is changed
-                         on Server; downloads it again if changed.
-   -(CP|CurrentPeriod) - allows action of the end date/hour beyond the current
-                         date/hour if the current date/hour lands in the current
+                         the recorded 'dsupdt' command to be started anywhere
+      -(BG|BackGround) - background process; suppresses screen display of
+                         standard output and errors
+      -(CN|CheckNewer) - when the server file is available locally, checks if
+                         it has changed on the server and re-downloads if so
+   -(CP|CurrentPeriod) - allows the end date/hour to be processed beyond the
+                         current date/hour if it falls within the current
                          update period
-      -(EE-ErrorEmail) - sends email only when error happens during retrieving
-                         remote files and building local files
-     -(FU|ForceUpdate) - if present, force process at lease for one end data/time,
-                         although the update is not due yet;
+      -(EE|ErrorEmail) - sends email only when an error occurs during remote
+                         file retrieval or local file building
+     -(FU|ForceUpdate) - forces processing for at least one end date/time, even
+                         if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
-    -(HU|HourlyUpdate) - forces update of time to hours after successful action
-     -(IE|IgnoreError) - works with Mode option -MU (-MultipleUpdate) to skip
-                         the errors for the action and continue download/build
-                         the later remote/local files 
-      -(KR|KeepRemote) - keep remote file on local disk by copying it to local
-                         file instead of moving
-      -(KS|KeepServer) - keep server file on local disk by copying it to remove
-                         file instead of moving
-      -(MO|MissedOnly) - process data file only if it is not archived yet
-           -(LO|LogOn) - turn detail logging on if option -PL is present
-  -(MU|MultipleUpdate) - allows multiple download/build if multiple data update
-                         periods are available
-         -(NE|NoEmail) - does not send email to the specialist after action
-      -(NY|NoLeapYear) - skips February 29 for leap years
-       -(QE|QuitError) - quits processing updates of a dataset when an
-                         error happens, instead of continuing for other
-                         remote/local files
-   -(RD|RetryDownload) - retry download the remote file if it is local already
-    -(SE|SummaryEmail) - send a summary email to the specialist after action
-                         without detail logging information
-    -(UB|UseBeginTime) - when present, use the beginning time of update period
-                         for replace temporal pattern of end time in file names
-                         and download commands
+    -(HU|HourlyUpdate) - advances time tracking to hours after a successful
+                         action
+     -(IE|IgnoreError) - works with -MU (-MultipleUpdate) to skip errors and
+                         continue with remaining remote/local files
+      -(KR|KeepRemote) - copies rather than moves the remote file to the local
+                         file location, preserving the remote file on disk
+      -(KS|KeepServer) - keeps server file on local disk by copying it to the
+                         remote file location instead of moving it
+      -(MO|MissedOnly) - processes data file only if it has not been archived yet
+           -(LO|LogOn) - turns on detail logging when option -PL is present
+  -(MU|MultipleUpdate) - downloads and builds across all available update
+                         periods
+         -(NE|NoEmail) - suppresses post-action email notification
+      -(NY|NoLeapYear) - skips February 29 in leap years
+       -(QE|QuitError) - stops all processing for the dataset on the first
+                         error, rather than skipping and continuing
+   -(RD|RetryDownload) - re-downloads the remote file even if it already
+                         exists locally
+    -(SE|SummaryEmail) - sends a summary-only email after the action, without
+                         detailed log information
+    -(UB|UseBeginTime) - uses the period's beginning time instead of end time
+                         when substituting temporal patterns
 
 3.3.5 Archive Local Files
-  -AF or -ArchiveFile, an action to archive local files onto RDA
-  Server according the DSARCH action previously saved in RDADB or given on
-  command line per info Option -AN (-ActionName).
-   
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(AF|ArchiveFile) [Mode Options]
+  -AF or -ArchiveFile, an action to archive local files onto the GDEX
+  Server according to the DSARCH action previously saved in GDEXDB or specified
+  on the command line via Info option -AN (-ActionName).
+
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(AF|ArchiveFile) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -1026,17 +943,17 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(DB|Debug) DebugModeInfo]
          [-(GZ|GMTZone) GreenwichMeanTimeZone]
 
-  Mode option that can be specified for building local file Action:
+  Mode options that can be specified for the archive local files Action:
         -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
-                         the recorded "dsupdt' command be started anywhere.
-      -(BG|BackGround) - background process to turn off screen display for both 
-                         standard outputs and errors
-   -(CP|CurrentPeriod) - allows action of the end date/hour beyond the current
-                         date/hour if the current date/hour lands in the current
+                         the recorded 'dsupdt' command to be started anywhere
+      -(BG|BackGround) - background process; suppresses screen display of
+                         standard output and errors
+   -(CP|CurrentPeriod) - allows the end date/hour to be processed beyond the
+                         current date/hour if it falls within the current
                          update period
-      -(EE-ErrorEmail) - sends email only when error happens during archiving files
-     -(FU|ForceUpdate) - if present, force archive at lease for one end data/time,
-                         although the update is not due yet;
+      -(EE|ErrorEmail) - sends email only when an error occurs during archiving
+     -(FU|ForceUpdate) - if present, forces archive for at least one end
+                         date/time, even if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
     -(HU|HourlyUpdate) - forces update of time to hours after successful action
                          of building local file
@@ -1044,7 +961,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
                          the errors for archiving local files and continue
                          archive the later local files
       -(MO|MissedOnly) - archive local file only if it is not archived yet
-  -(MU|MultipleUpdate) - allows archive multiple local files if multiple 
+  -(MU|MultipleUpdate) - allows archive multiple local files if multiple
                          local files are available for different update periods;
                          it defaults to archive a single local file if this Mode
                          option is not present
@@ -1052,25 +969,24 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
       -(NY|NoLeapYear) - skips February 29 for leap years
     -(RA|RetryArchive) - force archive of local files by passing option -RA
                          to 'dsarch'
-    -(RE|ResetEndTime) - if present, reset end datae/hour according to the local file
-                         timestamp;
+    -(RE|ResetEndTime) - if present, resets end date/hour based on the local file
+                         timestamp
     -(SE|SummaryEmail) - send a summary email to the specialist after update
                          without detail logging information
     -(UB|UseBeginTime) - when present, use the beginning time of update period
-                         for replace temporal pattern of end time in file names
+                         to replace temporal patterns of end time in file names
                          and download commands
       -(UT|UpdateTime) - forces to update the data end time and next due or
                          update times
-  
+
   If a local file is not ready on the local disk, the archive action for this
-  local file is skipped. 
+  local file is skipped.
 
 3.3.6 Clean Temporary Files
-  -CF or -CleanFile, an action to clean the temporary files at the local 
-  working area. Those files can be either already archived successfully or
-  out of date files.
-   
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(CF|CleanFile) [Mode Options]
+  -CF or -CleanFile, removes temporary files from the local working area,
+  including files that have already been archived or have become outdated.
+
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(CF|CleanFile) [Mode Options]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(XO|ExecOrder) ExecOrderIndex]
@@ -1087,43 +1003,40 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for building local file Action:
+  Mode options that can be specified for the clean temporary files Action:
         -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
-                         the recorded "dsupdt' command be started anywhere.
-      -(BG|BackGround) - background process to turn off screen display for both 
-                         standard outputs and errors
-   -(CP|CurrentPeriod) - allows action of the end date/hour beyond the current
-                         date/hour if the current date/hour lands in the current
+                         the recorded 'dsupdt' command to be started anywhere
+      -(BG|BackGround) - background process; suppresses screen display of
+                         standard output and errors
+   -(CP|CurrentPeriod) - allows the end date/hour to be processed beyond the
+                         current date/hour if it falls within the current
                          update period
-      -(EE-ErrorEmail) - sends email only when error happens during cleaning files
-                         locally
-     -(FU|ForceUpdate) - if present, force clean at lease for one end data/time,
-                         although the update is not due yet;
+      -(EE|ErrorEmail) - sends email only when an error occurs during local
+                         file cleaning
+     -(FU|ForceUpdate) - if present, forces clean for at least one end
+                         date/time, even if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
-    -(HU|HourlyUpdate) - forces update of time to hours after successful action
-                         of cleaning the temporary files
-  -(MU|MultipleUpdate) - allows cleaning multiple temporary files if multiple
-                         update periods are available
-         -(NE|NoEmail) - does not send email to the specialist after clean
-      -(NY|NoLeapYear) - skips February 29 for leap years
-    -(SE|SummaryEmail) - sends a summary email to the specialist after update
-                         without detail logging information
-    -(UB|UseBeginTime) - when present, uses the beginning time of update period
-                         for replace temporal pattern of end time in file names
-                         and clear commands
-  
-  If a temporary file is not on the local working area, the cleaning action is
-  is ignored. 
+    -(HU|HourlyUpdate) - advances time tracking to hours after a successful
+                         clean action
+  -(MU|MultipleUpdate) - cleans temporary files across all available update
+                         periods
+         -(NE|NoEmail) - suppresses post-clean email notification
+      -(NY|NoLeapYear) - skips February 29 in leap years
+    -(SE|SummaryEmail) - sends a summary-only email after the action, without
+                         detailed log information
+    -(UB|UseBeginTime) - uses the period's beginning time instead of end time
+                         when substituting temporal patterns in file names
+                         and clean commands
+
+  If a temporary file is not found in the local working area, the cleaning
+  action is skipped.
 
 3.3.7 Unlock Local Files
-  -UL or -UnLockUpdate (Alias: -UnLock), unlocks update records that their
-  processes abort abnormally. Process IDs and hostnames are saved in an update
-  control and local file records temporarily when the records are under process.
-  If the update processes abort abnormally, the PIDs and hostnames may not be
-  cleaned properly. If the same update records are reprocessed on a different
-  computer, the lock information blocks the update actions. Use this action to
-  clean up the PID information manually to allow the update control and local
-  file records to be re-processed.
+  -UL or -UnLockUpdate (Alias: -UnLock), clears lock information from update
+  records whose processes terminated abnormally. While a record is being
+  processed, its PID and hostname are temporarily saved. If the process aborts,
+  this information may not be cleared, preventing the record from being
+  reprocessed on another host. Use this action to manually clear those locks.
 
   dsupdt -(-UL|UnLockUpdate)
           -(CI|ControlIndex) UpdateControlIndices
@@ -1134,16 +1047,15 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
           -(LI|LocalIndex) LocfileIndices
          [-(DB|Debug) DebugModeInfo]
 
-  It is mandatory to provide an update control index and local file index to
-  remove locks on the control and local file record, respectively.
+  A control index is required to unlock a control record; a local file index
+  is required to unlock a local file record.
 
 3.3.8 Check Update Status
-  -CU or -CheckUpdate, checks update status via looking at if remote files are available
-  for retrieving. This action is useful to check if remote files are ready to be retrieved
-  for updates for remote data files are ready irregularly while the data themselves
-  are organized into files with regular temporal periods.
-  
-  dsupdt [[-(DS|dataset)] dsnnn.n] -(UF|UpdateFile) [Mode Options]
+  -CU or -CheckUpdate, checks whether remote files are available for retrieval.
+  This is useful when remote data files become available irregularly but are
+  organized into files covering regular temporal periods.
+
+  dsupdt [[-(DS|dataset)] dNNNNNN] -(CU|CheckUpdate) [Mode Options]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(CI|ControlIndex) UpdateControlIndices]
@@ -1165,610 +1077,507 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(DB|Debug) DebugModeInfo]
 
 
-  Mode options that can be specified for checking update Action:
-        -(CA|CheckAll) - forces to all remote files instead of quitting checks
-                         after first unavailable remote file
-     -(EE|-ErrorEmail) - sends email only when error happens during checking
-                         update status
-  -(MU|MultipleUpdate) - checks remote files for multiple update periods
-         -(NE|NoEmail) - does not send email to the specialist after update checking
-      -(NY|NoLeapYear) - skips February 29 for leap years
-    -(SE|SummaryEmail) - send a summary email for update status to the specialist
-                         without detail logging information
-    -(UB|UseBeginTime) - when present, use the beginning time of update period
-                         for replace temporal pattern of end time in file names
-                         and download commands
+  Mode options that can be specified for this action:
+        -(CA|CheckAll) - checks all remote files rather than stopping at the
+                         first unavailable one
+      -(EE|ErrorEmail) - sends email only when an error occurs during checking
+  -(MU|MultipleUpdate) - checks files across multiple update periods
+         -(NE|NoEmail) - suppresses post-check email notification
+      -(NY|NoLeapYear) - skips February 29 in leap years
+    -(SE|SummaryEmail) - sends a summary-only email with update status, without
+                         detailed log information
+    -(UB|UseBeginTime) - uses the period's beginning time instead of end time
+                         when substituting temporal patterns
 
-  Execute this action without other conditions, all datasets that are due for updates
-  are checked for update status.
+  When executed without additional conditions, all datasets due for updates are
+  checked for update status.
 
 4 MODE OPTIONS
 
-Use proper Mode options to modify behaviors of Action options. Mode options
-are all optional. No value is allowed to be passed in following any Mode option.
+Mode options modify the behavior of Action options. All Mode options are
+optional and do not accept values.
 
-  -AW or -AnyWhere, works with Info option -BP (-BatchProcess) to use empty
-  work directory so that the recorded "dsupdt' command can be started processing
-  any where other than the directory where the command was recorded initially.
+  -AW or -AnyWhere, works with Info option -BP (-BatchProcess) to use an empty
+  working directory so that the recorded 'dsupdt' command can be started from
+  anywhere other than the directory where it was originally recorded.
 
-  -BG or -BackGround (Alias: -b), background process. When it presents screen
-  display is turned off for both standard outputs and errors.
+  -BG or -BackGround (Alias: -b), background process. When present, screen
+  display is suppressed for both standard output and errors.
 
-  -CA or -CheckAll, if presents, allows check update actions -CU (-CheckUpdate)
-  to check availability of all remote files. Without it, the checking procedure
-  quits after the first unavailable remote.
+  -CA or -CheckAll, if present, allows check update actions -CU (-CheckUpdate)
+  to verify availability of all remote files. Without it, checking stops after
+  the first unavailable file.
 
-  -CN or -CheckNew (Alias: -CheckNewFile), for server file is locally ready,
-  checks if the file on server is changed; downloads it again if it is changed.
-  This option is ignored if -RD is present. There must be a local copy of the data
-  file for checking newer file on server. The local data file copy is normally
-  the local copy of the server file, but it can be an existing remote file or
-  local file if it is the same file content as the server file, although it
-  may have different file name.
-  
-  For this Mode option to work properly, it is specialists' responsibility to
-  maintain a proper local data file and a valid download command that can check
-  data file info on server, such commands as 'cp', 'mv' and 'tar' for a file on
-  local host, 'scp', 'wget' and 'ncftpget' for a file on remote host. For a
-  customized download command, it must have build-in function of checking newer
-  server file.
+  -CN or -CheckNew (Alias: -CheckNewFile), when the server file is available
+  locally, checks if it has changed on the server and re-downloads it if so.
+  This option is ignored if -RD is present. A local copy of the data file is
+  required for the comparison. This copy is normally the local copy of the server
+  file, but may also be an existing remote or local file with identical content,
+  even if the name differs.
 
-  If the server time zone is different from the local time, Info Option -HO
-  (-HourOffset) for an offset value in hours must be provided to be able to
-  check newer file on remote server by comparing the file local and remote
-  timestamps.
+  For this option to work correctly, specialists must maintain a valid local
+  copy of the data file and a download command capable of checking the server
+  for changes. Suitable commands include 'cp', 'mv', and 'tar' for local files,
+  and 'scp', 'wget', and 'ncftpget' for remote files. Custom download commands
+  must include built-in logic for detecting server-side changes.
 
-  -CP or -CurrentPeriod, if presents, allows update actions for the current
-  date/hour lands in the current update period, although the data end date/hour
-  are not due yet. 
+  If the server and local time zones differ, provide -HO (-HourOffset) with the
+  hour difference so that local and remote file timestamps can be compared
+  correctly.
 
-  -EE or -ErrorEmail, sends email to the specialist after update only when error
-  happens during the update action.
+  -CP or -CurrentPeriod, if present, allows update actions when the current
+  date/hour falls within the current update period, even if the data end
+  date/hour is not yet due.
 
-  -FO or -FormatOutput, if present, formats column output results for get
-  actions. A same width, evaluated dynamically, is applied for all values of a
-  given field.
+  -EE or -ErrorEmail, sends an email notification only when an error occurs
+  during the update action.
 
-  -FU or -ForceUpdate, if present, force update at lease for one end data/time,
-  although the update may not be due yet.
+  -FO or -FormatOutput, formats the output of GET actions so that all values
+  in a given field share the same dynamically calculated column width.
 
-  -GZ or -GMTZone (Alias: -GMT|GreenwichZone|UTC), uses GMT dates/times as 
-  controlling times for update actions, instead of local time.
+  -FU or -ForceUpdate, if present, forces update for at least one end date/time,
+  even if the update is not yet due.
 
-  -HU or -HourlyUpdate, forces update of time to hours after successful archive
-  action for data file update.
+  -GZ or -GMTZone (Alias: -GMT|-GreenwichZone|-UTC), uses GMT rather than
+  local time as the reference for update action scheduling.
 
-  -IE or -IgnoreError, works with Mode option -MU (-MultipleUpdate) to skip
-  the update errors and continue update for the later archive periods. For archive
-  record with defined valid interval, this Mode option will also make 'dsupdt'
-  to check back to the valid period and re-archive if found any missing archive.
- 
-  -KR or -KeepRemote (Alias: KeepRemoteFile), keeps remote file on local disk by
-  copying it to local file instead of moving.
+  -HU or -HourlyUpdate, forces the time tracking to advance in hourly increments
+  after a successful archive action for data file update.
 
-  -KS or -KeepServer (Alias: -KeepServerFile), keeps server file on local disk
-  by copying it to remote file instead of moving.
+  -IE or -IgnoreError, used with -MU (-MultipleUpdate) to skip failed updates
+  and continue processing subsequent periods. For records with a valid interval
+  defined, 'dsupdt' also looks back over that interval to re-archive any
+  missing data.
 
-  -LO or -LO (Alias: -LoggingOn), turns detail logging on when Info option
+  -KR or -KeepRemote (Alias: -KeepRemoteFile), preserves the remote file on
+  disk by copying it to the local file location rather than moving it.
+
+  -KS or -KeepServer (Alias: -KeepServerFile), preserves the server file on
+  disk by copying it to the remote file location rather than moving it.
+
+  -LO or -LogOn (Alias: -LoggingOn), turns on detail logging when Info option
   -PL (-ProcessLimit) is present for update actions.
 
-  -MD or -MyDataset, allows a specialist to add or modify update information of
-  a given dataset listed for another specialist.
+  -MD or -MyDataset, allows a specialist to add or modify update records for
+  a dataset owned by another specialist.
 
-  -MO or -MissedOnly, skips update action if the data file is archived already.
-  This is often used with Mode option -MU (-MultipleUpdate). This option is
-  ignored if one of the Mode options -RA, -RD or -CN is present.
+  -MO or -MissedOnly, skips files that are already archived. Typically used
+  with -MU (-MultipleUpdate). Ignored when -RA, -RD, or -CN is present.
 
-  -MU or -MultipleUpdate, allows multiple updates if multiple data update
-  periods are available; 'dsupdt' defaults to process a single update if this
-  Mode option is not present.
+  -MU or -MultipleUpdate, processes all available elapsed update periods.
+  Without this option, only the most recent period is processed.
 
-  -NC or -NewControl, a new update control record can only be added when this Mode
-  option is present and update control index is given as 0 when Action -SC
-  (-SetControl) of 'dsupdt' is executed. This Mode option prevents adding update
-  control records unintentionally.
+  -NC or -NewControl, required when adding a new update control record via
+  -SC (-SetControl) with a control index of 0. Guards against unintentional
+  record creation.
 
-  -NE or -NoEmail, does not send email notice to the specialist after update.
+  -NE or -NoEmail, suppresses all post-update email notifications.
 
-  -NL or -NewLocfile, a new local file record can only be added when this Mode option
-  is present and local file index is given as 0 when Action -SL (-SetLocalFile) of
-  'dsupdt' is executed. This Mode option prevents adding local file update records
-  unintentionally.
+  -NL or -NewLocfile, required when adding a new local file record via
+  -SL (-SetLocalFile) with a local file index of 0. Guards against unintentional
+  record creation.
 
   -NY or -NoLeapYear, skips February 29 for leap years.
- 
-  -QE or -QuitError (Alias: QuitOnError), quits processing updates of a dataset
-  when an error happens, instead of continuing on finishing other local file
-  records.
 
-  -RA or -RetryArchive, forces archive of local files by passing option -RA
+  -QE or -QuitError (Alias: -QuitOnError), stops all update processing for the
+  dataset on the first error, rather than skipping the failed file and
+  continuing.
+
+  -RA or -RetryArchive, forces re-archiving of local files by passing -RA
   to 'dsarch'.
 
-  -RD or -RetryDownload (Alias: -Redownload), retries download the remote file
-  if it is local already for Action -DR (-DownloadRemote).
+  -RD or -RetryDownload (Alias: -ReDownload), retries downloading the remote
+  file if it already exists locally, for Action -DR (-DownloadRemote).
 
-  -RE or -ResetEndTime - if present, reset end datae/hour if file timestamp is newer
-  than end date/hoour plus one update frequency.
+  -RE or -ResetEndTime, if present, resets the end date/hour when the file
+  timestamp is newer than the end date/hour plus one update frequency.
 
-  -RO or -ResetOrder (Alias: -Reorder), when present, resets the executing 
-  orders of the given local file lists as the orders the data files are given
-  for action -SL (-SetLocalFile). Another way of reordering the data files is
-  to provide explicitly the order index values per Info option 
-  -XO (-ExecOrder). Valid values are 1, 2, 3, ...
+  -RO or -ResetOrder (Alias: -Reorder), resets execution order indices to match
+  the sequence in which local files are provided to -SL (-SetLocalFile).
+  Alternatively, explicit order indices can be supplied via -XO (-ExecOrder).
+  Valid values are 1, 2, 3, ...
 
-  -SE or -SummaryEmail, sends a summary email to the specialist after data update
-  action without detail logging information.
+  -SE or -SummaryEmail, sends a brief summary email after the update action,
+  omitting detailed log information.
 
-  -UB or -UseBeginTime when present, uses the beginning time of update period
-  for replacing temporal patterns configured for file names, download
-  commands, and other fields.
- 
-  -UT or -UpdateTime, when present, forces to update the data end time and
-  next due update times in local file records no matter the update actions are
-  successful or not.
+  -UB or -UseBeginTime, when present, uses the beginning time of the update
+  period to replace temporal patterns in file names, download commands, and
+  other fields.
+
+  -UT or -UpdateTime, when present, forces an update of the data end time and
+  next due update times in local file records, regardless of whether the update
+  actions succeed.
 
 
 5 INFORMATION OPTIONS
 
-Information options are used to pass information, one or multiple values, into
-'dsupdt'. Two types of Info options are used:
-  Single-Value Info Options - pass a single value to 'dsupdt'
-   Multi-Value Info Options - pass one or multiple values to 'dsupdt'
+Information (Info) options supply values to 'dsupdt'. There are two types:
+  Single-Value Info Options - accept exactly one value
+   Multi-Value Info Options - accept one or more values
 
 
 5.1 Single-Value Info Options
 
-  A single-value Info option is used to pass one value into this application.
-  One value, and one only, must follow a single-value option; otherwise an
-  error message is displayed if no value or more than one value passed in.
+  A single-value Info option passes exactly one value into this application.
+  Exactly one value must follow each such option; providing no value or more
+  than one value will result in an error.
 
   -BP or -BatchProcess (Alias: -d, -DelayedMode), delayed mode execution. When
-  it presents, the 'dsupdt' command is not executed right way, but the command
-  information is recorded into RDADB instead and the command is executed later
-  by the centralized daemon 'dscheck'. One or multiple host names can be specified
-  after option -BP to force the 'dsupdt' command be executed on or not on the hosts.
-  For examples, '-d rda-work' to run on host 'rda-work'; and '-d !rda-work' to
-  run on all configured hosts other than 'rda-work'. A upper limit for number of
-  tries can also be passed in with this options, 1 to 99, as '-d 2' for example.
-  It default to 1 for cammand of 'dsupdt' if not specified. 
+  present, the 'dsupdt' command is not executed immediately; instead, the command
+  information is recorded in GDEXDB and executed later by the daemon 'dscheck'.
+  One or more host names may be specified after -BP to restrict execution to or
+  exclude specific hosts. For example, '-d PBS' runs on Portable Batch System (PBS)
+  hosts. An upper limit on retry attempts (1 to 99) can also be set, e.g., '-d 2'.
+  Defaults to 1 retry for 'dsupdt' commands if not specified.
 
-  -CD or -CurrentDate, provides a current date for update actions when a date
-  is used other than today. This option provides opportunity for specialists to
-  rerun a update for re-archiving or a deleted update action. 
+  -CD or -CurrentDate, provides an alternative current date for update actions.
+  This allows specialists to rerun an update for re-archiving or recovering a
+  deleted update action.
 
-  -CH or -CurrentHour, provides a current hour for update actions when an hour
-  is used other than the executing hour. This option provides opportunity for
-  specialists to rerun a update for re-archiving or a deleted update action. 
+  -CH or -CurrentHour, provides an alternative current hour for update actions.
+  This allows specialists to rerun an update for re-archiving or recovering a
+  deleted update action.
 
-  -DS or -Dataset, for a dataset ID, in format of [a-z]NNNNNN.
+  -DS or -Dataset, the dataset ID in the format [a-z]NNNNNN.
 
   -DV or -Divider (Alias: -Delimiter, -Separator), delimiter for separating
-  columns of multi-value Info options in input files. It is default to '<:>'.
+  columns of multi-value Info options in input files. Defaults to '<:>'.
 
-  -ES or -EqualSign, for an equal sign of assigning one value to either a
-  single-value option or multi-value option in input files. It is defaulted
-  to '<=>'.
+  -ES or -EqualSign, sets the delimiter used to assign values to options in
+  input files. Defaults to '<=>'.
 
-  -FN or -FieldNames, for a string of single letter field names. Values of
-  the selected fields are retrieved per actions -GL (-GetLocalFile) and
-  -GR (-GetRemoteFile). Values of default fields are retrieved if this option
-  is not specified. Valid field names are listed in corresponding action
-  sections.
+  -FN or -FieldNames, a string of single-letter field names specifying which
+  fields to retrieve via -GL (-GetLocalFile) or -GR (-GetRemoteFile). Omitting
+  this option returns the default fields. Valid names are listed in each
+  action's section.
 
-  -LN or -LoginName, login name of the current user; it defaults to the current
-  login DSS specialist who starts execution of 'dsupdt'. Set this option if you
-  try to run this utility for a specialist other than yourself. Mode option -MD
-  is added to execute 'dsarch' if a login name provided by option -LN is
-  different than the one who starts 'dsupdt'.
+  -LN or -LoginName, the login name of the executing specialist. Defaults to
+  the current user. Set this option to run 'dsupdt' on behalf of another
+  specialist. If the provided name differs from the actual login, -MD is
+  automatically applied when calling 'dsarch'.
 
-  -OF or -OutputFile, leading an output file name into which the output result
-  of this application is dumped. Output file format is similar to the format of
-  the input files. If this option is not given, the result is displayed on
-  screen.
- 
-  -ON or -OrderNames, for a string of single letter field names use to order
-  the results of GET actions, -GC (-GETControl), -GL (-GetLocalFile) or -GR
-  (-GetRemoteFile). Uppercase is for Ascending order while lowercase is for
-  Descending order.
+  -OF or -OutputFile, specifies an output file name into which this application
+  writes its results. The output format matches the input file format. If not
+  specified, results are displayed on screen.
 
-  -PL or -ProcessLimit, defaults to 1. If present with a value larger than 1,
-  the update actions of 'dsupdt' forks multiple child processes to process one
-  update record in each child process. The master program quits when all 
-  available update records are handled in child processes. This helps data
-  update for datasets with many time consuming independent update records.
+  -ON or -OrderNames, a string of single-letter field names that determines the
+  sort order of GET action results (-GC, -GL, -GR). Uppercase letters sort
+  ascending; lowercase sort descending.
 
-  -AO or -ActOption, for setting Action and Mode options in input files. It is
-  default to '<!>'.
+  -PL or -ProcessLimit, defaults to 1. When set to a value greater than 1,
+  'dsupdt' spawns that many child processes, each handling one update record in
+  parallel. The parent process exits once all records are handled. Useful for
+  datasets with many independent, time-consuming update records.
 
-  -VS or -ValidSize, a minimal size for a file to be valid for archiving process.
-  It defaults to 100 bytes and can be reset on command line with the update actions.
+  -AO or -ActOption, sets the marker used to designate Action and Mode options
+  in input files. Defaults to '<!>'.
+
+  -VS or -ValidSize, the minimum file size considered valid for archiving.
+  Defaults to 100 bytes. Can be overridden on the command line at run time.
 
 5.2 Multi-Value Info Options
 
-  A multi-value Info option is used to pass multiple values for one Info option
-  into 'dsupdt'. At lease one value must follow each multi-value option.
+  A multi-value Info option passes one or more values for a single Info option
+  into 'dsupdt'. At least one value must follow each multi-value option.
 
-  -AN or -ActionName, (Alias: -Action), Action options set in update controls
-  and local file records to execute 'dsupdt' for processing controls and 'dsarch'
-  for archiving data, respectively.
+  -AN or -ActionName (Alias: -Action), the action to run: set in update control
+  records to drive 'dsupdt' processing, and in local file records to drive
+  'dsarch' archiving.
 
-  -AT or -AgeTime (Alias: -fileAge, -FileAgeTime), sets the number of days or
-  hours the remote files have to be aged on remote servers to be valid for
-  download. If this value is set, 'dsupdt' tries to check timestamp of a data
-  file on remote server. If the time difference between the current date/time
-  and the data file date/time is shorter than the age time set in RDADB by this
-  option, 'dsupdt' will not download this file.
+  -AT or -AgeTime (Alias: -fileAge, -FileAgeTime), the minimum age a remote
+  file must have before it is eligible for download. When set, 'dsupdt' checks
+  the file's timestamp on the server and skips the download if the file is
+  newer than the configured age threshold.
 
-  -BC or -BuildCommand (Alias: -BuildCmd), external commands for additional
-  processes to build local files instead of the standard way of taring/compressing.
+  -BC or -BuildCommand (Alias: -BuildCmd), an external command for building
+  local files, used in place of the standard tar/compress approach.
 
-  Options allowed passing information into the command include -LF, -RF, -SF,
-  -DS, -ED, -EH, -SN/LN, and -LI. Each individual option is replaced by a real
-  value at the time 'dsupdt' calls the command.
+  The following option values are substituted at call time: -LF, -RF, -SF,
+  -DS, -ED, -EH, -SN/LN, and -LI.
 
-  If you send email inside your build command and want the email being held until
-  the update action of 'dsupdt' is finished successfully, you can use option -LI
-  to pass the local file index to you command, and save a customized email into
-  field of dlupdt.emnote in the local file record. If you want the email being
-  held until multiple local file records being updated successfully, you can pass
-  to your command the  index value of the last local file record. The saved
-  customized email will be sent out only when the update action is completed
-  successfully against all the included local file indices.
+  To send a deferred email from within your build command, pass -LI to obtain
+  the local file index, then save the email content to the dlupdt.emnote field
+  of that record. To defer until multiple records complete, pass the index of
+  the last record. The email is sent only after all included records update
+  successfully.
 
-  -BT or -BeginTime, used for remote file records to specify beginning times.
-  Combined with the time interval given per Info option -TI, it is used to set
-  the beginning time of creating multiple remote file names based on the
-  temporal pattern of the file name in each update period. It is defaulted to 0,
-  which means the first available time during a update period, i.e., 00 hour for
-  hourly controlled updates and the 1st of a month for monthly updates.
+  -BT or -BeginTime, specifies the start time when generating multiple remote
+  file names from a temporal pattern. Used with -TI (-TimeInterval). Defaults
+  to 0, meaning the first available time in the period (hour 00 for hourly
+  updates, the 1st for monthly updates).
 
-  Beginning time can be set as D:D:D:D:D:D:D:D:D:D:D:D for 12 offset values for
-  setting beginning days of each month in a year, if they are not the first days
-  of each month of a monthly controlled update.
+  To specify non-standard start days per month, provide 12 colon-separated
+  offset values in the form D:D:D:D:D:D:D:D:D:D:D:D.
 
-  -CC or -CarbonCopy, sets additional one or multiple email addresses into update
-  control records via Action -SC (-SetControl) to send Cc'd email notification of
-  the update results. This option can also provided on command line to do the same
-  thing. For DSS specialists, login user names themselves are acceptable; otherwise
-  full email addresses are required for email domains other than 'ucar.edu'.
+  -CC or -CarbonCopy, adds one or more Cc recipients for update notification
+  emails. Can be set in update control records via -SC or supplied at run time
+  on the command line. DSS specialists may use login names; others must provide
+  full addresses for domains outside 'ucar.edu'.
 
-  For example, to make a carbon copy email to 'schuster@ucar.edu' for update
-  results of 'd337000', provide Info option as '-CC schuster'
+  For example, to Cc 'schuster@ucar.edu' on update results for d337000:
 
   dsupdt d337000 UF -MU -IE -CC schuster
 
   -CI or -ControlIndex (Alias: -UpdateControlIndex), update control indices for
-  set update control records. A single Control index can be provided for updates of
-  multiple local file records. Provide one Update Control index at a time for
-  any update actions.
+  setting update control records. A single control index can be provided for
+  updates of multiple local file records. Provide one control index at a time
+  for any update action.
 
-  -CL or -CleanCommand, sets in RDADB for a local file record, and used later to
-  clean the temporary data files during data update.
-  
-  -CO or -ControlOffset, time offsets, i.e., 2D10H, 3H15N, work with control
-  frequency to set next update control time. For a monthly control frequency 1M
-  and the data update is finished for the current month 2011-09, without the
-  control time offset, the update control time for next month is set to
-  2011-10-01 00:00.00. If an offset is 2D10H30N, update control time for next
-  month is set to 2011-10-03 10:30.00 instead.
+  -CL or -CleanCommand, a command stored in the local file record and run during
+  data update to clean up temporary files.
 
-  -CT or -ControlTime, update control times, in form of YYY-MM-DD HH:NN:SS,
-  for update control records to be due for processing. The control times are
-  reset to next update control periods according to both the control frequencies
-  and control offsets after successful update processes in the current periods. 
+  -CO or -ControlOffset, a time offset (e.g., 2D10H, 3H15N) added to the
+  control frequency to determine the next scheduled run time. For example, with
+  a monthly frequency and no offset, the next run after completing 2011-09 is
+  scheduled for 2011-10-01 00:00:00. With an offset of 2D10H30N, it becomes
+  2011-10-03 10:30:00.
 
-  -DC or -DownloadCommand (Alias: -Download|-Command), command to download
-  a file on a remote server, copy a file locally somewhere else, or process data
-  and generate a remote file. It can be set in both local and remote file records.
-  This command is used for Action of download remote file, -DR (-DownloadRemote).
-  A command provided on command line at execution is considered first; otherwise,
-  the command specified in the remote file record, if exists, is used. If the
-  command is not set in the remote file record either, the one set for the local
-  file record is used. 
+  -CT or -ControlTime, the scheduled run time for an update control record,
+  in the form YYYY-MM-DD HH:NN:SS. After a successful update, this time is
+  advanced to the next period based on the control frequency and offset.
 
-  -DB or -Debug, turns on debug mode with specified information. This option
-  provides upto 3 values, they are Debug Level, debug log file path and debug
-  log file name. The debug level is mandatory for this option. It can be a
-  single integer value, for example, 1000 means to log debug messages for debug
-  levels 1 to 1000; or a range of values, for example, 200-1000 means to log
-  debug messages from debug levels 200 to 1000. The default debug file path is
-  '$DSSHOME}/dssdb/log' and the default debug file name is 'mydss.dbg'. Provides
-  the second and third values for this option to override the default ones
-  respectively.
+  -DC or -DownloadCommand (Alias: -Download|-Command), the command used to
+  download a remote file, copy a local file, or generate a remote file via local
+  processing. Can be set in both local and remote file records; used by
+  -DR (-DownloadRemote). At run time, the command precedence is:
+  command line > remote file record > local file record.
 
-  -DE or -Description (Alias: -Desc|-Note|-FileDesc|-FileDescription), for file
-  descriptions of data files. Multiple lines are allowed for a
-  description if it is passed in from an input file specified by Info option
-  -IF (-InputFile).
+  -DB or -Debug, enables debug mode with specified detail level. This option
+  accepts up to 3 values: Debug Level, debug log file path, and debug log file
+  name. The debug level is required and may be a single integer (e.g., 1000 to
+  log levels 1 through 1000) or a range (e.g., 200-1000). The default log path
+  is '$DSSHOME/dssdb/log' and the default log file name is 'mydss.dbg'. Provide
+  the second and third values to override these defaults.
 
-  -DO or -DownloadOrder, the download order indices for remote file records
-  for situation that a single remote file is available on multiple remote 
-  servers. The location with download index of 0 is tried first. If missed, the
-  second location, index 1, is tried and so on.
-     
-  -DT or -DataTime, times, in form of YYY-MM-DD HH:NN:SS, for data being 
-  updated upto. They are used for dependencies of the control records.
-  The dependencies of update controls are set via Info option -PI (-ParentIndex).
-  If parent index of an update control record is not empty, the control record
-  for an update period will be blocked until the data time of the parent
-  control record shows it is done for that period.
+  -DE or -Description (Alias: -Desc|-Note|-FileDesc|-FileDescription), a
+  description for data files. Multi-line descriptions are supported when
+  supplied via an input file (-IF).
 
-  -EC or -ErrorControl, a single letter option for error controls to set in
-  update control records:
-  - Set it as I to Ignore errors and continue finish multiple period updates,
-    it equivalents to Mode option -IE;
-  - Set it as Q to force quit on any errors, it equivalents to Mode option -QE;
-  - Set it to N for treating errors normally, that is to stop a multiple period
-    updates when an error is encountered, but allow process continue for next
-    local file update if multiple local files are under a single update control
-    process.
+  -DO or -DownloadOrder, download priority indices for remote file records
+  when a file is available from multiple servers. The server with index 0 is
+  tried first, then index 1, and so on.
 
-  -ED or -EndDate, for data end date of next data update period.
+  -DT or -DataTime, timestamps (YYYY-MM-DD HH:NN:SS) recording how far data
+  has been updated. Used to manage control record dependencies via
+  -PI (-ParentIndex): a control record will not run for a given period until
+  the parent control record's data time confirms completion.
 
-  -EH or -EndHour, for end hour of next data update period if hourly controlled.
-
-  The dependencies of local indices are set via Info option -PI (-ParentIndex).
-  If parent index of a local file record is not empty, the local file record
-  for end date, and hour if hourly update, will be blocked until the end data
-  date and hour of the parent local file record shows it is done for that end
-  date and hour.
-
-  -EP or -EndPeriod, specifies the end time of a given update period determined
-  from the given update frequency per -FQ (-Frequency). Default value of 0 means
-  that the end time should be the end of update period, i.e., for march of 2007
-  of a monthly update data record, the end time should be exactly '2007-03-31'.
-   
-  -ET or -EndTime, used for remote file records to specify ending times.
-  Combined with the time interval given per Info option -TI, it is used to set
-  the ending time of creating multiple remote file names based on the
-  temporal pattern of the file name in each update period. It is defaulted to 0,
-  which means the last available time during a update period.
-
-  Ending time can be set as D:D:D:D:D:D:D:D:D:D:D:D for 12 offset values for
-  setting ending days of each month in a year, if they are not the last days
-  of each month of a monthly controlled update.
-
-  -FQ or -Frequency, data update and control frequencies are time internals in
-  format of NU, N - integer value and U - a single letter unit measure, i.e.,
-  1Y, 1M, 1W, 5D, 6H. Frequency of fraction of a month is supported in format
-  of NU/F. For example, 1M/3 means the update frequency as one third of a month,
-  so that 10 days for the first two periods (1 - 10 and 11 - 20) of each month,
-  and 8 to 11 days for the third period (21 - End Of Month) depending on how many
-  days in a month.
-
-  -FA or -FileArchived, specifies an archived file name for data on RDA
-  Server. Archived file names are normally created automatically, but they
-  can be specified otherwise per this option.
-
-  -GP or -GenericPattern (Alias: -GeneralPattern), generic pattern option for
-  pattern values to be provided on command line. The first value is for
-  replacing pattern '<P0>', the second value for '<P1>', and so on.
-  
-  If 2 patterns are required for matching, <P0> and <P1>, n*2 generic pattern
-  values are allowed on command line to loop n times for pattern matching. Here
-  n is numeric value and n > 0.
-
-  -HN or -HostName, host machine names to set into update control records. One
-  or multiple host names can be set into an update control record. The hostname
-  information in update control records limits the associated update actions can,
-  or cannot, be processed on the specified machines. 
-  
-  For example, set update control record of Control Index 1 of d277000 to
-  control its associated update actions to be processed on rda-work only
- 
-  dsupdt SC -CI 1 -HN rda-work
-
-  -HO or -HourOffset, works with Mode option -CN (-CheckNew) to provide a time zone
-  offset value in hours to compare the timestamp of a server file to its local
-  copy. For example, 2 means the server time zone is 2 hours ahead of the local time;
-  while -2 means the server time zone is 2 hours behind the local time. It can be
-  set into update control record via this Info option for action -SC (-SetControl).
-
-  -ID or -ControlID, a unique string to identify a Update control record.
-
-  -IF or -InputFile, for input file names; one or multiple file names may be
-  given on command line. A input file name must starts with dataset number as
-  in format of 'dsnnn.n.*' and the dataset number must match the dataset number
-  given per option -DS (-Dataset). This restriction prevents specialists archiving
-  data files accidentally into a wrong dataset. Input files are used to hold
-  valid options and the associated values of Info options that need to be passed
-  in for execution of 'dsupdt'.
-
-  In a input file, lines start with sign '#' are considered as comments;
-  Option Names can be given either short, long or alias names. Action and Mode
-  options are given in format of OptionName<!>. Single value Assignment is 
-  given in format of OptionName<=>OptionValue. One option is given on each line.
-  Different setting sign of Action and Mode options can be provided by Info
-  option -AO (-ActOption, default to <!>); and different equal sign of single
-  value assignment can be provided by Info option -ES, (-EqualSign, default to
-  '<=>'). Multi-value assignments can be given in columns delimited with
-  separator specified per option -SP (-Separator, default to '<:>'). It starts
-  with a column title line for multi-value option names and the rest holds
-  values corresponding to each column titles. The value information stops at
-  the end of the file or when a new column name line or another single value
-  assignment appears. If the last column is a multi-line value field, an
-  additional separator must be appended for each line, including the column
-  title line to end lines properly.
-
-  -KF or -KeepFile, single letter options set in update control records for
-  keeping files on local disks after data update finished:
-  - Set S to keep server files retrieved remotely, it equivalents to Mode option -KS;
-  - Set R to keep remote files after they are built into local files, it equivalents
-    to Mode option -KR;
-  - Set B to keep both, it equivalents to combination of Mode options -KS and -KR.
-  - Set N for not keeping either.
-
-  -LF or -LocalFile, local file names for set update local file records and
-  are used later for building up local data files and archiving them onto RDA
-  Server. If there is any temporal patterns in the given file names, the
-  patterns are replaced by the times evaluated from the end date/hour of 
-  the update periods. 
-  
-  A different local file name can be provided at the update run time if a local
-  file index is provided. 
-  
-  -LI or -LocalIndex (Alias: -LocalFileIndx),  indices for
-  set update local file records. Locfile index can be provided for update of
-  individual local file record.
-
-  -MC or -EMailControl, a single letter option for email controls set in update
+  -EC or -ErrorControl, a single-letter error handling setting for update
   control records:
-  - Set E to send emails only when error happens during update actions,
-    it equivalents to Mode option -EE;
-  - Set N to send no email at all, it equivalents to Mode option -NE;
-  - Set S to send summary emails without detail, it equivalents to Mode option -SE;
-  - Set A for always sending detail emails;
-  - Set B for E + S, it equivalents to combination of Mode options -SE and -EE,
-    which means send summary emails only when error happens.
+  - I: ignore errors and continue processing all periods (equivalent to -IE);
+  - Q: stop immediately on any error (equivalent to -QE);
+  - N: normal behavior — stop the current period on error, but continue with
+    other local files under the same control record.
 
-  -MR or -MissRemote, if set to 'Y', allows missing one of some remote
-  files of the multiple remote files needed to build a single local file. Value
-  'Y' of this option means differently if the value of option -VI
-  (-ValidInterval) is not empty; that download effort is not given up for the
-  remote data files until they are out of the valid periods defined by the given
-  valid intervals.
-  
-  -DI or -DueInterval, the data due interval between data end date/hour and the
-  date/hour the data file file ready for update, which is set in local file record.
-  The next update date/hour of a local file is evaluated by adding the due interval
-  to the data end date/hour.
- 
-  -OP or -Options (Alias: -DsarchOption), a string, upto 128 characters, passed
-  to 'dsarch' for additional Info and Mode options to archiving data files.
-  Group index or group can be passed to 'dsarch'. Temporal patterns can be
-  setup into the group index or name values to dynamically identify group
-  information for the data files being updated. 
+  -ED or -EndDate, the data end date of the next update period.
 
-  -PD or -PatternDelimiter, pattern delimiters, default to ["<", ">"],
-  are used to hold temporal or generic patterns in file names and any other
-  text fields. Normally the data end date/hour are used for the temporal
-  patterns, but current date/hour will be used if the pattern is both started
-  and ended with letter 'C', as in <CYYYY.MM.DD.HHC> for example. Beginning
-  date/hour of update period are used if the pattern is both started and ended
-  with letter 'B', as in <BYYYY.MM.DD.HHB> for example. If fractional month is
-  used for update frequency, pattern as <M*M> is supported to get different file
-  names for each fraction; '* == C' means up case letters: A, B, C, ..., 
-  '* == c' means lower case letters: a, b, c, ..., and '* == N' means numeric
-  values: 1, 2, 3, ...
-  
-  Generic patterns can be specified per option -GP (-GenericPattern) on command
-  line while execute 'dsupdt' for update actions. For a given local file name
-  as '<P0>.txt', the pattern value must be provided on the command line via
-  option -GP (-GenericPattern) as the first option value; otherwise a fatal
-  error happens. Multiple generic pattern matches can be provided the way.
+  -EH or -EndHour, the data end hour of the next update period, for hourly
+  updates.
 
-  -PI or -ParentIndex, parent update control or local indices for data update
-  dependencies. Set parent indices for update control records, if the control
-  records need the parent controls be processed first; set parent local index
-  for local file records, if the the local file records need the parent local
-  files be build and archived first. 
+  Local file dependencies are configured via -PI (-ParentIndex). When set, a
+  local file record is blocked for a given end date (and hour, if applicable)
+  until the parent local file record completes that same end date and hour.
 
-  -PR or -ProcessRemote, external command specified by individual specialists
-  for additional processes to validate and convert remote files after they are
-  successfully downloaded.
-  
-  Options allowed passing information into the command include -LF, -RF, -SF,
-  -DS, -ED, -EH, -SN/LN, and -LI. Each individual option is replaced by a real
-  value at the time 'dsupdt' calls the command.
-  
-  If you send email inside your process command and want the email being held
-  until the update action of 'dsupdt' is finished successfully, you can use
-  option -LI to pass the local file index to you command, and save a customized
-  email into field of dlupdt.emnote in the local file record. If you want the
-  email being held until multiple local file records being updated successfully,
-  you can pass to your command the local file index value of the last local file
-  record. The saved customized email will be sent out only the update action is
-  completed successfully for all local file records.
-  
-  -QS or -QsubOptions, (Alias: -PBSOptions), specifies options to execute dsupdt
-  as a batch job via qsub on PBS nodes. The qsub options must be quoted when prsented
-  on command line, such as, -QS '-l walltime=12:00:00'.
+  -EP or -EndPeriod, the end point of the update period derived from the
+  frequency set by -FQ. A value of 0 (default) means the natural end of the
+  period — e.g., '2007-03-31' for a monthly record covering March 2007.
 
-  -RF or -RemoteFile, for remote file names to set update remote file records
-  and are used later for download remote data files and building local files.
-  If there is any temporal patterns in the given file names, the patterns are
-  replaced by the times evaluated from the end date/hour of the update
-  periods. Local file names are used if remote file names are not specified.
- 
-  For simple situation that a remote file is the same as local file,
-  information of the local file record is enough to process data update. A
-  remote file update record is only required if the remote file is different
-  from local file, including situations that multiple remote files are
-  downloaded and tarred for a single local file, or a single remote file is
-  available from multiple servers.
-  
+  -ET or -EndTime, the end time used when generating multiple remote file names
+  from a temporal pattern. Used with -TI (-TimeInterval). Defaults to 0, meaning
+  the last available time in the period.
+
+  To specify non-standard end days per month, provide 12 colon-separated offset
+  values in the form D:D:D:D:D:D:D:D:D:D:D:D.
+
+  -FQ or -Frequency, the update frequency expressed as NU, where N is an integer
+  and U is a unit letter: Y (year), M (month), W (week), D (day), H (hour);
+  e.g., 1W, 5D, 6H. Sub-monthly fractions are supported as NU/F; for example,
+  1M/3 divides each month into three periods: days 1-10, 11-20, and 21-end
+  (8 to 11 days depending on the month).
+
+  -FA or -FileArchived, overrides the automatically generated archived file
+  name for data on the GDEX Server.
+
+  -GP or -GenericPattern (Alias: -GeneralPattern), supplies values for generic
+  patterns on the command line. The first value replaces '<P0>', the second
+  '<P1>', and so on.
+
+  When two patterns are used (<P0> and <P1>), providing n*2 values causes the
+  substitution to loop n times (n > 0).
+
+  -HN or -HostName, one or more host names stored in an update control record
+  to restrict or allow its associated update actions on specific machines.
+
+  -HO or -HourOffset, a time zone offset in hours used by -CN (-CheckNew) to
+  compare server and local file timestamps. Positive values mean the server is
+  ahead of local time; negative values mean it is behind. Can be stored in an
+  update control record via -SC (-SetControl).
+
+  -ID or -ControlID, a unique descriptive string identifying an update control
+  record.
+
+  -IF or -InputFile, one or more input file names supplied on the command line.
+  Each file name must begin with the dataset number in the format 'dNNNNNN.*'
+  and match the dataset number given by -DS. This naming rule prevents
+  accidentally targeting the wrong dataset. Input files contain option names
+  and their values for passing to 'dsupdt'.
+
+  In an input file, lines beginning with '#' are treated as comments. Option
+  names may be given in short, long, or alias form. Action and Mode options use
+  the format OptionName<!>. Single-value assignments use the format
+  OptionName<=>OptionValue, one per line. The Action/Mode option sign can be
+  changed via -AO (-ActOption, default '<!>'); the assignment sign can be changed
+  via -ES (-EqualSign, default '<=>').  Multi-value assignments are column-
+  delimited using the separator set by -SP (-Separator, default '<:>'). A column
+  title line precedes the data rows. Data ends at the end of the file or when a
+  new column title line or single-value assignment is encountered. If the last
+  column contains multi-line values, an additional separator must be appended to
+  each line, including the title line.
+
+  -KF or -KeepFile, controls which files are retained on local disk after a
+  data update:
+  - S: keep server files (equivalent to -KS);
+  - R: keep remote files after building local files (equivalent to -KR);
+  - B: keep both (equivalent to -KS and -KR combined);
+  - N: keep neither.
+
+  -LF or -LocalFile, local file names for setting update local file records;
+  used later for building and archiving local data files onto the GDEX Server.
+  If temporal patterns are present in the given file names, they are replaced
+  by times derived from the end date/hour of the update periods.
+
+  A different local file name can be provided at the update run time if a local
+  file index is provided.
+
+  -LI or -LocalIndex (Alias: -LocalFileIndx), indices for setting update local
+  file records. A local file index may be provided to update an individual
+  local file record.
+
+  -MC or -EMailControl, controls when notification emails are sent from update
+  control records:
+  - E: email only on error (equivalent to -EE);
+  - N: no email (equivalent to -NE);
+  - S: summary email only (equivalent to -SE);
+  - A: always send a detailed email;
+  - B: summary email, but only on error (equivalent to -SE + -EE combined).
+
+  -MR or -MissRemote, when set to 'Y', allows one or more required remote
+  files to be absent when building a local file. When -VI (-ValidInterval) is
+  also set, download attempts continue until the missing files arrive or the
+  valid interval expires.
+
+  -DI or -DueInterval, the interval between the data end date/hour and when the
+  data file is expected to be ready for update, as set in the local file record.
+  The next update date/hour is calculated by adding this interval to the data
+  end date/hour.
+
+  -OP or -Options (Alias: -DsarchOption), passes a string of up to 128
+  characters to 'dsarch' as additional Info and Mode options for archiving.
+  Group index or name values can be included, with temporal patterns embedded
+  to dynamically identify group information at update time.
+
+  -PD or -PatternDelimiter, the delimiters enclosing temporal or generic
+  patterns in file names and other text fields. Defaults to '<' and '>'. By
+  default, patterns are replaced with the data end date/hour. Wrapping a
+  pattern's content with 'C' (e.g., <CYYYY.MM.DD.HHC>) uses the current
+  date/hour instead; wrapping with 'B' (e.g., <BYYYY.MM.DD.HHB>) uses the
+  period's beginning date/hour. For sub-monthly frequencies, <M*M> generates
+  distinct names per fraction: 'C' for uppercase (A, B, C, ...), 'c' for
+  lowercase (a, b, c, ...), and 'N' for numeric (1, 2, 3, ...).
+
+  Generic patterns are supplied at run time via -GP (-GenericPattern). For
+  example, if a local file name contains '<P0>.txt', the replacement value for
+  '<P0>' must be the first -GP value; omitting it causes a fatal error.
+  Additional patterns (<P1>, <P2>, ...) are provided as subsequent -GP values.
+
+  -PI or -ParentIndex, establishes dependencies between records. Set a parent
+  control index on an update control record to ensure the parent runs first;
+  set a parent local index on a local file record to ensure the parent local
+  file is built and archived first.
+
+  -PR or -ProcessRemote, a specialist-defined command for validating and
+  converting remote files after download.
+
+  The following option values are substituted at call time: -LF, -RF, -SF,
+  -DS, -ED, -EH, -SN/LN, and -LI.
+
+  To send a deferred email from within your process command, pass -LI to obtain
+  the local file index, then save the email content to the dlupdt.emnote field
+  of that record. To defer until multiple records complete, pass the index of
+  the last record. The email is sent only after all included records update
+  successfully.
+
+  -QS or -QsubOptions (Alias: -PBSOptions), specifies options for executing
+  'dsupdt' as a batch job via qsub on PBS nodes. Qsub options must be quoted
+  when provided on the command line, e.g., -QS '-l walltime=12:00:00'.
+
+  -RF or -RemoteFile, remote file names for setting update remote file records;
+  used later for downloading remote data files and building local files.
+  If temporal patterns are present in the given file names, they are replaced
+  by times derived from the end date/hour of the update periods. Local file
+  names are used if remote file names are not specified.
+
+  When a remote file has the same name as the local file, the local file record
+  alone is sufficient for data update. A remote file record is needed only when
+  the remote file differs from the local file, when multiple remote files are
+  downloaded and tarred into a single local file, or when a single remote file
+  is available from multiple servers.
+
   Multiple remote files can be provided in a single remote file record by joining
   them with separator '::', as Rfile1::Rfile2::Rfile3 for example.
-   
-  For remote file name with a leading '!' it is treated as an executable command
-  and its returned string is used as a dynamically created remote file name.
 
-  -RI or -RetryInterval, set the number of days or hours to retry the update
-  control process when first try failed.  
+  A remote file name beginning with '!' is treated as a shell command; its
+  output is used as the dynamically generated remote file name.
 
-  -RO or -ResetOrder (Alias: -Reorder), when present, resets the execute orders
-  of the given local file lists as the orders the update records are given for
-  actions -SL (-SetLocalFile). Another way of reordering the local files is to
-   provide explicitly order index values per Info option -XO (-ExecOrder).
+  -RI or -RetryInterval, the wait time (in days or hours) before retrying an
+  update control process after a failed attempt.
 
-  -SF or -ServerFile, only used to set file names on Remote servers when they
-  are different from the remote file names.
+  -RO or -ResetOrder (Alias: -Reorder), when present, resets the execution
+  order of the given local files to match the order in which the update records
+  are provided for action -SL (-SetLocalFile). Local files can also be reordered
+  by explicitly providing order index values via Info option -XO (-ExecOrder).
 
-  -SN or -Specialist, sets login names of specialists into RDADB for update
-  records. It defaults to the login name of a specialist if not proved explicitly.
-  At run time of a data update, specialist login name is validated against saved
-  specialist names and the update process is blocked if them are not match.
+  -SF or -ServerFile, specifies file names on remote servers when they differ
+  from the remote file names.
 
-  -TI or -TimeInterval, used for remote file records to specify a time increase
-  step. The interval is used to create multiple remote file names based on the
-  temporal pattern of the file name in each update period; starting from the
-  beginning time given per Info option -BT (-BeginTime) to the data end
-  date/hour.
-  
-  -UC or -UpdateControl, a string to hold multiple single letter options setting
-  in update control records: 
-  - Include B for using begin times of update periods for temporal patterns, it
-    equivalents to Mode option -BT; 
-  - Include C for allowing update actions for the current update period although
-    the data end time is not due yet, it equivalents to Mode option -CP;
-  - Include E to reset end date/hour if the file timestamp is newer than end date/hour
-    plus one update frequency, it equivalents to Mode option -RE;
-  - Include F for forcing update actions at least for one update period although
-    data update is not due yet, it equivalents to Mode option -FU;
-  - Include G for using GMT time zone as controlling time, it equivalents to Mode
-    option -GZ;
-  - Include M for update actions against multiple update periods, it equivalents
-    to Mode option -MU;
-  - Include N for checking if any files archived have been changed on remote
-    servers, and executing update actions against only the files got changed,
-    it equivalents to Mode option -CN;
-  - Include O for update actions against the update periods with missing archives
-    only, it equivalents to Mode option -MO;
-  - Include Y for skipping February 29 in leap years while adding days to date,
-    it equivalents to Mode option -NY;
-  - Include Z for considering empty files as valid data files; it equivalents to
-    Info option '-VS 0'.
+  -SN or -Specialist, the specialist login name stored in GDEXDB for an update
+  record. Defaults to the current user's login. At run time, the login is
+  validated against the stored name; a mismatch blocks the update.
 
-  -VI or -ValidInterval, sets the number of days or hours the remote files are
-  valid on remote servers. If the time difference between the current date/time
-  and the data date/time is longer than the time internal set in RDADB by this
-  option, 'dsupdt' will not download.
-  
-  -WD or -WorkDir, specifies a working directory to hold the temporary data files
-  for the download/archive activities. The leading path of the working directory
-  can be set as an environment variable $UPDTWKP. It is defaulted to
-  '/glade/data02/dsswork' on machines that can write to /glade/data02. A working
-  directory '$UPDTWKP/zji/icoads' means that the temporary downloaded data files
-  are staged in  '/glade/data02/dsswork/zji/icoads' during the update. Specify it
-  differently or use a different environment variable name if you want to store
-  the temporary data files some where else. Be aware that the default value for
-  $UPDTWKP is used if you use a different environment variable name without
-  defining it.
-  
-  -XC or -ExecuteCommand (Alias: -ExecCmd), external command for additional
-  process after successful update action for a specified update control
-  configuration.
-  
-  -XO or -ExecOrder, for executing order indices of local file records of a
-  given a dataset. This Info option is ignored if Mode option -RO (-ResetOrder)
-  is present.
+  -TI or -TimeInterval, the step size used to generate multiple remote file
+  names from a temporal pattern within a single update period, stepping from
+  the beginning time (-BT) to the data end date/hour.
+
+  -UC or -UpdateControl, a string of single letters pre-configuring Mode
+  options in an update control record:
+  - B: use period begin times for temporal patterns (equivalent to -BT mode);
+  - C: allow updates within the current period before the end time is due
+    (equivalent to -CP);
+  - E: reset end date/hour when the file timestamp exceeds it by one frequency
+    (equivalent to -RE);
+  - F: force at least one update even if not yet due (equivalent to -FU);
+  - G: use GMT as controlling time (equivalent to -GZ);
+  - M: process multiple update periods (equivalent to -MU);
+  - N: check for changed remote files and update only those (equivalent to -CN);
+  - O: process only periods with missing archives (equivalent to -MO);
+  - Y: skip February 29 in leap years (equivalent to -NY);
+  - Z: treat zero-byte files as valid (equivalent to -VS 0).
+
+  -VI or -ValidInterval, sets the number of days or hours remote files remain
+  valid on the server. If the time difference between the current date/time and
+  the data date/time exceeds the interval configured in GDEXDB by this option,
+  'dsupdt' will not attempt a download.
+
+  -WD or -WorkDir, the working directory for staging temporary files during
+  download and archive operations. The root path can be set via the environment
+  variable $UPDTWKP, which defaults to '/glade/data02/dsswork' on machines with
+  write access to /glade/data02. For example, '$UPDTWKP/zji/icoads' resolves to
+  '/glade/data02/dsswork/zji/icoads'. To use a different root, set $UPDTWKP
+  accordingly; if a different variable name is used without being defined, the
+  default value of $UPDTWKP applies.
+
+  -XC or -ExecuteCommand (Alias: -ExecCmd), an external command run after a
+  successful update action for a given update control configuration.
+
+  -XO or -ExecOrder, explicit execution order indices for local file records
+  within a dataset. Ignored when -RO (-ResetOrder) is present.
