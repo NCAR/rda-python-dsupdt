@@ -22,8 +22,16 @@ from rda_python_common.pg_cmd import PgCMD
 from rda_python_common.pg_opt import PgOPT
 
 class PgUpdt(PgOPT, PgCMD):
+   """Base class providing common update utility functions for dataset updates.
+
+   Extends PgOPT and PgCMD to handle update control records, local/remote file
+   management, temporal pattern replacement, and dataset update scheduling in RDADB.
+   Defines option codes, aliases, table hash mappings, and shared counters used by
+   the DsUpdt subclass.
+   """
 
    def __init__(self):
+      """Initialize option/alias tables, table hash mappings, and update counters."""
       super().__init__()  # initialize parent class
       self.CORDERS = {}
       self.OPTS.update({
@@ -284,6 +292,21 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get file contion
    def file_condition(self, tname, include = None, exclude = None, nodsid = 0):
+      """Build a SQL WHERE condition string for filtering update records.
+
+      Iterates over the field hash for the given table name and constructs a
+      condition from option values present in self.params.  A ``dsid`` prefix
+      is prepended unless *nodsid* is set.
+
+      Args:
+         tname (str): Table name key into self.TBLHASH (e.g. 'dlupdt', 'drupdt').
+         include (str | None): If given, only keys in this string are included.
+         exclude (str | None): If given, keys in this string are skipped.
+         nodsid (int): When non-zero, omit the leading ``dsid = '...'`` clause.
+
+      Returns:
+         str: SQL condition fragment (without a leading ``AND``).
+      """
       condition = ""
       hash = self.TBLHASH[tname]
       noand = 1 if nodsid else 0
@@ -305,6 +328,17 @@ class PgUpdt(PgOPT, PgCMD):
    # check if enough information entered on command line and/or input file
    # for given action(s)
    def check_enough_options(self, cact, acts):
+      """Validate that sufficient options have been supplied for the requested action.
+
+      Raises an action error if required indices or file names are missing.
+      Also performs one-time setup tasks: sets the uid, configures batch/daemon
+      mode, applies no-leap-year and email suppression flags, and starts the
+      none-daemon process manager.
+
+      Args:
+         cact (str): The current action key (e.g. 'UF', 'SC', 'SL').
+         acts (int): Bitmask of all requested actions from self.PGOPT['ACTS'].
+      """
       errmsg = [
          "Miss dataset number per -DS(-Dataset)",
          "Miss local file names per -LF(-LocalFile)",
@@ -373,6 +407,13 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get the associated dataset id
    def get_dsupdt_dataset(self):
+      """Return the dataset ID associated with the current operation.
+
+      Checks self.params in order: 'DS', 'CI' (control index), 'LI' (local index).
+
+      Returns:
+         str | None: Dataset ID string, or None if not determinable.
+      """
       if 'DS' in self.params: return self.params['DS']
       if 'CI' in self.params and self.params['CI'][0]:
          pgrec = self.pgget("dcupdt", "dsid", "cindex = {}".format(self.params['CI'][0]), self.PGOPT['extlog'])
@@ -385,6 +426,25 @@ class PgUpdt(PgOPT, PgCMD):
    # replace the temoral patterns in given fname with date/hour
    # return pattern array only if not date
    def replace_pattern(self, fname, date, hour = None, intv = None, limit = 0, bdate = None, bhour = None):
+      """Replace temporal placeholder patterns in a filename with actual date/hour values.
+
+      Patterns are delimited by self.params['PD'] (default ``<`` and ``>``).
+      Supported pattern types include: generic (``P<n>``), current-date (``C…C``),
+      month-fraction (``M[NC]M``), sequence number (``N[HD]+N``), back-shifted
+      (``B…B``), Wednesday-aligned (``W…W``), and standard date-format strings.
+
+      Args:
+         fname (str | None): Filename containing zero or more patterns.
+         date (str | int | None): End data date (YYYY-MM-DD).
+         hour (int | None): End data hour (0-23), or None for daily data.
+         intv (list | None): Frequency interval array [Y, M, D, H, …].
+         limit (int): Maximum number of patterns to replace (0 = unlimited).
+         bdate (str | None): Beginning date of the update period.
+         bhour (int | None): Beginning hour of the update period.
+
+      Returns:
+         str | None: Filename with patterns replaced, or None if *fname* is falsy.
+      """
       if not fname: return None
       if date and not isinstance(date, str): date = str(date)
       if bdate and not isinstance(bdate, str): bdate = str(bdate)
@@ -477,6 +537,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get next display order of an archived data file of given dataset (and group)
    def get_next_exec_order(self, dsid, next):
+      """Return the next execution order value for a local file record of *dsid*.
+
+      Caches the current maximum ``execorder`` per dataset in self.CORDERS.
+      Passing *dsid* as None resets the cache.
+
+      Args:
+         dsid (str | None): Dataset ID, or None to reset the cache.
+         next (int): If non-zero, query the database for the current maximum
+            order when the dataset is not already cached.
+
+      Returns:
+         int | None: Incremented execution order, or None when *dsid* is None.
+      """
       if not dsid:
          self.CORDERS = {}   # reinitial lize cached display orders
          return
@@ -489,6 +562,24 @@ class PgUpdt(PgOPT, PgCMD):
 
    # execute specialist specified command
    def executable_command(self, cmd, file, dsid, edate, ehour, rfiles = None):
+      """Expand placeholder tokens in a specialist-defined shell command string.
+
+      Replaces ``__FN__``/``__FNAME__``/``__FILENAME__``, ``-LF``/``-RF``/``-SF``,
+      ``-DS``, ``-ED``, ``-EH``, ``-SN``/``-LN``, and ``-LI`` with the
+      corresponding runtime values.  Returns None for commented-out (``#``) or
+      empty commands.
+
+      Args:
+         cmd (str | None): Raw command template.
+         file (str | None): Local or server filename to substitute.
+         dsid (str | None): Dataset ID.
+         edate (str | int | None): End data date.
+         ehour (int | None): End data hour.
+         rfiles (list | None): List of remote file names or dicts for ``-RF``.
+
+      Returns:
+         str | None: Expanded command string, or None if *cmd* is falsy/commented.
+      """
       if not cmd or re.match(r'^#', cmd): return None
       if re.search(r'\$', cmd): cmd = self.replace_environments(cmd, None, self.PGOPT['emlerr'])
       if file:
@@ -535,6 +626,20 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get the local file names
    def get_local_names(self, lfile, tempinfo, edate = None):
+      """Resolve the list of local filenames for a given update period.
+
+      If *lfile* starts with ``!``, the remainder is treated as an executable
+      command whose stdout (``::``-delimited) provides the names.  Otherwise
+      serial patterns are expanded and temporal placeholders replaced.
+
+      Args:
+         lfile (str): Local file pattern or ``!command``.
+         tempinfo (dict): Temporal info dict (must contain 'ehour', 'edate').
+         edate (str | None): Override end date; defaults to tempinfo['edate'].
+
+      Returns:
+         list | None: List of resolved filenames, or None if none found.
+      """
       locfiles = []
       ehour = tempinfo['ehour']
       if not edate: edate = tempinfo['edate']
@@ -553,6 +658,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # expend serial pattern
    def expand_serial_pattern(self, fname):
+      """Expand a serial index pattern (``<S start:end:step S>``) in a filename.
+
+      The pattern ``<Sstart:end:stepS>`` (or ``<Sstart:endS>`` with step=1) is
+      replaced by each zero-padded integer in the range, producing a list of
+      filenames.  Returns a single-element list with the original name when no
+      such pattern is found.
+
+      Args:
+         fname (str | None): Filename possibly containing a serial pattern.
+
+      Returns:
+         list | None: Expanded list of filenames, or None if *fname* is falsy.
+      """
       if not fname: return None
       seps = self.params['PD']
       ms = re.search(r'{}S(\d[\d:]+\d)S{}'.format(seps[0], seps[1]), fname)
@@ -575,6 +693,23 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get the remote file names
    def get_remote_names(self, rfile, rmtrec, rmtinfo, tempinfo, edate = None):
+      """Resolve the list of remote filenames for a given update period.
+
+      If *rfile* starts with ``!``, the remainder is executed as a command.
+      Otherwise serial patterns are expanded and each element is passed through
+      replace_remote_pattern_times() to produce one or more timestamped names.
+
+      Args:
+         rfile (str): Remote file pattern or ``!command``.
+         rmtrec (dict): Remote file database record (tinterval, begintime, etc.).
+         rmtinfo (str): Log-friendly label for this remote entry.
+         tempinfo (dict): Temporal info dict for the current update period.
+         edate (str | None): Override end date; defaults to tempinfo['edate'].
+
+      Returns:
+         list | None: List of remote file dicts (with 'fname', 'ready', etc.),
+         or None if none found.
+      """
       rmtfiles = []
       if not edate: edate = tempinfo['edate']
       if rfile[0] == '!':   # executable for build up remote file names
@@ -592,6 +727,22 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get and replace pattern dates/hours for remote files
    def replace_remote_pattern_times(self, rfile, rmtrec, rmtinfo, tempinfo, edate = None):
+      """Expand a single remote filename pattern over its time interval range.
+
+      When a remote record has a ``tinterval`` field, this method generates one
+      remote file dict per sub-period within the update window (from begintime
+      to endtime).  Without a time interval a single dict is returned.
+
+      Args:
+         rfile (str): Remote file pattern with optional temporal placeholders.
+         rmtrec (dict): Remote file DB record (tinterval, begintime, endtime).
+         rmtinfo (str): Log label for this remote record.
+         tempinfo (dict): Temporal info for the current update period.
+         edate (str | None): Override end date; defaults to tempinfo['edate'].
+
+      Returns:
+         list: List of remote file dicts; empty on error.
+      """
       rfiles = []
       if not edate: edate = tempinfo['edate']
       ehour = tempinfo['ehour']
@@ -723,6 +874,25 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get one hash array for a single remote file name
    def one_remote_filename(self, fname, date, hour, tempinfo, intv, bdate, bhour):
+      """Build a remote file descriptor dict for a single date/hour.
+
+      Resolves the filename pattern, determines readiness relative to the
+      current date, and packages metadata (date, hour, time string, download
+      command) into a dict used downstream by download_remote_files().
+
+      Args:
+         fname (str): Remote file pattern.
+         date (str): Data date for this file (YYYY-MM-DD).
+         hour (int | None): Data hour, or None for daily data.
+         tempinfo (dict): Temporal info dict (FQ, NX, VD/VH, DC, etc.).
+         intv (list | None): Interval array; falls back to tempinfo['FQ'].
+         bdate (str): Beginning date of the update period.
+         bhour (int | None): Beginning hour of the update period.
+
+      Returns:
+         dict: Remote file descriptor with keys 'fname', 'ready', 'amiss',
+         'date', 'hour', 'time', and 'rcmd'.
+      """
       if tempinfo['NX']:
          (udate, uhour) = self.adddatehour(date, hour, tempinfo['NX'][0], tempinfo['NX'][1], tempinfo['NX'][2], tempinfo['NX'][3])
       else:
@@ -758,6 +928,21 @@ class PgUpdt(PgOPT, PgCMD):
 
    # record the date/hour for missing data
    def set_miss_time(self, lfile, locrec, tempinfo, rmonly = 0):
+      """Update the missdate/misshour fields in the dlupdt record for a local file.
+
+      When valid-interval tracking is active, this records the earliest date at
+      which remote data became missing.  Passing *rmonly* = 1 clears the miss
+      timestamp only when it matches the current end date/hour.
+
+      Args:
+         lfile (str): Local filename (used for logging context).
+         locrec (dict): Local file DB record (lindex, missdate, misshour, etc.).
+         tempinfo (dict): Temporal info dict (edate, ehour, VD, VH).
+         rmonly (int): If 1, remove the miss-time rather than set it.
+
+      Returns:
+         int: 1 if a miss-time remains set, 0 otherwise.
+      """
       setmiss = 1
       mdate = mhour = None
       pgrec = {}
@@ -790,6 +975,20 @@ class PgUpdt(PgOPT, PgCMD):
 
    # reset next data end/update times
    def reset_update_time(self, locinfo, locrec, tempinfo, arccnt, endonly):
+      """Advance the dlupdt end-date and optionally update the dsperiod record.
+
+      After successfully archiving files, advances the stored ``enddate``/
+      ``endhour`` to the next update period.  Also calls ``sdp`` to extend
+      the dataset time coverage when the data period has grown.
+
+      Args:
+         locinfo (str): Log label for the current local file.
+         locrec (dict): Local file DB record (lindex, enddate, endhour, gindex, etc.).
+         tempinfo (dict): Temporal info (edate, ehour, FQ, EP, QU, NX).
+         arccnt (int): Number of files successfully archived in this pass.
+         endonly (int): If non-zero, skip the enddate advancement when no files
+            were archived.
+      """
       gx = 1 if re.search(r'(^|\s)-GX(\s|$)', locrec['options'], re.I) else 0
       date = tempinfo['edate']
       hour = tempinfo['ehour']
@@ -839,6 +1038,20 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get period record for sub group
    def get_period_record(self, gindex, dsid, locinfo):
+      """Fetch the dsperiod record for a dataset group, traversing parent groups.
+
+      Looks up the period record for *gindex* in dsperiod; if not found and the
+      group has a parent (dsgroup.pindex), recurses to find the parent's period.
+      Logs an error and returns None if date_end is the sentinel '0000-00-00'.
+
+      Args:
+         gindex (int): Group index to look up.
+         dsid (str): Dataset ID.
+         locinfo (str): Log label for error messages.
+
+      Returns:
+         dict | None: dsperiod record dict, or None if not found/invalid.
+      """
       pgrec = self.pgget("dsperiod", "gindex, date_end, time_end, dorder",
                           "dsid = '{}' AND gindex = {} ORDER BY dorder".format(dsid, gindex), self.PGOPT['extlog'])
       if not pgrec and gindex:
@@ -851,6 +1064,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check if need time interval for remote/server file
    def need_time_interval(self, fname, freq):
+      """Return True if the remote filename pattern implies a finer time interval.
+
+      Warns when the temporal units embedded in *fname* are at a finer
+      granularity than the dataset update frequency, suggesting that a
+      ``tinterval`` should be set in the remote file record.
+
+      Args:
+         fname (str): Remote filename pattern.
+         freq (list): Frequency array [Y, M, D, H, …] from get_control_time().
+
+      Returns:
+         int: 1 if a time interval appears needed, 0 otherwise.
+      """
       units = self.temporal_pattern_units(fname, self.params['PD'])
       if not units: return 0   # no temporal pattern found in file name    
       funit = punit = None
@@ -881,6 +1107,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check if local file is a growing one
    def is_growing_file(self, fname, freq):
+      """Determine whether a local file is expected to grow with each update.
+
+      A file is considered *growing* when its name contains no temporal pattern
+      that matches the update frequency granularity, meaning the same physical
+      file is appended to rather than replaced each cycle.
+
+      Args:
+         fname (str): Local filename pattern.
+         freq (list): Frequency array [Y, M, D, H, …].
+
+      Returns:
+         int: 1 if the file is growing, 0 if it is replaced each period.
+      """
       units = self.temporal_pattern_units(fname, self.params['PD'])
       if not units: return 1   # no temporal pattern found in file name    
       if freq[3] > 0:
@@ -896,6 +1135,19 @@ class PgUpdt(PgOPT, PgCMD):
    # add update frequency to date/hour
    # opt = -1 - minus, 0 - begin time, 1 - add (default)
    def addfrequency(self, date, hour, intv, opt = 1):
+      """Add (or subtract) an update frequency interval to a date/hour.
+
+      Args:
+         date (str | int | None): Starting date (YYYY-MM-DD).
+         hour (int | None): Starting hour, or None for daily granularity.
+         intv (list | None): Frequency array [Y, M, D, H, min, sec, frac_month].
+            Returns (date, hour) unchanged when *intv* is falsy.
+         opt (int): 1 to add (default), -1 to subtract, 0 to return the
+            beginning of the next period.
+
+      Returns:
+         tuple[str, int | None]: Updated (date, hour) pair.
+      """
       if date and not isinstance(date, str): date = str(date)
       if not intv: return (date, hour)
       freq = intv.copy()
@@ -920,6 +1172,12 @@ class PgUpdt(PgOPT, PgCMD):
 
    #  send a cumtomized email if built during specialist's process
    def send_updated_email(self, lindex, locinfo):
+      """Send a specialist-built custom email stored in dlupdt.emnote, then clear it.
+
+      Args:
+         lindex (int): Local file index whose emnote field to check and send.
+         locinfo (str): Log label used if sending fails.
+      """
       pgrec = self.pgget("dlupdt", "emnote", "lindex = {}".format(lindex), self.LOGERR)
       if not (pgrec and pgrec['emnote']): return   # no customized email info to send   
       if not self.send_customized_email(locinfo, pgrec['emnote'], self.PGOPT['emllog']): return
@@ -927,6 +1185,18 @@ class PgUpdt(PgOPT, PgCMD):
 
    # validate given local indices
    def validate_lindices(self, cact):
+      """Validate local file indices in self.params['LI'] against RDADB.
+
+      Converts string values to integers, resolves comparison-operator tokens
+      (``!``, ``<``, ``>``) into matching index lists, and verifies ownership.
+      Sets a validated flag on self.OPTS['LI'] to avoid re-validation.
+
+      Args:
+         cact (str): Current action key (used to enforce -NL for new records).
+
+      Returns:
+         int: Count of zero-valued (new-record) indices.
+      """
       if (self.OPTS['LI'][2]&8) == 8: return 0  # already validated
       zcnt = 0
       lcnt = len(self.params['LI'])
@@ -971,6 +1241,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # validate given control indices
    def validate_cindices(self, cact):
+      """Validate update control indices in self.params['CI'] (or 'ID') against RDADB.
+
+      Converts string values to integers, resolves comparison/wildcard tokens
+      into matching index lists, verifies that each index exists, and enforces
+      single-control-per-invocation for update/check actions.  Falls back to
+      cid2cindex() when 'ID' is provided instead of 'CI'.
+
+      Args:
+         cact (str): Current action key.
+
+      Returns:
+         int: Count of zero-valued (new-control) indices.
+      """
       if (self.OPTS['CI'][2] & 8) == 8: return 0   # already validated
       zcnt = 0
       if 'CI' in self.params:
@@ -1020,6 +1303,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get control index array from given control IDs
    def cid2cindex(self, cact, cntlids, zcnt):
+      """Convert a list of control ID strings to their corresponding cindex values.
+
+      Performs an exact-match DB lookup for normal IDs and a wildcard/comparison
+      query for patterns containing ``%``, ``!``, ``<``, or ``>``.
+
+      Args:
+         cact (str): Current action key (used to allow new-record creation).
+         cntlids (list[str]): List of control ID strings from self.params['ID'].
+         zcnt (int): Running count of zero-index (new-record) placeholders.
+
+      Returns:
+         list[int]: List of resolved cindex integers.
+      """
       count = len(cntlids) if cntlids else 0
       if count == 0: return None
       i = 0
@@ -1057,6 +1353,21 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check remote server file information
    def check_server_file(self, dcmd, opt, cfile):
+      """Retrieve metadata for the source file referenced by a download command.
+
+      Parses the command to identify the transfer protocol (rdacp, cp/mv, tar,
+      ncftpget, wget, or generic) and delegates to the appropriate
+      check_*_file() helper.  The returned dict includes a 'ftype' key
+      indicating the protocol detected.
+
+      Args:
+         dcmd (str): Download command string.
+         opt (int): Option bitmask passed to the underlying check helper.
+         cfile (str | None): Comparison file path for wget-based newer checks.
+
+      Returns:
+         dict | None: File info dict (data_size, date_modified, etc.) or None.
+      """
       sfile = info = type = None
       self.PGLOG['SYSERR'] = self.PGOPT['STATUS'] = ''
       docheck = 1
@@ -1164,6 +1475,14 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check and sleep if given web site need to be slowdown for accessing
    def slow_web_access(self, wbuf):
+      """Sleep to rate-limit access to web servers that require throttling.
+
+      Checks *wbuf* against the self.WSLOWS dictionary (hostname → sleep
+      seconds) and sleeps the configured number of seconds when a match is found.
+
+      Args:
+         wbuf (str): URL or command string that may contain a known slow hostname.
+      """
       for wsite in self.WSLOWS:
          if wbuf.find(wsite) > -1:
             time.sleep(self.WSLOWS[wsite])
@@ -1172,6 +1491,19 @@ class PgUpdt(PgOPT, PgCMD):
    # return 1 if exists; 0 missed, -1 with error, -2 comand not surported yet
    # an error message is stored in self.PGOPT['STATUS'] if not success
    def check_server_status(self, dcmd):
+      """Check whether the remote source file referenced by a download command exists.
+
+      Dispatches to the appropriate protocol handler (rdacp, mv/cp/tar,
+      ncftpget, wget, or generic) based on the command content.
+
+      Args:
+         dcmd (str): Download command string.
+
+      Returns:
+         int: 1 if the file exists, 0 if not found (possibly just not ready),
+         -1 on a recoverable error, -2 on an unrecoverable error or unsupported
+         command.
+      """
       self.PGOPT['STATUS'] = ''
       target = None
       ms = re.search(r'(^|\s|\||\S/)rdacp\s+(.+)$', dcmd)
@@ -1248,9 +1580,25 @@ class PgUpdt(PgOPT, PgCMD):
       return -2
 
    # check status for remote server/file via wget
-   # return self.SUCCESS if file exist and self.FAILURE otherwise. 
+   # return self.SUCCESS if file exist and self.FAILURE otherwise.
    # file status message is returned via reference string of $status
    def check_wget_status(self, server, fname, user, pswd):
+      """Check the existence of a remote file on an HTTP/HTTPS server using wget --spider.
+
+      Walks up the directory tree (up to self.PGOPT['PCNT'] levels) if the
+      exact path is not found, to distinguish a missing file from an
+      inaccessible server.
+
+      Args:
+         server (str): Base server URL (e.g. ``https://example.com``).
+         fname (str): File path on the server.
+         user (str | None): HTTP username (wget --user).
+         pswd (str | None): HTTP password (wget --password).
+
+      Returns:
+         int: 1 if found, 0 if not yet present (parent dir exists),
+         -1 if file is missing, -2 on a server/network error.
+      """
       cmd = "wget --spider --no-check-certificate "
       if user or pswd:
          self.PGOPT['STATUS'] = "{}{}: {}".format(server, fname, self.PGLOG['MISSFILE'])
@@ -1284,9 +1632,24 @@ class PgUpdt(PgOPT, PgCMD):
          i += 1
 
    # check status for remote server/file via check_ftp_file()
-   # return self.SUCCESS if file exist and self.FAILURE otherwise. 
+   # return self.SUCCESS if file exist and self.FAILURE otherwise.
    # file status message is returned via reference string of $status
    def check_ftp_status(self, server, fname, user, pswd):
+      """Check the existence of a remote file on an FTP server using ncftpls.
+
+      Walks up the directory tree on missing entries to distinguish a missing
+      file from an inaccessible parent directory or server.
+
+      Args:
+         server (str): FTP server URL (e.g. ``ftp://data.example.com``).
+         fname (str): File path on the server.
+         user (str | None): FTP username.
+         pswd (str | None): FTP password.
+
+      Returns:
+         int: 1 if found, 0 if not yet present, -1 if file is missing,
+         -2 on an unrecoverable server error.
+      """
       cmd = "ncftpls "
       if user: cmd += "-u {} ".format(user)
       if pswd: cmd += "-p {} ".format(pswd)
@@ -1319,6 +1682,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check remote server status
    def check_remote_status(self, host, fname):
+      """Check the existence of a file on an RDA remote host via ``<host>-sync``.
+
+      Walks up the path tree to distinguish a missing file from an inaccessible
+      parent directory.
+
+      Args:
+         host (str): Remote host prefix used to construct ``<host>-sync``.
+         fname (str): File path to check on the remote host.
+
+      Returns:
+         int: 1 if found, 0 if not yet present, -1 if file is missing,
+         -2 on error.
+      """
       pname = None
       i = 0
       while True:
@@ -1344,6 +1720,18 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check local disk status
    def check_local_status(self, fname):
+      """Check the existence of a path on the local filesystem.
+
+      Walks up the directory tree to distinguish a missing file from a missing
+      parent directory, returning different codes for each case.
+
+      Args:
+         fname (str): Absolute or relative path to check.
+
+      Returns:
+         int: 1 if path exists, 0 if parent exists but file does not,
+         -1 if file is missing, -2 on error.
+      """
       pname = None
       i = 0
       while True:
@@ -1365,6 +1753,16 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check tar file status
    def check_tar_status(self, fname, target):
+      """Check whether *target* exists inside a local tar archive *fname*.
+
+      Args:
+         fname (str): Path to the tar file.
+         target (str): Member path to look for within the archive.
+
+      Returns:
+         int: 1 if the member exists, 0 if the archive exists but the member
+         does not, -1 on error.
+      """
       stat = self.check_local_status(fname)
       if stat < 1: return stat
       msg = self.pgsystem("tar -tvf {} {}".format(fname, target), self.LOGWRN, 272)   # 16+256
@@ -1380,6 +1778,17 @@ class PgUpdt(PgOPT, PgCMD):
 
    # count directories with temoral patterns in given path
    def count_pattern_path(self, dcmd):
+      """Count the number of path components containing temporal patterns in a command.
+
+      Used to determine how many directory levels to walk up when checking
+      file existence on a remote server.
+
+      Args:
+         dcmd (str): Download command string.
+
+      Returns:
+         int: Number of pattern-containing path levels (minimum 1).
+      """
       getpath = 1
       ms = re.search(r'(^|\s|\||\S/)rdacp\s+(.+)$', dcmd)
       if ms:
@@ -1427,6 +1836,21 @@ class PgUpdt(PgOPT, PgCMD):
 
    # check error message for download action
    def parse_download_error(self, err, act, sinfo = None):
+      """Classify a download error message and determine whether to retry or abort.
+
+      Returns a (status, error_message) tuple where status follows the
+      convention: 1 = success, 0 = recoverable missing, -1 = error continue,
+      -2 = unrecoverable error.
+
+      Args:
+         err (str): Stderr output from the download command.
+         act (str): Download action name (e.g. 'wget', 'ncftpget', 'UNTAR').
+         sinfo (dict | None): File info dict from check_local_file(); if
+            provided, size validation takes precedence over *err*.
+
+      Returns:
+         tuple[int, str]: (status_code, cleaned_error_message).
+      """
       derr = ''
       stat = 0
       if sinfo:
@@ -1454,6 +1878,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    # cache update control information
    def cache_update_control(self, cidx, dolock = 0):
+      """Load a dcupdt control record into self.PGOPT['UCNTL'] and apply its settings.
+
+      Validates the dataset ID, hostname restrictions, and data time.  Applies
+      control flags (updtcntl, emailcntl, errorcntl, keepfile) to self.params,
+      caches associated data times, and optionally acquires an exclusive lock.
+
+      Args:
+         cidx (int): Control index (dcupdt.cindex) to cache.
+         dolock (int): If non-zero, acquire an exclusive update-control lock.
+
+      Returns:
+         bool: self.SUCCESS on success, self.FAILURE on any validation error.
+      """
       cstr = "C{}".format(cidx)
       pgrec = self.pgget("dcupdt", "*", "cindex = {}".format(cidx), self.PGOPT['emlerr'])
       if not pgrec: return self.pglog(cstr + ": update control record NOT in RDADB", self.PGOPT['errlog'])
@@ -1515,6 +1952,12 @@ class PgUpdt(PgOPT, PgCMD):
 
    # cache date time info
    def cache_data_time(self, cidx):
+      """Pre-populate self.PGOPT['DTIMES'] with enddate/endhour for all local files
+      associated with control index *cidx*.
+
+      Args:
+         cidx (int): Control index whose dlupdt records to cache.
+      """
       pgrecs = self.pgmget("dlupdt", "lindex, enddate, endhour", "cindex = {}".format(cidx), self.PGOPT['emlerr'])
       cnt =  len(pgrecs['lindex']) if pgrecs else 0
       for i in range(cnt):
@@ -1524,6 +1967,19 @@ class PgUpdt(PgOPT, PgCMD):
 
    #  check if valid host to process update control
    def valid_control_host(self, cstr, hosts, logact):
+      """Verify that the current host is allowed to process the given update control.
+
+      The *hosts* field may be a plain hostname (must match) or ``!hostname``
+      (must NOT match).
+
+      Args:
+         cstr (str): Control identifier string for log messages.
+         hosts (str | None): Allowed or excluded hostname pattern from dcupdt.
+         logact (int): Log action bitmask for failure messages.
+
+      Returns:
+         bool: self.SUCCESS if the host is valid, self.FAILURE otherwise.
+      """
       host = self.get_host(1)
       if hosts:
          if re.search(host, hosts, re.I):
@@ -1535,6 +1991,18 @@ class PgUpdt(PgOPT, PgCMD):
 
    # reset updated data time
    def reset_data_time(self, qu, ddate, dhour, lidx):
+      """Update dcupdt.datatime and chktime to reflect the latest successfully archived data.
+
+      Tracks the earliest data time across all local files in PGOPT['DTIMES']
+      and writes the minimum value to the control record if it has advanced.
+
+      Args:
+         qu (str | None): Update frequency unit ('H', 'D', etc.) to determine
+            default hour when *dhour* is None.
+         ddate (str | None): Data date of the archived file.
+         dhour (int | None): Data hour of the archived file.
+         lidx (int): Local file index being updated.
+      """
       pgrec = self.PGOPT['UCNTL']
       record = {'chktime': int(time.time())}
       if ddate:
@@ -1552,6 +2020,22 @@ class PgUpdt(PgOPT, PgCMD):
 
    # adjust control time according to the control offset
    def adjust_control_time(self, cntltime, freq, unit, offset, curtime):
+      """Advance a control timestamp to the next scheduled run time.
+
+      Removes any configured offset, aligns the time to the frequency boundary
+      (e.g. truncates to the start of an hour or period), re-applies the offset,
+      then increments by *freq* until the result is strictly after *curtime*.
+
+      Args:
+         cntltime (str): Current dcupdt.cntltime (``YYYY-MM-DD HH:MM:SS``).
+         freq (list): Frequency array from get_control_time().
+         unit (str): Frequency unit character ('H', 'D', 'M', 'Y', 'W').
+         offset (str | None): Control offset string (e.g. '2H') or None.
+         curtime (str): Current wall-clock datetime string.
+
+      Returns:
+         str: Next scheduled control time (``YYYY-MM-DD HH:MM:SS``).
+      """
       if offset:
          ofreq = self.get_control_time(offset, "Control Offset")
          if ofreq:   # remove control offset
@@ -1579,7 +2063,12 @@ class PgUpdt(PgOPT, PgCMD):
       return cntltime
 
    #  reset control time
-   def reset_control_time(self):   
+   def reset_control_time(self):
+      """Compute and write the next dcupdt.cntltime after a completed (or failed) run.
+
+      If there were errors, the retry interval is used to schedule an earlier
+      retry provided it falls before the normal next run time.
+      """   
       pgrec = self.PGOPT['UCNTL']
       cstr = "{}-C{}".format(self.params['DS'], pgrec['cindex'])
       gmt = self.PGLOG['GMTZ']
@@ -1611,6 +2100,21 @@ class PgUpdt(PgOPT, PgCMD):
 
    # get array information of individual controlling time
    def get_control_time(self, val, type):
+      """Parse a time-interval string into a 7-element integer array.
+
+      Recognises Y (year), M (month), D (day), W (week, converted to days),
+      H (hour), N (minute), and S (second) suffixes.  Returns 0 for falsy or
+      '0' values.  Logs and returns None for unsupported fractional notation or
+      strings with no recognised units.
+
+      Args:
+         val (str | None): Interval string such as ``'6H'``, ``'1M'``, ``'2W3D'``.
+         type (str): Human-readable name for error messages.
+
+      Returns:
+         list[int] | int | None: 7-element list [Y,M,D,H,min,sec,frac], 0 for
+         empty input, or None on parse error.
+      """
       if not val or val == '0': return 0
       if re.search(r'/(\d+)$', val):
          return self.pglog("{}: '{}' NOT support Fraction".format(val, type), self.PGOPT['emlerr'])
@@ -1635,6 +2139,20 @@ class PgUpdt(PgOPT, PgCMD):
 
    #  get group index from given option string
    def get_group_index(self, option, edate, ehour, freq):
+      """Extract the dataset group index from a dsarch options string.
+
+      Looks for ``-GI <index>`` (literal or pattern) or ``-GN <group_name>``
+      in the options string.  Returns 0 if neither is found.
+
+      Args:
+         option (str): dsarch options string from dlupdt.options.
+         edate (str): End data date for pattern replacement.
+         ehour (int | None): End data hour.
+         freq (list): Frequency array for pattern replacement.
+
+      Returns:
+         int: Group index, or 0 if not specified.
+      """
       ms = re.search(r'-GI\s+(\S+)', option, re.I)
       if ms: return int(self.replace_pattern(ms.group(1), edate, ehour, freq))
       ms = re.search(r'-GN\s+(.*)$', option, re.I)
