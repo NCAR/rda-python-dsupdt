@@ -21,7 +21,22 @@ from .pg_updt import PgUpdt
 from rda_python_common.pg_split import PgSplit
 
 class DsUpdt(PgUpdt, PgSplit):
+   """Main application class for the dsupdt dataset-update utility.
+
+   Extends PgUpdt (update control / DB utilities) and PgSplit (multiprocessing
+   support) to implement the full dataset-update workflow:
+
+   * Downloading remote files via configurable commands (wget, ncftpget, rsync, …)
+   * Building or converting local files from downloaded sources
+   * Archiving local files to RDA web, Saved, or Quasar storage via dsarch
+   * Managing update control records (dcupdt), local file records (dlupdt), and
+     remote file records (drupdt) in RDADB
+   * Checking dataset update status and sending notification emails
+   * Scheduling and dispatching child processes for parallel updates
+   """
+
    def __init__(self):
+      """Initialize DsUpdt instance state and call parent __init__."""
       super().__init__()  # initialize parent class
       self.TEMPINFO = {}
       self.TOPMSG = self.SUBJECT = self.ACTSTR = None
@@ -32,6 +47,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # main function to run dsupdt
    def read_parameters(self):
+         """Parse and validate command-line arguments for the dsupdt action.
+
+         Sets the help path, calls parsing_input() to populate self.params, and
+         then check_enough_options() to ensure mandatory options are present.
+         """
          self.set_help_path(__file__)
          aname = 'dsupdt'
          self.parsing_input(aname)
@@ -39,6 +59,14 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # start actions of dsupdt
    def start_actions(self):
+      """Dispatch and execute the primary dsupdt action requested on the command line.
+
+      Routes to the appropriate method based on self.PGOPT['ACTS'] / self.PGOPT['CACT']:
+      CU (CheckUpdate), DL (Delete), GA/GC/GL/GR (Get*), SC/SL/SR/SA (Set*),
+      UF (UpdateFile), UL (UnLock), and PC (ProcessControls).  After the action
+      completes, builds and sends an email summary if required, records dscheck
+      status, and logs the end time.
+      """
       if self.PGOPT['ACTS']&self.OPTS['CU'][0]:
          if 'CI' in self.params:
             if self.cache_update_control(self.params['CI'][0], 1):
@@ -120,6 +148,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # delete update control records for given dsid and control indices
    def delete_control_info(self):
+      """Delete dcupdt control records for the control indices in self.params['CI'].
+
+      Also clears the cindex foreign key on any associated dlupdt records.
+      Acquires a lock on each control record before deleting it.
+      """
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Delete {} update control record{} ...".format(self.ALLCNT, s), self.WARNLG)
       delcnt = modcnt = 0
@@ -136,6 +169,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # delete local files for given dsid and locfile indices
    def delete_local_info(self):
+      """Delete dlupdt local file records for the indices in self.params['LI'].
+
+      Cascades to delete any associated drupdt remote file records before
+      removing each dlupdt row.  Acquires a lock before each deletion.
+      """
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Delete {} Locfile record{} ...".format(self.ALLCNT, s), self.WARNLG)
       dcnt = delcnt = 0
@@ -156,6 +194,10 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # delete update remote files for given dsid and remote files/locfile indices
    def delete_remote_info(self):
+      """Delete drupdt remote file records for the indices/names in self.params.
+
+      Matches rows by lindex + remotefile (and optionally dindex via -DO).
+      """
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Delete {} remote file record{} ...".format(self.ALLCNT, s), self.WARNLG)
       self.validate_multiple_options(self.ALLCNT, ["LI", "DO"])
@@ -168,6 +210,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get update control information
    def get_control_info(self):
+      """Retrieve and print dcupdt update control records for the current dataset.
+
+      Applies any field-name (-FN) and order (-ON) filters, then formats and
+      writes the results to self.OUTPUT.
+      """
       tname = "dcupdt"
       hash = self.TBLHASH[tname]
       self.pglog("Get update control info of {} from RDADB ...".format(self.params['DS']), self.WARNLG)
@@ -190,6 +237,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get local file update information
    def get_local_info(self):
+      """Retrieve and print dlupdt local file records for the current dataset.
+
+      Applies any field-name (-FN) and order (-ON) filters, then formats and
+      writes the results to self.OUTPUT.
+      """
       tname = "dlupdt"
       hash = self.TBLHASH[tname]
       self.pglog("Get local file update info of {} from RDADB ...".format(self.params['DS']), self.WARNLG)
@@ -214,6 +266,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get remote file update information
    def get_remote_info(self):
+      """Retrieve and print drupdt remote file records for the current dataset.
+
+      Applies any field-name (-FN) and order (-ON) filters, then formats and
+      writes the results to self.OUTPUT.
+      """
       tname = "drupdt"
       hash = self.TBLHASH[tname]
       self.pglog("Get remote file update info of {} from RDADB ...".format(self.params['DS']), self.WARNLG)
@@ -238,6 +295,12 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # add or modify update control information
    def set_control_info(self):
+      """Insert or update dcupdt control records for the indices in self.params['CI'].
+
+      For each index: if > 0, locks and updates the existing record; if 0 (with
+      -NC), inserts a new record.  Validates parent index and action name before
+      writing.
+      """
       tname = 'dcupdt'
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Set {} update control record{} ...".format(self.ALLCNT, s), self.WARNLG)
@@ -275,6 +338,12 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # add or modify local file update information
    def set_local_info(self):
+      """Insert or update dlupdt local file records for the indices in self.params['LI'].
+
+      For each index: if > 0, locks and updates; if 0 (with -NL), inserts a new
+      record.  Validates control index and action name; assigns the next
+      execorder for new records.
+      """
       tname = 'dlupdt'
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Set {} local file record{} ...".format(self.ALLCNT, s), self.WARNLG)
@@ -316,6 +385,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # add or modify remote file update information
    def set_remote_info(self):
+      """Insert or update drupdt remote file records for the pairs in self.params.
+
+      Matches existing rows by lindex + remotefile + dindex.  Validates that the
+      referenced lindex exists in dlupdt before inserting a new record.
+      """
       tname = 'drupdt'
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Set {} update remote file{} ...".format(self.ALLCNT, s), self.WARNLG)
@@ -343,6 +417,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # unlock update records for given locfile indices
    def unlock_update_info(self):
+      """Unlock dlupdt records locked by dead or stale processes.
+
+      For each lindex in self.params['LI']: attempts a normal unlock; if that
+      fails and the locking host appears to be down, forces the unlock.
+      """
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Unlock {} update locfile{} ...".format(self.ALLCNT, s), self.WARNLG)
       modcnt = 0
@@ -366,6 +445,11 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # unlock update control records for given locfile indices
    def unlock_control_info(self):
+      """Unlock dcupdt control records locked by dead or stale processes.
+
+      For each cindex in self.params['CI']: attempts a normal unlock; if that
+      fails and the locking host appears to be down, forces the unlock.
+      """
       s = 's' if self.ALLCNT > 1 else ''
       self.pglog("Unlock {} update control{} ...".format(self.ALLCNT, s), self.WARNLG)
       modcnt = 0
@@ -388,6 +472,14 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get update info of local and remote files owned by login name
    def get_update_info(self):
+      """Retrieve and print update records (control, local, and/or remote) for one
+      or more datasets.
+
+      When no -DS is given, determines the applicable dataset list from dlupdt
+      filtered by the login name or other conditions.  Iterates over each
+      dataset and calls get_control_info(), get_local_info(), and/or
+      get_remote_info() according to the action bitmask.
+      """
       if 'DS' in self.params:
          dsids = {'dsid': [self.params['DS']]}
          dscnt = 1
@@ -422,6 +514,15 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # gather due datasets for data update
    def dataset_update(self):
+      """Orchestrate the full data-update cycle across all due datasets.
+
+      Determines which datasets and local file records are due for update,
+      then calls file_update() for each one.  Handles multiprocessing via
+      child processes when self.PGSIG['MPROC'] > 1.  After all files are
+      processed, renews internal version numbers if any files were rearchived,
+      refreshes metadata, builds the email subject/top-message, and resets the
+      control time when a control record was active.
+      """
       actcnd = "specialist = '{}'".format(self.params['LN'])
       if self.PGOPT['ACTS']&self.OPTS['AF'][0]: actcnd += " AND action IN ('AW', 'AS', 'AQ')"
       (self.PGOPT['CURDATE'], self.PGOPT['CURHOUR']) = self.curdatehour()
@@ -589,6 +690,14 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # renew internal version number for given dataset
    def renew_internal_version(self, dsid, vcnt):
+      """Invoke dsarch to bump the internal version number after rearchiving files.
+
+      Runs ``dsarch <dsid> SV -NV`` and logs the new version number and DOI.
+
+      Args:
+         dsid (str): Dataset ID.
+         vcnt (int): Number of files that were rearchived (used for log message).
+      """
       s = 's' if vcnt > 1 else ''
       cmd = "dsarch {} SV -NV -DE '{} Data file{} rearchived'".format(dsid, vcnt, s)
       if self.pgsystem(cmd, self.PGOPT['emerol'], 5):  # 1 + 4
@@ -601,6 +710,19 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # cach the total count of files to be archived
    def count_caching(self, locrec, locinfo):
+      """Estimate the total number of files that will be archived for *locrec*.
+
+      Used during dscheck pre-counting passes to report expected work.
+      Multiplies the number of serial-pattern expansions by the number of
+      update periods in the temporal info.
+
+      Args:
+         locrec (dict): Local file DB record.
+         locinfo (str): Log label.
+
+      Returns:
+         int: Estimated file count.
+      """
       files = self.expand_serial_pattern(locrec['locfile'])
       scnt = len(files) if files else 1
       if self.ALLCNT > 1:
@@ -612,6 +734,28 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # gather/archive due data file for update of each local file
    def file_update(self, locrec, logact, caching = 0):
+      """Run the download / build / archive pipeline for one local file record.
+
+      For each update period derived from get_tempinfo():
+        1. Resolves local and remote filenames.
+        2. Downloads remote files via download_remote_files() (DR/PB/UF).
+        3. Builds the local file via build_local_file() (BL/PB/UF).
+        4. Archives the local file via archive_data_file() (AF/UF).
+        5. Cleans working copies via clean_files() (CF/UF).
+        6. Advances the stored end-date via reset_update_time().
+
+      When *caching* is set, returns only the expected file count without
+      performing any real work (used for dscheck pre-counting).
+
+      Args:
+         locrec (dict): dlupdt local file record.
+         logact (int): Log action bitmask for progress messages.
+         caching (int): If non-zero, return the expected count without acting.
+
+      Returns:
+         int: Number of successfully processed update periods (or count when
+         caching), 0 on lock failure or no work, negative on fatal error.
+      """
       lfile = locrec['locfile']
       endonly = retcnt = 0
       lindex = locrec['lindex']
@@ -841,6 +985,15 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # refresh the gathered metadata with speed up option -R and -S
    def refresh_metadata(self, dsid):
+      """Invoke the search-metadata command to refresh web-table indices after archiving.
+
+      Called periodically (every RSMAX files) during archiving when the -RS
+      (refresh-search) option is active.  Flushes the accumulated wtidx set
+      after running the command.
+
+      Args:
+         dsid (str): Dataset ID to refresh.
+      """
       if self.sm is None: self.sm = self.valid_command(self.PGOPT['scm'], self.PGOPT['emlerr'])
       if self.PGOPT['wtidx']:
          if self.sm:
@@ -852,8 +1005,31 @@ class DsUpdt(PgUpdt, PgSplit):
                   self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1029)  # 1+4+1024
          self.PGOPT['wtidx'] = {}
 
-   # retrieve remote files# act: > 0 - create filenames and get data files physically; 0 - create filenames only
+   # retrieve remote files
+   # act: > 0 - create filenames and get data files physically; 0 - create filenames only
    def download_remote_files(self, rmtrec, lfile, linfo, locrec, locinfo, tempinfo, act = 0):
+      """Download remote files described by *rmtrec* to the local working directory.
+
+      Resolves remote and server filenames, then for each file: checks whether a
+      local copy already exists and is current; if not, runs the download command
+      and validates the result.  Processes remote file via *processremote* command
+      when specified.  Returns the list of successfully obtained local filenames
+      (or None on failure).
+
+      Args:
+         rmtrec (dict): drupdt remote file record (remotefile, serverfile, download,
+            tinterval, begintime, endtime).
+         lfile (str): Target local filename.
+         linfo (dict | None): Existing local file info from check_local_file().
+         locrec (dict): dlupdt local file record (options, action, etc.).
+         locinfo (str): Log label.
+         tempinfo (dict): Temporal info dict for the current update period.
+         act (int): If > 0, physically retrieve files; if 0, only build the
+            filename list (used for status checking).
+
+      Returns:
+         list[str] | None: List of downloaded local filenames, or None on error.
+      """
       emlsum = self.PGOPT['emlsum'] if self.PGOPT['CACT'] == "DR" else self.PGOPT['emllog']
       rfile = rmtrec['remotefile']
       rmtinfo = locinfo
@@ -1169,6 +1345,29 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # build up local files
    def build_local_file(self, rfiles, lfile, linfo, locrec, tempinfo, lcnt, l):
+      """Build a local file from one or more downloaded remote files.
+
+      Supports three build strategies:
+        1. Explicit build command (buildcmd): runs the command directly.
+        2. Executable local file spec (``!command``): runs the command to get the name.
+        3. Automatic: compresses/converts individual files and then tars them, or
+           directly renames/converts a single remote file.
+
+      Creates parent directories as needed, backs up any existing local file,
+      and restores the backup on failure.
+
+      Args:
+         rfiles (list[str]): Downloaded remote filenames.
+         lfile (str): Target local filename.
+         linfo (dict | None): Existing local file info.
+         locrec (dict): dlupdt record (options, buildcmd, action, etc.).
+         tempinfo (dict): Temporal info (edate, ehour, FQ, blcmd, AQ).
+         lcnt (int): Total number of local files in the serial expansion.
+         l (int): Index of the current local file within the serial expansion.
+
+      Returns:
+         int: 1 on success, 0 on failure.
+      """
       emlsum = self.PGOPT['emlsum'] if (self.PGOPT['ACTS'] == self.OPTS['BL'][0]) else self.PGOPT['emllog']
       if lcnt > 1:
          rcnt = 1
@@ -1277,18 +1476,54 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # append data type to options for given type name if not in options
    def append_data_type(self, tname, options):
+      """Append a default data-type flag to *options* if it is not already present.
+
+      Args:
+         tname (str): Option name key in self.DEFTYPES (e.g. 'WT', 'ST', 'QT').
+         options (str): Current dsarch options string.
+
+      Returns:
+         str: Updated options string.
+      """
       mp = r'(^|\s)-{}(\s|$)'.format(tname)
       if not re.search(mp, options, re.I): options += " -{} {}".format(tname, self.DEFTYPES[tname])
       return options
 
    # get data type from options for given type name, and default one if not in options
    def get_data_type(self, tname, options):
+      """Extract the data-type character from *options*, falling back to the default.
+
+      Args:
+         tname (str): Option name (e.g. 'WT', 'ST', 'QT').
+         options (str): dsarch options string.
+
+      Returns:
+         str: Single-character data type (e.g. 'D', 'P', 'B').
+      """
       mp = r'(^|\s)-{}\s+(\w)(\s|$)'.format(tname)
       ms = re.search(mp, options, re.I)
       return ms.group(2) if ms else self.DEFTYPES[tname]
 
    # archive a data file
    def archive_data_file(self, lfile, locrec, tempinfo, eidx):
+      """Archive a local data file by invoking dsarch with the appropriate options.
+
+      Skips archiving (returns -1) when the file is already archived and has not
+      changed.  Optionally moves the previous version-controlled file before
+      re-archiving.  Runs gatherxml to update metadata when the -GX option is set
+      in the local file's options field.
+
+      Args:
+         lfile (str): Local file path to archive.
+         locrec (dict): dlupdt record (action, options, archfile, note, etc.).
+         tempinfo (dict): Temporal info (edate, ehour, FQ, ainfo, RS, gotnew).
+         eidx (int): Index of the current update period (0-based); used to
+            suppress the re-archive hint on subsequent periods.
+
+      Returns:
+         int: Return code from dsarch (> 0 success, 0 or negative failure),
+         or -1 if archiving was skipped.
+      """
       growing = -1
       if tempinfo['ainfo']:
          ainfo = tempinfo['ainfo']
@@ -1375,6 +1610,14 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # call gatherxml
    def call_gatherxml(self, gcmd):
+      """Run the gatherxml command to index a newly archived data file.
+
+      Redirects logging to gatherxml-specific log/err files and suppresses
+      known benign warning patterns from being treated as errors.
+
+      Args:
+         gcmd (str): Fully constructed gatherxml command string.
+      """
       logfile = self.PGLOG['LOGFILE']
       errfile = self.PGLOG['ERRFILE']
       self.PGLOG['LOGFILE'] = "gatherxml.log"
@@ -1388,6 +1631,21 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # count files updated
    def count_update_files(self, oinfo, ninfo, success, rsopt):
+      """Compare pre- and post-archive file records and update per-type counters.
+
+      For each archive type (web, saved, quasar) in the new archive info,
+      increments the appropriate counter in self.PGOPT (udcnt, uncnt, uwcnt,
+      uscnt, qbcnt, qdcnt) and registers web-table indices for metadata refresh.
+
+      Args:
+         oinfo (dict | None): Archive info dict before the dsarch call.
+         ninfo (dict | None): Archive info dict after the dsarch call.
+         success (int): Non-zero if dsarch returned success.
+         rsopt (int): RS option value; 1 triggers web-table refresh tracking.
+
+      Returns:
+         str: Human-readable summary of what was (re-)archived, or empty string.
+      """
       nrecs = ninfo['types'] if ninfo else {}
       orecs = oinfo['types'] if oinfo else {}
       astrs = []
@@ -1440,9 +1698,27 @@ class DsUpdt(PgUpdt, PgSplit):
          astr += " of {} archfile{}".format(ninfo['archcnt'], s)
       return astr
 
-   # get the temporal info in local and remote file names and the possible values# between the break update and the current date
-   # BTW, change to working directory
+   # get the temporal info in local and remote file names and the possible values
+   # between the break update and the current date
    def get_tempinfo(self, locrec, locinfo, eidx = 0):
+      """Build the temporal-info dict for one or more update periods of *locrec*.
+
+      Resolves end date/hour, valid interval, age time, frequency, next-due
+      offset, and missing-remote flag from the local file record and current
+      parameters.  Computes the list of end dates/hours (ED/EH) that still
+      need to be updated up to the current date.
+
+      Args:
+         locrec (dict): dlupdt local file record (enddate, endhour, frequency,
+            validint, agetime, nextdue, missremote, options, action, etc.).
+         locinfo (str): Log label.
+         eidx (int): When > 0, index into self.params['ED'/'EH'] for explicit
+            multi-period invocations.
+
+      Returns:
+         dict | None: Temporal info dict with keys ED, EH, FQ, QU, VD, VH,
+         AT, NX, amiss, AQ, RS, etc.; or None / 0 on error / not-yet-due.
+      """
       # get data end date for update action
       edate = self.params['ED'][eidx] if ('ED' in self.params and self.params['ED'][eidx]) else locrec['enddate']
       if not edate: return self.pglog(locinfo + ": MISS End Data Date for local update", self.PGOPT['emlerr'])
@@ -1601,6 +1877,21 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get archived file info
    def file_archive_info(self, lfile, locrec, tempinfo):
+      """Query RDADB for the current archive status of *lfile*.
+
+      Looks up web files (wfile), saved files (sfile), or quasar backup files
+      (bfile) depending on the archive action.  Returns a dict with keys
+      archcnt, archived, present, vindex, types, note, and the matching file
+      path (wfile/sfile/bfile) when found.
+
+      Args:
+         lfile (str): Local filename whose archive record to look up.
+         locrec (dict): dlupdt record (action, options, archfile, gindex).
+         tempinfo (dict): Temporal info (edate, ehour, FQ, NX, ainfo).
+
+      Returns:
+         dict: Archive info dict (always returned, possibly with archived=0).
+      """
       if tempinfo['ainfo'] != None: return tempinfo['ainfo']
       edate = tempinfo['edate']
       ehour = tempinfo['ehour']
@@ -1711,9 +2002,25 @@ class DsUpdt(PgUpdt, PgSplit):
          self.pglog("{}: unknown archive action {}".format(lfile, act), self.PGOPT['extlog'])
       return ainfo   # always returns a hash reference for archiving info
 
-   # build up data note based on temporal info, keep the begin timestamp# for existing record; change end timestamp only if new data added
+   # build up data note based on temporal info, keep the begin timestamp
+   # for existing record; change end timestamp only if new data added
    # return None if no change for existing note
    def build_data_note(self, onote, lfile, locrec, tempinfo):
+      """Construct the data note string for the dsarch -DE option.
+
+      Preserves the begin-time from an existing note when two temporal patterns
+      are present.  Replaces temporal patterns with the current end date/hour.
+      Returns None when no change is needed for an existing note.
+
+      Args:
+         onote (str | None): Existing note text from the archive record.
+         lfile (str): Local filename (for log messages).
+         locrec (dict): dlupdt record (note field).
+         tempinfo (dict): Temporal info (edate, ehour, FQ, PD).
+
+      Returns:
+         str | None: New note string, or None if no update is required.
+      """
       note = locrec['note']
       if not note: return onote
       seps = self.params['PD']
@@ -1751,6 +2058,18 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get data file status info
    def file_status_info(self, lfile, rfile, tempinfo):
+      """Cache size, checksum, and modification timestamp of *lfile* before archiving.
+
+      Stores the results in self.PGOPT['fsize'], self.PGOPT['chksm'],
+      self.PGOPT['fdate'], and self.PGOPT['ftime'].  When -RE is active,
+      also advances tempinfo['edate'/'ehour'] to the file's actual data date.
+
+      Args:
+         lfile (str): Local file path to inspect.
+         rfile (str | None): Associated remote file path (used to get an
+            earlier modification timestamp if applicable).
+         tempinfo (dict): Temporal info dict (updated in place for -RE mode).
+      """
       # check and cache new data info
       finfo = self.check_local_file(lfile, 33, self.PGOPT['wrnlog'])   # 33 = 1 + 32
       if not finfo:
@@ -1788,8 +2107,23 @@ class DsUpdt(PgUpdt, PgSplit):
             tempinfo['edate'] = edate
             tempinfo['ehour'] = ehour
 
-   # check if a Server file is aged enough for download# return 1 if valid, 0 if not aged enough, -1 if cannot check
+   # check if a Server file is aged enough for download
+   # return 1 if valid, 0 if not aged enough, -1 if cannot check
    def check_agetime(self, dcmd, sfile, atime):
+      """Check whether a server file is old enough to be downloaded.
+
+      Compares the file's last-modified time plus the *atime* interval to the
+      current date/hour.  Returns 0 (skip) if the file is not yet aged enough,
+      1 if it is ready, or a negative code on error.
+
+      Args:
+         dcmd (str): Download command used to locate the server file.
+         sfile (str): Server filename for log messages.
+         atime (list): Age-time interval array from get_control_time().
+
+      Returns:
+         int: 1 if aged enough, 0 if not yet ready, negative on error.
+      """
       info = self.check_server_file(dcmd, 1)
       if not info:
          sact = self.get_download_action(dcmd)
@@ -1812,9 +2146,26 @@ class DsUpdt(PgUpdt, PgSplit):
                       "but NOT aged enough for retrieving yet by {}:{:02}".format(self.params['CD'], self.params['CH'])), self.PGOPT['emllog'])
       return 0   # otherwise server file is not aged enough
 
-   # check if a Server file is changed with different size# return 1 - file changed, 2 - new file retrieved, 3 - force redlownload,
+   # check if a Server file is changed with different size
+   # return 1 - file changed, 2 - new file retrieved, 3 - force redlownload,
    #        0 - no change , -1 - error check, -2 - cannot check
    def check_newer_file(self, dcmd, cfile, ainfo):
+      """Determine whether the server file is newer than the local/archived copy.
+
+      Compares size, checksum, and modification time.  For wget, re-downloads
+      and returns 2 if the file changed.
+
+      Args:
+         dcmd (str): Download command pointing to the server file.
+         cfile (str | None): Comparison file path (local copy or empty string
+            to compare against the archive record only).
+         ainfo (dict): Archive info dict (chksm, asize, adate, atime).
+
+      Returns:
+         int: 1 = changed (download needed), 2 = new wget file retrieved,
+         3 = force re-download (cannot check), 0 = no change,
+         -1 = check error, -2 = unsupported command.
+      """
       if cfile:
          finfo = self.check_local_file(cfile, 33, self.PGOPT['wrnlog'])
          if not finfo: return 3   # download if can not check newer
@@ -1856,6 +2207,14 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get download action name
    def get_download_action(self, dcmd):
+      """Extract the download tool name from a command string for logging purposes.
+
+      Args:
+         dcmd (str | None): Download command string.
+
+      Returns:
+         str: Tool name such as 'wget', 'ncftpget', 'TAR', 'UNTAR', or 'DOWNLOAD'.
+      """
       if not dcmd: return "download"
       dact = "DOWNLOAD"
       ms = re.search(r'(^|\S\/)tar\s+-(\w+)\s', dcmd)
@@ -1873,6 +2232,19 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # change to working directory if not there yet
    def change_workdir(self, wdir, locinfo, edate, ehour, FQ):
+      """Change the process working directory, applying environment and pattern substitution.
+
+      Args:
+         wdir (str | None): Target working directory (may contain ``$VAR`` or
+            temporal patterns).  Overridden by self.params['WD'] when present.
+         locinfo (str): Log label for error messages.
+         edate (str): End data date for pattern replacement.
+         ehour (int | None): End data hour.
+         FQ (list): Frequency array for pattern replacement.
+
+      Returns:
+         int: 1 on success, 0 on failure (logs an error).
+      """
       if 'WD' in self.params and self.params['WD'][0]: wdir = self.params['WD'][0]
       if not wdir:
          return self.pglog(locinfo + ": MISS working directory", self.PGOPT['emlerr'])
@@ -1884,6 +2256,19 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # clean the working copies of remote and local files/directories
    def clean_files(self, cleancmd, edate, ehour, lfiles, rfiles, freq):
+      """Run the clean command to remove working copies of local/remote files.
+
+      Applies temporal and file-name substitutions to *cleancmd* before execution.
+      Missing-file errors from the shell command are treated as warnings.
+
+      Args:
+         cleancmd (str): Clean command template (may include -LF, -RF tokens).
+         edate (str): End data date for pattern replacement.
+         ehour (int | None): End data hour.
+         lfiles (list[str] | None): Local filenames to substitute for -LF.
+         rfiles (list | None): Remote file dicts/names to substitute for -RF.
+         freq (list): Frequency array for pattern replacement.
+      """
       lfile = ' '.join(lfiles) if lfiles else ''
       cleancmd = self.replace_pattern(cleancmd, edate, ehour, freq)
       cleancmd = self.executable_command(cleancmd, lfile, None, None, None, rfiles)
@@ -1893,6 +2278,21 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # clean files rematching pattern on given date/hour
    def clean_older_files(self, cleancmd, workdir, locinfo, edate, locfile, rmtrecs, rcnt, tempinfo):
+      """Clean local and remote files that match patterns for a past valid-interval date.
+
+      Resolves filenames for the given *edate*, changes to the working directory,
+      and then calls clean_files().
+
+      Args:
+         cleancmd (str): Clean command template.
+         workdir (str): Working directory path.
+         locinfo (str): Log label.
+         edate (str): Valid-interval boundary date (files older than this are cleaned).
+         locfile (str): Local file pattern.
+         rmtrecs (dict): Remote file records.
+         rcnt (int): Number of remote file records.
+         tempinfo (dict): Temporal info dict.
+      """
       rfiles = None
       lfiles = self.get_local_names(locfile, tempinfo, edate)
       self.change_workdir(workdir, locinfo, edate, tempinfo['ehour'], tempinfo['FQ'])
@@ -1902,6 +2302,17 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # get all remote file names for one update period
    def get_all_remote_files(self, rmtrecs, rcnt, tempinfo, edate):
+      """Collect all resolved remote filenames across every remote record for *edate*.
+
+      Args:
+         rmtrecs (dict): Remote file records (keyed by field name).
+         rcnt (int): Number of remote records.
+         tempinfo (dict): Temporal info dict.
+         edate (str): Date for pattern replacement.
+
+      Returns:
+         list: Flat list of remote file dicts from get_remote_names().
+      """
       rfiles = []
       for i in range(rcnt): # processs each remote record
          rmtrec = self.onerecord(rmtrecs, i)
@@ -1911,8 +2322,14 @@ class DsUpdt(PgUpdt, PgSplit):
          if files: rfiles.extend(files)
       return rfiles
 
-   # check remote file status and sed email to specialist for irregular update cases
+   # check remote file status and send email to specialist for irregular update cases
    def check_dataset_status(self):
+      """Check update readiness for all local files due before the current date.
+
+      Iterates over dlupdt records whose enddate is past, calls
+      check_locfile_status() for each, and builds an email summary.  Resets
+      the control time when a control record is active.
+      """
       if 'CD' in self.params:
          self.params['CD'] = self.format_date(self.params['CD'])   # standard format in case not yet
       else:
@@ -1951,6 +2368,18 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # check update status for a given local file
    def check_locfile_status(self, locrec):
+      """Check whether the remote files for *locrec* are ready for the next update.
+
+      For each update period and remote record, calls check_remote_status() to
+      verify that the source file exists and is ready.  Accumulates counts in
+      self.PGOPT['lcnt'] and self.PGOPT['rcnt'].
+
+      Args:
+         locrec (dict): dlupdt local file record.
+
+      Returns:
+         int: 1 if any period was ready, 0 otherwise.
+      """
       loccnd = "lindex = {}".format(locrec['lindex'])
       lfile = locrec['locfile']
       locinfo = "{}-L{}".format(locrec['dsid'], locrec['lindex'])
@@ -2011,6 +2440,21 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # check update status for given remote file
    def check_remote_status(self, rmtrec, lfile, locrec, locinfo, tempinfo):
+      """Verify that the remote files referenced by *rmtrec* are ready for download.
+
+      Resolves remote and server filenames, counts the path-pattern depth for
+      server-status polling, and checks each file's readiness.
+
+      Args:
+         rmtrec (dict): drupdt remote file record.
+         lfile (str): Local target filename.
+         locrec (dict): dlupdt local file record.
+         locinfo (str): Log label.
+         tempinfo (dict): Temporal info dict.
+
+      Returns:
+         int: 1 if all files are ready, 0 if any are not yet available.
+      """
       rfile = rmtrec['remotefile']
       rmtinfo = locinfo
       if not rfile:
@@ -2054,6 +2498,12 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # process the update control records
    def process_update_controls(self):
+      """Dispatch pending update control records whose cntltime has arrived.
+
+      Queries dcupdt for unlocked records due by the current time, then calls
+      process_one_control() for each.  Stops after the first dispatched control
+      when no explicit -CI or -DS filter is active (to avoid flooding).
+      """
       ctime = self.curtime(1)
       if not ('CI' in self.params or 'DS' in self.params):
          self.set_default_value("SN", self.params['LN'])
@@ -2075,6 +2525,18 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # process one update control
    def process_one_control(self, pgrec):
+      """Launch a background dsupdt process for a single update control record.
+
+      Validates the action, frequency, and specialist, checks data time
+      readiness, then runs ``dsupdt <dsid> <action> -CI <cidx> -d -b`` in the
+      background.
+
+      Args:
+         pgrec (dict): dcupdt control record.
+
+      Returns:
+         int: 1 if the process was successfully started, 0 otherwise.
+      """
       cidx = pgrec['cindex']
       cstr = "Control Index {}".format(cidx)
       if not pgrec['action']: return self.pglog(cstr + ": Miss update action", self.PGOPT['errlog'])
@@ -2101,6 +2563,20 @@ class DsUpdt(PgUpdt, PgSplit):
 
    # move the previous archived version controlled files
    def move_archived_file(self, ainfo, archived):
+      """Move an existing version-controlled web or saved file before re-archiving.
+
+      When the archive record indicates version control (vindex set), calls
+      dsarch MV to relocate the old file to a ``.vbu<n>`` backup name and marks
+      the local *archived* flag as 0 so the file is re-archived.
+
+      Args:
+         ainfo (dict): Archive info dict (wfile, sfile, wtype, stype, types).
+         archived (int): Current archived flag value.
+
+      Returns:
+         int: 0 if a version-controlled file was moved (triggering re-archive),
+         or the original *archived* value if no move was needed.
+      """
       stat = 0
       if 'wfile' in ainfo:
          type = ainfo['wtype']
