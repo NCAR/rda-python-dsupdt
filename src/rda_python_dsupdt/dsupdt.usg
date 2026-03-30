@@ -75,7 +75,7 @@ Brackets [] indicate optional elements. A pipe '|' within parentheses, as in
 categories:
   Action options - specify what task to execute
   Mode options   - modify how an action behaves
-  Info options   - supply values to the actionAction options specify
+  Info options   - supply values to the action
 
 Each option may be given in either its short or long form (e.g., -DS or -Dataset).
 Some options have alias names for convenience. Option names are case-insensitive,
