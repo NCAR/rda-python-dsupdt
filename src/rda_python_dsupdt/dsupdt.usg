@@ -72,12 +72,14 @@ detailed descriptions of each option, with examples interspersed throughout.
 
 Brackets [] indicate optional elements. A pipe '|' within parentheses, as in
 (A|B), means either A or B may be used. Options are divided into three
-categories: Action, Mode, and Information (Info) options. Action options specify
-what tasks to execute; Mode options modify action behavior; and Info options pass
-one or more values to 'dsupdt'. Each option may be given in either its short or
-long form (e.g., -DS or -Dataset). Some options have alias names for convenience.
-Option names are case-insensitive, but the values following Info options are
-case-sensitive.
+categories:
+  Action options - specify what task to execute
+  Mode options   - modify how an action behaves
+  Info options   - supply values to the actionAction options specify
+
+Each option may be given in either its short or long form (e.g., -DS or -Dataset).
+Some options have alias names for convenience. Option names are case-insensitive,
+but the values following Info options are case-sensitive.
 
 Option -DS specifies a dataset number. If provided as the first argument
 following 'dsupdt', the -DS (-Dataset) option name may be omitted. Some actions
@@ -244,7 +246,7 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   L      -(ID|ControlID)        descriptive id for a control record
   N      -(SN|Specialist)       DSS specialist who owns the control record
   P      -(PI|ParentIndex)      parent index, refers to a dcupdt.cindex if not 0
-  A      -(AN|ActionName)       Update action name for 'dsupdt'
+  A      -(AN|ActionName)       update action name for 'dsupdt'
   F      -(FQ|Frequency)        frequency of update control, i.e., 1W, 1M
   O      -(CO|ControlOffset)    time offset for next process, i.e., 2D10H, 3H15N
   T      -(CT|ControlTime)      time to run dsupdt, format: YYYY-MM-DD HH:NN:SS
@@ -258,9 +260,9 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   K      -(KF|KeepFile)         one of S-Server File, R-Remote File, B-Keep Both, N-Neither
   Z      -(HO|HourOffset)       time zone hour offset, hours ahead of local time
   D      -(DT|DataTime)         time data updated to, format: YYYY-MM-DD HH:NN:SS
-  H      -(HN|HostName)         hostnames this cindex can/cannot be processed on
-  S      -(SB|SBatchOptions)    additional PBS batch options
-  Q      -(QS|QSubOptions)      additional PBS batch options
+  H      -(HN|HostName)         hostnames on which this control index can or cannot be processed
+  S      -(SB|SBatchOptions)    additional SLURM sbatch options
+  Q      -(QS|QSubOptions)      additional PBS qsub options
   Y      -(CC|CarbonCopy)       carbon copies for additional email addresses
   X      -(XC|ExecuteCommand)   Command to be executed after successful update
 
@@ -373,7 +375,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   I      -(CI|ControlIndex)     update control indices
   P      -(PI|ParentIndex)      parent index, refers to a dlupdt.lindex if not 0
   U      -(FA|FileArchived)     archived file names on GDEX Servers
-  C      -(DC|DownloadCommand)  command for download Remote file
+  C      -(DC|DownloadCommand)  command for downloading a remote file
   O      -(OP|Options)          options following the Action
   X      -(XO|ExecOrder)        order indices for update execution
   Q      -(FQ|Frequency)        frequency of data files, i.e., 1W, 1M
@@ -385,7 +387,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   T      -(AT|AgeTime)          remote file age interval, i.e., 2D, 1M
   W      -(WD|WorkDir)          working directory for processing update
   Z      -(CL|CleanCommand)     command for removing data files after update
-  M      -(MR|MissRemote)       flag, Y/N, if allow missing one of remote files
+  M      -(MR|MissRemote)       flag (Y/N) indicating whether a missing remote file is allowed
   R      -(PR|ProcessRemote)    external utility to process remote files
   B      -(BC|BuildCommand)     external utility to build local files
   S      -(SN|Specialist)       DSS specialist who owns the local file record
@@ -479,7 +481,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   F      -(RF|RemoteFile)       remote file names
   D      -(DO|DownloadOrder)    download order indices
   S      -(SF|ServerFile)       file names on remote server
-  C      -(DC|DownloadCommand)  command for download Remote file
+  C      -(DC|DownloadCommand)  command for downloading a remote file
   B      -(BT|BeginTime)        for remote file names, 0 - the first day/hour
   E      -(ET|EndTime)          for remote file names, 0 - the last day/hour
   T      -(TI|TimeInterval)     for remote file names, i.e., 2H, 5D
@@ -530,7 +532,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   records for a given dataset. It combines -GC (-GetControl), -GL (-GetLocalFile),
   and -GR (-GetRemoteFile) into a single action.
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(GA|GetAll) [Mode Option]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(GA|GetAll) [Mode Option]
          [-(CI|ControlIndex) UpdateControlIndices]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -573,7 +575,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   remote file records for a given dataset. It combines -SC (-SetControl),
   -SL (-SetLocalFile), and -SR (-SetRemoteFile) into a single action.
 
-  dsupdt [-(DS|dataset)] dNNNNNN -(SA|SetAll) [Mode Options]
+  dsupdt [-(DS|Dataset)] dNNNNNN -(SA|SetAll) [Mode Options]
           -(IF|InputFile) Input Files
          [-(DB|Debug) DebugModeInfo]
 
@@ -613,7 +615,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   the available remote files, archives local files to the GDEX server, and cleans
   up temporary data files generated during the update procedure.
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(UF|UpdateFile) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(UF|UpdateFile) [Mode Options]
           [-(CI|ControlIndex) UpdateControlIndex]
           [-(LI|LocalIndex) LocalFileIndices]
           [-(LF|LocalFile) LocalFileNames]
@@ -718,7 +720,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   The resulting files are called remote files and are later validated and
   converted to local files by -BL (-BuildLocal).
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(DR|DownloadRemote) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(DR|DownloadRemote) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -791,7 +793,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   -BL or -BuildLocal (Alias: -BuildLocalFile), an action to validate and convert
   remote files and build local files.
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(BL|BuildLocal) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(BL|BuildLocal) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -853,7 +855,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   -PB or -ProcessBoth, downloads remote files then validates, converts, and
   builds local files in a single action.
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(PB|ProcessBoth) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(PB|ProcessBoth) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileName]
@@ -923,7 +925,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   Server according to the DSARCH action previously saved in GDEXDB or specified
   on the command line via Info option -AN (-ActionName).
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(AF|ArchiveFile) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(AF|ArchiveFile) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
@@ -983,7 +985,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   -CF or -CleanFile, removes temporary files from the local working area,
   including files that have already been archived or have become outdated.
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(CF|CleanFile) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(CF|CleanFile) [Mode Options]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(XO|ExecOrder) ExecOrderIndex]
@@ -1052,7 +1054,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   This is useful when remote data files become available irregularly but are
   organized into files covering regular temporal periods.
 
-  dsupdt [[-(DS|dataset)] dNNNNNN] -(CU|CheckUpdate) [Mode Options]
+  dsupdt [[-(DS|Dataset)] dNNNNNN] -(CU|CheckUpdate) [Mode Options]
          [-(LI|LocalIndex) LocalFileIndices]
          [-(LF|LocalFile) LocalFileNames]
          [-(CI|ControlIndex) UpdateControlIndices]
@@ -1106,7 +1108,7 @@ optional and do not accept values.
   to verify availability of all remote files. Without it, checking stops after
   the first unavailable file.
 
-  -CN or -CheckNew (Alias: -CheckNewFile), when the server file is available
+  -CN or -CheckNewer (Alias: -CheckNewFile), when the server file is available
   locally, checks if it has changed on the server and re-downloads it if so.
   This option is ignored if -RD is present. A local copy of the data file is
   required for the comparison. This copy is normally the local copy of the server
@@ -1407,7 +1409,7 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
   -HN or -HostName, one or more host names stored in an update control record
   to restrict or allow its associated update actions on specific machines.
 
-  -HO or -HourOffset, a time zone offset in hours used by -CN (-CheckNew) to
+  -HO or -HourOffset, a time zone offset in hours used by -CN (-CheckNewer) to
   compare server and local file timestamps. Positive values mean the server is
   ahead of local time; negative values mean it is behind. Can be stored in an
   update control record via -SC (-SetControl).
