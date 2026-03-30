@@ -55,8 +55,8 @@ class PgUpdt(PgOPT, PgCMD):
          'AW': [0, 'AnyWhere'],
          'BG': [0, 'BackGround'],
          'CA': [0, 'CheckAll'],
-         'CN': [0, 'CheckNew'],
-         'CP': [0, 'CurrrentPeriod'],
+         'CN': [0, 'CheckNewer'],
+         'CP': [0, 'CurrentPeriod'],
          'EE': [0, 'ErrorEmail'],   # send email when error happens only
          'FO': [0, 'FormatOutput'],
          'FU': [0, 'FutureUpdate'],
@@ -184,7 +184,7 @@ class PgUpdt(PgOPT, PgCMD):
          'PD': ['TD', 'TemporalDelimiter'],
          'QE': ['QuitOnError'],
          'QS': ['PBSOptions'],
-         'RD': ['Redownlaod'],
+         'RD': ['Redownload'],
          'RO': ['Reorder'],
          'SC': ['SetUpdateControl'],
          'SL': ['SetLocal'],
@@ -286,11 +286,11 @@ class PgUpdt(PgOPT, PgCMD):
       self.WSLOWS = {
          'nomads.ncep.noaa.gov': 8
       }
-       # set default parameters
+      # set default parameters
       self.params['PD'] = ["<" , ">"]   # temporal pattern delimiters
       self.params['PL'] = 1   # max number of child processes allowed
 
-   # get file contion
+   # get file conition
    def file_condition(self, tname, include = None, exclude = None, nodsid = 0):
       """Build a SQL WHERE condition string for filtering update records.
 
@@ -423,7 +423,7 @@ class PgUpdt(PgOPT, PgCMD):
          if pgrec: return pgrec['dsid']
       return None
 
-   # replace the temoral patterns in given fname with date/hour
+   # replace the temporal patterns in given fname with date/hour
    # return pattern array only if not date
    def replace_pattern(self, fname, date, hour = None, intv = None, limit = 0, bdate = None, bhour = None):
       """Replace temporal placeholder patterns in a filename with actual date/hour values.
@@ -481,14 +481,14 @@ class PgUpdt(PgOPT, PgCMD):
                pattern = ms.group(1)
                if intv and len(intv) == 7 and intv[6] and re.search(mps['d'], date):
                   ms = re.search(mps['d'], date)
-                  d = ms.group(1)
-                  d = (intv[6] - 1) if d >= 28 else int(d*intv/30)
+                  d = int(ms.group(1))
+                  d = (intv[6] - 1) if d >= 28 else int(d * intv[6] / 30)
                   if pattern == "C":
                      pattern = chr(65 + d)   # upper case, chr(65) is A
                   elif pattern == "c":
                      pattern = chr(97 + d)   # lower case, chr(97) is a
                   else:
-                     pattern = d + 1   # numeric, start from 1
+                     pattern = str(d + 1)   # numeric, start from 1
                   d = None
                   domatch = 0
                else:
@@ -551,7 +551,7 @@ class PgUpdt(PgOPT, PgCMD):
          int | None: Incremented execution order, or None when *dsid* is None.
       """
       if not dsid:
-         self.CORDERS = {}   # reinitial lize cached display orders
+         self.CORDERS = {}   # reinitialize cached display orders
          return
       if dsid not in self.CORDERS:
          if next:
@@ -863,7 +863,7 @@ class PgUpdt(PgOPT, PgCMD):
             hour = 0
          if min: (date, hour)  = self.adddatehour(date, hour, 0, 0, 0, min)
       if not gotintv:
-         self.pglog("{}: error process time internal '{}'".format(rmtinfo, tintv), self.PGOPT['emlerr'])
+         self.pglog("{}: error processing time interval '{}'".format(rmtinfo, tintv), self.PGOPT['emlerr'])
          return []
       rfiles = []
       i = 0
@@ -896,7 +896,7 @@ class PgUpdt(PgOPT, PgCMD):
       if tempinfo['NX']:
          (udate, uhour) = self.adddatehour(date, hour, tempinfo['NX'][0], tempinfo['NX'][1], tempinfo['NX'][2], tempinfo['NX'][3])
       else:
-         udate = date,
+         udate = date
          uhour = hour
       if 'CP' in self.params:
          (vdate, vhour) = self.addfrequency(self.PGOPT['CURDATE'], self.PGOPT['CURHOUR'], tempinfo['FQ'], 1)
@@ -1170,7 +1170,7 @@ class PgUpdt(PgOPT, PgCMD):
          date = self.adddate(date, freq[0], freq[1], freq[2])
       return (date, hour)
 
-   #  send a cumtomized email if built during specialist's process
+   #  send a customized email if built during specialist's process
    def send_updated_email(self, lindex, locinfo):
       """Send a specialist-built custom email stored in dlupdt.emnote, then clear it.
 
@@ -1220,7 +1220,7 @@ class PgUpdt(PgOPT, PgCMD):
                   if 'NL' not in self.params: self.action_error("Mode option -NL to add new local file record")
                   zcnt += 1
                elif cact == "SR":
-                  self.action_error("Local File Index 0 is not allowed/n" +
+                  self.action_error("Local File Index 0 is not allowed\n" +
                                "Use Action SL with Mode option -NL to add new record")
                continue
             if i > 0 and val == self.params['LI'][i-1]: continue
@@ -1381,14 +1381,14 @@ class PgUpdt(PgOPT, PgCMD):
          while ms:
             flg = ms.group(1)
             buf = re.sub(r'^-\w+\s+'.format(flg), '', buf, 1)   # remove options
-            if flg != "-r":   # no option value
+            if flg != "-r":   # has option value
                m = re.match(r'^(\S+)\s', buf)
                if not m: break
                if flg == "-f":
-                  sfile = ms.group(1)
+                  sfile = m.group(1)
                elif flg == "-fh":
-                  target = ms.group(1)
-               buf = re.sub(r'^\S\s+', '', buf, 1)   # remove values
+                  target = m.group(1)
+               buf = re.sub(r'^\S+\s+', '', buf, 1)   # remove values
             ms = re.match(r'^(-\w+)', buf)
          if not sfile:
              ms = re.match(r'^(\S+)', buf)

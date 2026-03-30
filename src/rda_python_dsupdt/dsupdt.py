@@ -370,9 +370,9 @@ class DsUpdt(PgUpdt, PgSplit):
             if 'action' in record and not re.match(r'^({})$'.format(self.PGOPT['ARCHACTS']), record['action']):
                self.action_error("Action Name '{}' must be one of dsarch Actions ({})".format(record['action'], self.PGOPT['ARCHACTS']))
             if pgrec:
-               if 'VI' in record and not record['VI'] and pgrec['missdate']: record['missdate'] = record['misshour'] = None
+               if 'validint' in record and not record['validint'] and pgrec['missdate']: record['missdate'] = record['misshour'] = None
                record['pid'] = 0
-               record['hostname'] = 0
+               record['hostname'] = ''
                modcnt += self.pgupdt(tname, record, cnd, self.PGOPT['errlog']|self.DODFLT)
             else:
                record['dsid'] = self.params['DS']
@@ -467,7 +467,7 @@ class DsUpdt(PgUpdt, PgSplit):
             modcnt += 1
             self.pglog("{}: Update Control Force unlocked {}/{}".format(cidx, pgrec['pid'], pgrec['lockhost']), self.PGOPT['wrnlog'])
          else:
-            self.pglog("{}: Undate Control Unable to unlock {}/{}".format(cidx, pgrec['pid'], pgrec['lockhost']), self.PGOPT['wrnlog'])
+            self.pglog("{}: Update Control Unable to unlock {}/{}".format(cidx, pgrec['pid'], pgrec['lockhost']), self.PGOPT['wrnlog'])
       self.pglog("{} of {} update control record{} unlocked from RDADB".format(modcnt, self.ALLCNT, s), self.LOGWRN)
 
    # get update info of local and remote files owned by login name
@@ -528,7 +528,7 @@ class DsUpdt(PgUpdt, PgSplit):
       (self.PGOPT['CURDATE'], self.PGOPT['CURHOUR']) = self.curdatehour()
       if 'CD' not in self.params: self.params['CD'] = self.PGOPT['CURDATE']   # default to current date
       if 'CH' not in self.params: self.params['CH'] = self.PGOPT['CURHOUR']   # default to current hour
-      if self.ALLCNT > 1 and self.params['MU']: del self.params['MU']
+      if self.ALLCNT > 1 and 'MU' in self.params: del self.params['MU']
       if 'CN' in self.params and 'RD' in self.params: del self.params['CN']
       if 'CN' in self.params or 'RD' in self.params or 'RA' in self.params:
          if 'MO' in self.params: del self.params['MO']
@@ -1185,7 +1185,7 @@ class DsUpdt(PgUpdt, PgSplit):
                       if stat < 3: self.pglog("{}: Found newer {} file {}".format(cfile, ftype, sname), emlsum)
                   else:
                       if stat < 3: self.pglog("{}: Found newer {} file".format(cfile, ftype), emlsum)
-                  if stat == 2:   # file redlownloaded, reget file info
+                  if stat == 2:   # file redownloaded, reget file info
                      sinfo = self.check_local_file(sname, 64, self.PGOPT['emerol'])
                   else:           # force download file
                      cfile = None
@@ -1201,7 +1201,7 @@ class DsUpdt(PgUpdt, PgSplit):
                            self.pglog("{}: Cannot check newer {} file {} via {}".format(cfile, ftype, sname, dcmd), self.PGOPT['emlsum'])
                         else:
                            self.pglog("{}: Cannot check newer {} file via {}".format(cfile, ftype, dcmd), self.PGOPT['emlsum'])
-                     if stat < -1:   # uncrecoverable error
+                     if stat < -1:   # unrecoverable error
                         self.PGOPT['rstat'] = stat
                         ecnt += 1
                         break
@@ -1226,7 +1226,7 @@ class DsUpdt(PgUpdt, PgSplit):
                   mode = 0o664 if sinfo['isfile'] else 0o775
                   if mode != sinfo['mode']: self.set_local_mode(sname, sinfo['isfile'], mode, sinfo['mode'], sinfo['logname'], self.PGOPT['emerol'])
                (stat, derr) = self.parse_download_error(derr, dact, sinfo)
-               if stat < -1: # uncrecoverable error
+               if stat < -1: # unrecoverable error
                   self.pglog("{}: error {}\n{}".format(sname, dcmd, derr), self.PGOPT['emlerr'])
                   self.PGOPT['rstat'] = stat
                   ecnt += 1
@@ -1377,8 +1377,9 @@ class DsUpdt(PgUpdt, PgSplit):
       rbfile = None
       if linfo:
          if rcnt == 1 and lfile == rfiles[l]: return 1
-         if self.pgsystem("mv -f {} {}".format(lfile, rbfile), self.PGOPT['emerol'], 4):
-            rbfile = lfile + '.rb'
+         rbfile = lfile + '.rb'
+         if not self.pgsystem("mv -f {} {}".format(lfile, rbfile), self.PGOPT['emerol'], 4):
+            rbfile = None
       else:
          s = op.dirname(lfile)
          if s and not op.isdir(s): self.make_local_directory(s, self.PGOPT['emllog']|self.EXITLG)
