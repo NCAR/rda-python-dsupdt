@@ -1338,18 +1338,18 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
   in the form YYYY-MM-DD HH:NN:SS. After a successful update, this time is
   advanced to the next period based on the control frequency and offset.
 
-  -DC or -DownloadCommand (Alias: -Download|-Command), the command used to
-  download a remote file, copy a local file, or generate a remote file via local
-  processing. Can be set in both local and remote file records; used by
-  -DR (-DownloadRemote). At run time, the command precedence is:
-  command line > remote file record > local file record.
-
   -DB or -Debug, enables debug mode with specified detail level. This option
   accepts up to 3 values: Debug Level, debug log file path, and debug log file
   name. The debug level is required and may be a single integer (e.g., 1000 to
   log levels 1 through 1000) or a range (e.g., 200-1000). The default log path
   is '$DSSHOME/dssdb/log' and the default log file name is 'mydss.dbg'. Provide
   the second and third values to override these defaults.
+
+  -DC or -DownloadCommand (Alias: -Download|-Command), the command used to
+  download a remote file, copy a local file, or generate a remote file via local
+  processing. Can be set in both local and remote file records; used by
+  -DR (-DownloadRemote). At run time, the command precedence is
+  command line, remote file record and local file record.
 
   -DE or -Description (Alias: -Desc|-Note|-FileDesc|-FileDescription), a
   description for data files. Multi-line descriptions are supported when
@@ -1533,11 +1533,6 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
 
   -RI or -RetryInterval, the wait time (in days or hours) before retrying an
   update control process after a failed attempt.
-
-  -RO or -ResetOrder (Alias: -Reorder), when present, resets the execution
-  order of the given local files to match the order in which the update records
-  are provided for action -SL (-SetLocalFile). Local files can also be reordered
-  by explicitly providing order index values via Info option -XO (-ExecOrder).
 
   -SF or -ServerFile, specifies file names on remote servers when they differ
   from the remote file names.
