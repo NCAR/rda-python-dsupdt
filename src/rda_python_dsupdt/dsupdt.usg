@@ -263,7 +263,7 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   Z      -(HO|HourOffset)       time zone hour offset, hours ahead of local time
   D      -(DT|DataTime)         time data updated to, format: YYYY-MM-DD HH:NN:SS
   H      -(HN|HostName)         hostnames on which this control index can or cannot be processed
-  Q      -(QS|QSubOptions)      additional PBS qsub options
+  Q      -(QS|QsubOptions)      additional PBS qsub options
   Y      -(CC|CarbonCopy)       carbon copies for additional email addresses
   X      -(XC|ExecuteCommand)   Command to be executed after successful update
 
