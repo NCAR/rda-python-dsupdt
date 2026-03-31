@@ -66,7 +66,7 @@ class PgUpdt(PgOPT, PgCMD):
          'KR': [0, 'KeepRemote'],
          'KS': [0, 'KeepServer'],
          'LO': [0, 'LogOn'],
-         'MD': [0, 'PgDataset'],
+         'MD': [0, 'MyDataset'],
          'MO': [0, 'MissedOnly'],
          'MU': [0, 'MultipleUpdate'],
          'NC': [0, 'NewControl'],

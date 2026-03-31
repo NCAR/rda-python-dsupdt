@@ -25,10 +25,10 @@ on placing a dataset under 'dsarch' control.
 
 Once update information is configured in GDEXDB, 'dsupdt' downloads and archives
 data in the following steps:
- Server Files on remote server or at other local area =========DOWNLOAD/COPY=>
- Remote Files at local working area ========================VALIDATE/CONVERT=>
- Remote Files ready for building Local Files =============TAR/COMPRESS/BUILD=>
- Local Files ready for archive =======================================DSARCH=>
+ Server Files on remote server or at other local area ===DOWNLOAD/COPY=>
+ Remote Files at local working area ==================VALIDATE/CONVERT=>
+ Remote Files ready for building Local Files =======TAR/COMPRESS/BUILD=>
+ Local Files ready for archive =================================DSARCH=>
  Files on GDEX Servers
 
 If not specified explicitly, the server file name defaults to the remote file name.
@@ -98,14 +98,16 @@ command-line options. The -IF option name itself may be omitted when a single
 input file is given on the command line and all action and option information is
 contained within that file.
 
-When retrieving update control, local file, or remote file information, Info
-options specify query conditions. The special characters '!', '<', '>', and
-'<>' can be used for more specific filtering. When supplied on the command line,
-these characters must be quoted or escaped to avoid shell interpretation. '!'
-(or \!) denotes exclusion and must appear immediately after the option name.
-'<' and '>' denote less-than and greater-than comparisons on the following
-value. '<>' denotes a range between two values. Combining '!' with '<' as
-'!' '<' OptionValue creates a 'greater than or equal to OptionValue' condition.
+Info options used with GET actions serve as query filters. Four special
+characters enable more precise filtering — they must be quoted or escaped
+on the command line to prevent shell interpretation:
+   '!' - exclude matches; must appear immediately after the option name
+   '<' - less-than comparison on the following value
+   '>' - greater-than comparison on the following value
+  '<>' - range between two values
+
+Combining '!' and '<' as "-<OptionName>!<OptionValue>" expresses a 'greater than
+or equal to OptionValue' condition.
 
 The description of an individual option is displayed when 'dsupdt' is run as
 
@@ -118,7 +120,7 @@ available at $DSSHOME/dssdb/prog_usage/dsupdt.usg, where $DSSHOME is the
 environment variable for the DSS home directory.
 
 #The online HTML version of this document is available at
-#http://dss.ucar.edu/internal/docs/dsupdt/
+#https://gdex-docs-dsupdt.readthedocs.io/en/latest/index.html
 
 
 3 ACTION OPTIONS
@@ -261,8 +263,7 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   Z      -(HO|HourOffset)       time zone hour offset, hours ahead of local time
   D      -(DT|DataTime)         time data updated to, format: YYYY-MM-DD HH:NN:SS
   H      -(HN|HostName)         hostnames on which this control index can or cannot be processed
-  S      -(SB|SBatchOptions)    additional SLURM sbatch options
-  Q      -(QS|QSubOptions)      additional PBS qsub options
+  Q      -(QS|QsubOptions)      additional PBS qsub options
   Y      -(CC|CarbonCopy)       carbon copies for additional email addresses
   X      -(XC|ExecuteCommand)   Command to be executed after successful update
 
