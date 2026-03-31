@@ -106,8 +106,8 @@ on the command line to prevent shell interpretation:
    '>' - greater-than comparison on the following value
   '<>' - range between two values
 
-Combining '!' and '<' as "'!' '<' OptionValue" expresses a 'greater than or
-equal to OptionValue' condition.
+Combining '!' and '<' as "-<OptionName>!<OptionValue>" expresses a 'greater than
+or equal to OptionValue' condition.
 
 The description of an individual option is displayed when 'dsupdt' is run as
 
