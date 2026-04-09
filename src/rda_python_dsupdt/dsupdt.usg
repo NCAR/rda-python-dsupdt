@@ -1563,9 +1563,10 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
 
   -WD or -WorkDir, the working directory for staging temporary files during
   download and archive operations. A root path can be set via the environment
-  variable $UPDTWKP. For it is set to '/lustre/gdex/work', '$UPDTWKP/zji/icoads'
-  resolves to '/lustre/gdex/work/zji/icoads'. To use a different root path,
-  set the $UPDTWKP environment variable before running 'dsupdt'.
+  variable $UPDTWKP. If it is set to '/lustre/gdex/work', '$UPDTWKP/zji/icoads'
+  resolves to '/lustre/gdex/work/zji/icoads'. If $UPDTWKP is unset, the work
+  directory is used as specified. To use a different root path, set the
+  $UPDTWKP environment variable before running 'dsupdt'.
 
   -XC or -ExecuteCommand (Alias: -ExecCmd), an external command run after a
   successful update action for a given update control configuration.
