@@ -115,12 +115,12 @@ The description of an individual option is displayed when 'dsupdt' is run as
 
 The description is shown for the option placed either before or after -(h|help).
 If no option is given, or 'dsupdt' is run without arguments, the full document
-is displayed using the UNIX 'more' utility. A printed copy of this document is
-available at $DSSHOME/dssdb/prog_usage/dsupdt.usg, where $DSSHOME is the
-environment variable for the DSS home directory.
+is displayed using the UNIX 'more' utility. A hard copy of this document
+can be printed from the saved file, dsupdt.usg, under python package
+rda_python_dsupdt.
 
 #The online HTML version of this document is available at
-#https://gdex-docs-dsupdt.readthedocs.io/en/latest/index.html
+#https://gdex-docs-dsupdt.readthedocs.io
 
 
 3 ACTION OPTIONS
@@ -195,7 +195,7 @@ Delete Update Information - delete update control and local/remote file records
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
    -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
                      ownership
   -(NC|NewControl) - adds a new update control record to GDEXDB
@@ -234,7 +234,7 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
          [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode option:
   -(FO|FormatOutput) - formats each column to a uniform fixed width
 
   Use Info option -FN (-FieldNames) to specify which control fields to
@@ -313,7 +313,7 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
          [-(DE|Description) FileDescription]  # note, include temporal patterns
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
    -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
                      ownership
   -(NL|NewLocfile) - adds a new local file update record to GDEXDB
@@ -361,7 +361,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
          [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode option:
   -(FO|FormatOutput) - formats each column to a uniform fixed width
 
   Use -FN (-FieldNames) to specify which local file fields to retrieve. Defaults
@@ -427,7 +427,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
          [-(TI|TimeInterval) TimeInterval]    # i.e., 2H, 5D
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode option:
    -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
                      ownership
 
@@ -469,7 +469,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
          [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode option:
   -(FO|FormatOutput) - formats each column to a uniform fixed width
 
   Use -FN (-FieldNames) to specify which remote file fields to retrieve.
@@ -510,7 +510,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
          [-(DO|DownloadOrder) DownloadOrderIndices]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode option:
    -(MD|MyDataset) - deletes records regardless of dataset ownership
 
   Provide a control index to delete an update control record. Provide a local
@@ -541,7 +541,7 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
          [-(OF|OutputFile) OutputFileName]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode option:
   -(FO|FormatOutput) - formats each column to a uniform fixed width
 
   Output is sectioned under [DCUPDT] for update controls, [DLUPDT] for local
@@ -554,9 +554,9 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   For example, to retrieve all update control, local file, and remote file
   information for d277000 at control index 2:
 
-  dsupdt d277000 GA -CI 2 -OF d277000.c1
+  dsupdt d277000 GA -CI 2 -OF d277000.all
 
-<<Content of output file d277000.c1>>
+<<Content of output file d277000.all>>
 Dataset<=>d277000
 [DCUPDT]
 ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>ControlTime<:>RetryInterval<:>UpdateControl<:>EMailControl<:>ErrorControl<:>KeepFile<:>HourOffset<:>DataTime<:>HostName<:>
@@ -580,7 +580,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
           -(IF|InputFile) Input Files
          [-(DB|Debug) DebugModeInfo]
 
-  Mode option that can be specified for this action:
+  Available mode options:
    -(MD|MyDataset) - sets information into GDEXDB regardless of dataset
                      ownership
   -(NC|NewControl) - sets a new update control record into GDEXDB
@@ -643,7 +643,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
           [-(CC|CarbonCopy) Cc'dEmailAddresses]
           [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(AW|AnyWhere) - works with -BP (-BatchProcess) to allow the recorded
                          'dsupdt' command to start from any directory
       -(BG|BackGround) - runs in background; suppresses screen output and errors
@@ -674,9 +674,8 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
     -(RA|RetryArchive) - forces re-archiving by passing -RA to 'dsarch'
    -(RD|RetryDownload) - re-downloads the remote file even if it already
                          exists locally
-    -(RE|ResetEndTime) - if present, resets end date/hour based on the local file
-                         timestamp
-    -(SE|SummaryEmail) - send a summary email to the specialist after update
+    -(RE|ResetEndTime) - resets end date/hour based on the local file timestamp
+    -(SE|SummaryEmail) - sends a summary email to the specialist after update
                          without detail logging information
     -(UB|UseBeginTime) - uses the period's beginning time instead of end time
                          when substituting temporal patterns
@@ -747,7 +746,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(AW|AnyWhere) - works with -BP (-BatchProcess) to allow the recorded
                          'dsupdt' command to start from any directory
       -(BG|BackGround) - runs in background; suppresses screen output and errors
@@ -791,8 +790,8 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
   when its name differs from the remote file name.
 
 3.3.3 Build Local Files
-  -BL or -BuildLocal (Alias: -BuildLocalFile), an action to validate and convert
-  remote files and build local files.
+  -BL or -BuildLocal (Alias: -BuildLocalFile), validates and converts remote
+  files and builds local files.
 
   dsupdt [[-(DS|Dataset)] dNNNNNN] -(BL|BuildLocal) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
@@ -815,7 +814,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(AW|AnyWhere) - works with -BP (-BatchProcess) to allow the recorded
                          'dsupdt' command to start from any directory
       -(BG|BackGround) - runs in background; suppresses screen output and errors
@@ -823,8 +822,8 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
                          falls within the current update period
       -(EE|ErrorEmail) - sends email only when an error occurs during local
                          file building
-     -(FU|ForceUpdate) - if present, forces build for at least one end date/time,
-                         even if the update is not yet due
+     -(FU|ForceUpdate) - forces build for at least one end date/time, even
+                         if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
     -(HU|HourlyUpdate) - advances time tracking to hours after a successful
                          local file build
@@ -883,7 +882,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
                          the recorded 'dsupdt' command to be started anywhere
       -(BG|BackGround) - background process; suppresses screen display of
@@ -922,9 +921,9 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
                          when substituting temporal patterns
 
 3.3.5 Archive Local Files
-  -AF or -ArchiveFile, an action to archive local files onto the GDEX
-  Server according to the DSARCH action previously saved in GDEXDB or specified
-  on the command line via Info option -AN (-ActionName).
+  -AF or -ArchiveFile, archives local files onto the GDEX Server according to
+  the DSARCH action previously saved in GDEXDB or specified on the command line
+  via Info option -AN (-ActionName).
 
   dsupdt [[-(DS|Dataset)] dNNNNNN] -(AF|ArchiveFile) [Mode Options]
          [-(CI|ControlIndex) UpdateControlIndex]
@@ -945,7 +944,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
                          the recorded 'dsupdt' command to be started anywhere
       -(BG|BackGround) - background process; suppresses screen display of
@@ -954,8 +953,8 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
                          current date/hour if it falls within the current
                          update period
       -(EE|ErrorEmail) - sends email only when an error occurs during archiving
-     -(FU|ForceUpdate) - if present, forces archive for at least one end
-                         date/time, even if the update is not yet due
+     -(FU|ForceUpdate) - forces archive for at least one end date/time, even
+                         if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
     -(HU|HourlyUpdate) - advances time tracking to hours after a successful
                          archive of a local file
@@ -979,8 +978,8 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
       -(UT|UpdateTime) - forces an update of the data end time and next due
                          update times regardless of whether archiving succeeds
 
-  If a local file is not ready on the local disk, the archive action for this
-  local file is skipped.
+  If a local file is not ready on the local disk, the archive action for that
+  file is skipped.
 
 3.3.6 Clean Temporary Files
   -CF or -CleanFile, removes temporary files from the local working area,
@@ -1003,7 +1002,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(CC|CarbonCopy) Cc'dEmailAddresses]
          [-(DB|Debug) DebugModeInfo]
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(AW|AnyWhere) - works with Info option -BP (-BatchProcess) to allow
                          the recorded 'dsupdt' command to be started anywhere
       -(BG|BackGround) - background process; suppresses screen display of
@@ -1013,8 +1012,8 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
                          update period
       -(EE|ErrorEmail) - sends email only when an error occurs during local
                          file cleaning
-     -(FU|ForceUpdate) - if present, forces clean for at least one end
-                         date/time, even if the update is not yet due
+     -(FU|ForceUpdate) - forces clean for at least one end date/time, even
+                         if the update is not yet due
          -(GZ|GMTZone) - uses GMT dates/times as controlling times
     -(HU|HourlyUpdate) - advances time tracking to hours after a successful
                          clean action
@@ -1077,7 +1076,7 @@ LocalIndex<:>LocalFile<:>RemoteFile<:>ExecOrder<:>DownloadOrder<:>ServerFile<:>D
          [-(DB|Debug) DebugModeInfo]
 
 
-  Mode options that can be specified for this action:
+  Available mode options:
         -(CA|CheckAll) - checks all remote files rather than stopping at the
                          first unavailable one
       -(EE|ErrorEmail) - sends email only when an error occurs during checking
@@ -1105,9 +1104,9 @@ optional and do not accept values.
   -BG or -BackGround (Alias: -b), background process. When present, screen
   display is suppressed for both standard output and errors.
 
-  -CA or -CheckAll, if present, allows check update actions -CU (-CheckUpdate)
-  to verify availability of all remote files. Without it, checking stops after
-  the first unavailable file.
+  -CA or -CheckAll, allows check update action -CU (-CheckUpdate) to verify
+  availability of all remote files. Without it, checking stops after the first
+  unavailable file.
 
   -CN or -CheckNewer (Alias: -CheckNewFile), when the server file is available
   locally, checks if it has changed on the server and re-downloads it if so.
@@ -1126,9 +1125,8 @@ optional and do not accept values.
   hour difference so that local and remote file timestamps can be compared
   correctly.
 
-  -CP or -CurrentPeriod, if present, allows update actions when the current
-  date/hour falls within the current update period, even if the data end
-  date/hour is not yet due.
+  -CP or -CurrentPeriod, allows update actions when the current date/hour falls
+  within the current update period, even if the data end date/hour is not yet due.
 
   -EE or -ErrorEmail, sends an email notification only when an error occurs
   during the update action.
@@ -1136,8 +1134,8 @@ optional and do not accept values.
   -FO or -FormatOutput, formats the output of GET actions so that all values
   in a given field share the same dynamically calculated column width.
 
-  -FU or -ForceUpdate, if present, forces update for at least one end date/time,
-  even if the update is not yet due.
+  -FU or -ForceUpdate, forces update for at least one end date/time, even if
+  the update is not yet due.
 
   -GZ or -GMTZone (Alias: -GMT|-GreenwichZone|-UTC), uses GMT rather than
   local time as the reference for update action scheduling.
@@ -1190,8 +1188,8 @@ optional and do not accept values.
   -RD or -RetryDownload (Alias: -ReDownload), retries downloading the remote
   file if it already exists locally, for Action -DR (-DownloadRemote).
 
-  -RE or -ResetEndTime, if present, resets the end date/hour when the file
-  timestamp is newer than the end date/hour plus one update frequency.
+  -RE or -ResetEndTime, resets the end date/hour when the file timestamp is
+  newer than the end date/hour plus one update frequency.
 
   -RO or -ResetOrder (Alias: -Reorder), resets execution order indices to match
   the sequence in which local files are provided to -SL (-SetLocalFile).
@@ -1201,13 +1199,11 @@ optional and do not accept values.
   -SE or -SummaryEmail, sends a brief summary email after the update action,
   omitting detailed log information.
 
-  -UB or -UseBeginTime, when present, uses the beginning time of the update
-  period to replace temporal patterns in file names, download commands, and
-  other fields.
+  -UB or -UseBeginTime, uses the beginning time of the update period to replace
+  temporal patterns in file names, download commands, and other fields.
 
-  -UT or -UpdateTime, when present, forces an update of the data end time and
-  next due update times in local file records, regardless of whether the update
-  actions succeed.
+  -UT or -UpdateTime, forces an update of the data end time and next due update
+  times in local file records, regardless of whether the update actions succeed.
 
 
 5 INFORMATION OPTIONS
@@ -1566,11 +1562,10 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
   'dsupdt' will not attempt a download.
 
   -WD or -WorkDir, the working directory for staging temporary files during
-  download and archive operations. The root path can be set via the environment
-  variable $UPDTWKP, which defaults to '/glade/data02/dsswork' on machines with
-  write access to /glade/data02. For example, '$UPDTWKP/zji/icoads' resolves to
-  '/glade/data02/dsswork/zji/icoads'. To use a different root path, set the
-  $UPDTWKP environment variable before running 'dsupdt'.
+  download and archive operations. A root path can be set via the environment
+  variable $UPDTWKP. For it is set to '/lustre/gdex/work', '$UPDTWKP/zji/icoads'
+  resolves to '/lustre/gdex/work/zji/icoads'. To use a different root path,
+  set the $UPDTWKP environment variable before running 'dsupdt'.
 
   -XC or -ExecuteCommand (Alias: -ExecCmd), an external command run after a
   successful update action for a given update control configuration.
