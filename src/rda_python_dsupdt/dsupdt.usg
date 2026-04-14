@@ -1260,7 +1260,7 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
 
   -ON or -OrderNames, a string of single-letter field names that determines the
   sort order of GET action results (-GC, -GL, -GR). Uppercase letters sort
-  ascending; lowercase sort descending.
+  ascending; lowercase letters sort descending.
 
   -PL or -ProcessLimit, defaults to 1. When set to a value greater than 1,
   'dsupdt' spawns that many child processes, each handling one update record in
