@@ -24,10 +24,10 @@ on placing a dataset under 'dsarch' control.
 Once update information has been configured in GDEXDB, 'dsupdt' downloads and
 archives data in the following stages:
 
-  Server Files on remote server or other local area =====DOWNLOAD/COPY=>
-  Remote Files staged in the local working area =======VALIDATE/CONVERT=>
-  Remote Files ready to build Local Files ==========TAR/COMPRESS/BUILD=>
-  Local Files ready for archive ==================================DSARCH=>
+  Server Files on remote server or other local area --DOWNLOAD/COPY------>
+  Remote Files staged in the local working area ------VALIDATE/CONVERT--->
+  Remote Files ready to build Local Files ------------TAR/COMPRESS/BUILD->
+  Local Files ready for archive ----------------------DSARCH------------->
   Files on the GDEX Servers
 
 If a server file name is not specified explicitly, it defaults to the remote
