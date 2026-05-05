@@ -1516,7 +1516,7 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
   A different local file name can be provided at the update run time
   when a local file index is supplied.
 
-  -LI or -LocalIndex (Alias: -LocalFileIndx) — indices for setting
+  -LI or -LocalIndex (Alias: -LocalFileIndex) — indices for setting
   update local file records. A local file index may be provided to
   update an individual local file record.
 
