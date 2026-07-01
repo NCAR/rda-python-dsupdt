@@ -324,6 +324,10 @@ class DsUpdt(PgUpdt, PgSplit):
                self.action_error("Parent control Index {} is not in RDADB".format(record['pindex']))
             if 'action' in record and not re.match(r'^({})$'.format(self.PGOPT['UPDTACTS']), record['action']):
                self.action_error("Action Name '{}' must be one of dsupdt Actions ({})".format(record['action'], self.PGOPT['UPDTACTS']))
+            if 'frequency' in record: self.check_interval_field(record['frequency'], "Frequency", 'freq')
+            if 'validint' in record: self.check_interval_field(record['validint'], "ValidInterval")
+            if 'retryint' in record: self.check_interval_field(record['retryint'], "RetryInterval")
+            if 'cntloffset' in record: self.check_interval_field(record['cntloffset'], "ControlOffset")
             if pgrec:
                record['pid'] = 0
                record['lockhost'] = ''
@@ -369,6 +373,18 @@ class DsUpdt(PgUpdt, PgSplit):
                self.action_error("Update control Index {} is not in RDADB".format(record['cindex']))
             if 'action' in record and not re.match(r'^({})$'.format(self.PGOPT['ARCHACTS']), record['action']):
                self.action_error("Action Name '{}' must be one of dsarch Actions ({})".format(record['action'], self.PGOPT['ARCHACTS']))
+            if 'frequency' in record: self.check_interval_field(record['frequency'], "Frequency", 'freq')
+            if 'validint' in record: self.check_interval_field(record['validint'], "ValidInterval")
+            if 'nextdue' in record: self.check_interval_field(record['nextdue'], "DueInterval")
+            if 'agetime' in record: self.check_interval_field(record['agetime'], "AgeTime")
+            if lidx > 0 and ('workdir' in record or 'download' in record):
+               vrec = self.pgget(tname, "workdir, download", cnd, self.PGOPT['errlog'])
+               workdir = record['workdir'] if 'workdir' in record else (vrec['workdir'] if vrec else None)
+               dlcmd = record['download'] if 'download' in record else (vrec['download'] if vrec else None)
+               rmtrecs = self.pgmget("drupdt", "remotefile, serverfile, download", cnd, self.PGOPT['errlog'])
+               for j in range(len(rmtrecs['remotefile']) if rmtrecs else 0):
+                  self.check_download_workdir(workdir, dlcmd, rmtrecs['remotefile'][j], rmtrecs['serverfile'][j], rmtrecs['download'][j],
+                                              "{} L{}/{}".format(self.params['DS'], lidx, rmtrecs['remotefile'][j]))
             if pgrec:
                if 'validint' in record and not record['validint'] and pgrec['missdate']: record['missdate'] = record['misshour'] = None
                record['pid'] = 0
@@ -407,6 +423,20 @@ class DsUpdt(PgUpdt, PgSplit):
          if record:
             if 'lindex' in record and record['lindex'] and not self.pgget("dlupdt", "", "lindex = {}".format(record['lindex'])):
                self.action_error("Local file Index {} is not in RDADB".format(record['lindex']))
+            vrec = self.pgget("drupdt", "serverfile, download, tinterval, begintime, endtime", cnd, self.PGOPT['errlog']) if pgrec else None
+            sfile = record['serverfile'] if 'serverfile' in record else (vrec['serverfile'] if vrec else None)
+            rcmd = record['download'] if 'download' in record else (vrec['download'] if vrec else None)
+            lrec = self.pgget("dlupdt", "workdir, download", "lindex = {}".format(lidx), self.PGOPT['errlog'])
+            self.check_download_workdir(lrec['workdir'] if lrec else None, lrec['download'] if lrec else None,
+                                        self.params['RF'][i], sfile, rcmd, "{} L{}/{}".format(self.params['DS'], lidx, self.params['RF'][i]))
+            if 'tinterval' in record: self.check_interval_field(record['tinterval'], "TimeInterval", 'tintv')
+            tintv = record['tinterval'] if 'tinterval' in record else (vrec['tinterval'] if vrec else None)
+            if not tintv:
+               btime = record['begintime'] if 'begintime' in record else (vrec['begintime'] if vrec else None)
+               etime = record['endtime'] if 'endtime' in record else (vrec['endtime'] if vrec else None)
+               if btime or etime:
+                  self.action_error("{} L{}/{}: BeginTime/EndTime are ignored without a TimeInterval (-TI); ".format(self.params['DS'], lidx, self.params['RF'][i]) +
+                                    "set -TI to generate a file name per sub-period, or remove -BT/-ET")
             if pgrec:
                modcnt += self.pgupdt("drupdt", record, cnd, self.PGOPT['errlog']|self.DODFLT)
             else:
@@ -414,6 +444,82 @@ class DsUpdt(PgUpdt, PgSplit):
                record['dsid'] = self.params['DS']
                addcnt += self.pgadd("drupdt", record, self.PGOPT['errlog']|self.DODFLT)
       self.pglog("{}/{} of {} remote file record{} added/modified".format(addcnt, modcnt, self.ALLCNT, s), self.PGOPT['wrnlog'])
+
+   # collect the distinct temporal-pattern units (Year/Month/Day/Hour/...) in a string
+   def download_pattern_units(self, string):
+      """Return the set of temporal pattern unit keys embedded in *string*.
+
+      Wraps temporal_pattern_units() to yield just the unit keys (e.g. 'Y', 'M',
+      'D', 'H') for the patterns delimited by self.params['PD'].
+
+      Args:
+         string (str | None): Filename, path, or command that may contain
+            delimited temporal patterns.
+
+      Returns:
+         set[str]: Distinct DATEFMTS unit keys found in *string*.
+      """
+      if not string: return set()
+      return set(self.temporal_pattern_units(string, self.params['PD']).keys())
+
+   # verify the working directory holds date patterns needed to keep downloads unique
+   def check_download_workdir(self, workdir, dlcmd, remotefile, serverfile, rcmd, locinfo):
+      """Abort with action_error when downloaded files would overwrite each other.
+
+      The downloaded remote file lands in *workdir* under the *remotefile* name.
+      Any temporal unit that distinguishes source files (found in *serverfile* or
+      the effective download command) but is not captured by the landing name
+      (*remotefile*) must therefore appear in *workdir*; otherwise files retrieved
+      for different dates share the same working path and overwrite each other
+      before archiving, causing wrong-date files to be archived.
+
+      Args:
+         workdir (str | None): dlupdt working directory pattern.
+         dlcmd (str | None): dlupdt download command (fallback for *rcmd*).
+         remotefile (str | None): drupdt local landing filename pattern.
+         serverfile (str | None): drupdt remote server path/filename pattern.
+         rcmd (str | None): drupdt download command (preferred over *dlcmd*).
+         locinfo (str): Log label identifying the record being validated.
+      """
+      dccmd = rcmd if rcmd else dlcmd
+      srcunits = self.download_pattern_units(serverfile) | self.download_pattern_units(dccmd)
+      if not srcunits: return   # no temporal source pattern, nothing to check
+      coverunits = self.download_pattern_units(remotefile) | self.download_pattern_units(workdir)
+      missing = srcunits - coverunits
+      if not missing: return
+      names = {'C': 'Century', 'Y': 'Year', 'Q': 'Quarter', 'M': 'Month',
+               'D': 'Day', 'H': 'Hour', 'N': 'Minute', 'S': 'Second'}
+      mstr = ', '.join(names[u] for u in ['C', 'Y', 'Q', 'M', 'D', 'H', 'N', 'S'] if u in missing)
+      self.action_error("{}: WorkDir '{}' MISS temporal pattern(s) of {} that identify remote files; ".format(locinfo, workdir if workdir else '', mstr) +
+                        "make WorkDir dynamic to hold {} so downloaded files are not overwritten before archiving".format(mstr))
+
+   # validate the grammar of an interval/frequency string, abort on a bad value
+   def check_interval_field(self, val, name, mode = 'intv'):
+      """Abort with action_error when *val* is not a valid interval string.
+
+      Mirrors the parsers used at update time so a malformed value is caught when
+      the record is set rather than silently failing during an update.
+
+      Args:
+         val (str | None): The interval value to validate; empty or '0' is skipped.
+         name (str): Field label used in the error message.
+         mode (str): 'freq' for a single-unit update frequency (get_control_frequency
+            grammar, allows fraction month), 'tintv' for a remote time interval
+            (single count with unit Y/M/W/D/H), or 'intv' (default) for a multi-unit
+            interval such as validint/agetime/nextdue/retryint/cntloffset.
+      """
+      if not val or val == '0': return
+      if mode == 'freq':
+         (freq, err) = self.get_control_frequency(val)
+         if not freq: self.action_error("{}: {}".format(name, err))
+      elif mode == 'tintv':
+         if not re.match(r'^\d*[YMWDH]$', val, re.I):
+            self.action_error("{}: time interval '{}' must be a count with unit (Y,M,W,D,H)".format(name, val))
+      else:
+         if re.search(r'/\d+$', val):
+            self.action_error("{}: '{}' does NOT support a fraction".format(name, val))
+         if not re.search(r'\d+[YMWDHNS]', val, re.I):
+            self.action_error("{}: invalid '{}', must be count(s) with unit(s) (Y,M,W,D,H,N,S)".format(name, val))
 
    # unlock update records for given locfile indices
    def unlock_update_info(self):

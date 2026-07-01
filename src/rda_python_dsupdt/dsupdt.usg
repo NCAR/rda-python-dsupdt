@@ -250,6 +250,13 @@ Delete Update Information - delete update control and local/remote file
   (-NewControl) is present. The dataset name via -DS is required only when
   adding a new control record.
 
+  The update frequency (-FQ) must be a single count with a unit of Y, M, W, D,
+  H, N, or S (i.e., 1W, 1M), optionally a fraction of a month (1M/2, 1M/3,
+  1M/5, 1M/6, 1M/10). Interval values (-CO, -RI, -VI here, and -DI, -AT, -TI in
+  the local and remote file records) must be one or more count/unit pairs
+  (i.e., 1D, 1D3H, 12H); malformed values are rejected when the record is set
+  rather than failing later during an update.
+
   For example, to set three new update control records for d277000 from input
   file 'd277000.cntl':
 
@@ -499,6 +506,22 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
 
   Files downloaded from a server or generated locally are staged on disk as
   remote files until they are validated and converted into local files.
+
+  A downloaded file lands in the working directory (-WD) under its remote file
+  name (-RF). Whenever the server file (-SF) or download command (-DC) carries
+  date information (i.e., <DDMMYYYY> in the server path) that is not captured by
+  the remote file name (i.e., only <HH> is in the name), the working directory
+  must be made dynamic to hold that missing date information; otherwise files
+  retrieved for different dates share the same working path and overwrite each
+  other before archiving, causing wrong-date files to be archived. Both -SR and
+  -SL (and -SA) reject a record when a required date pattern is present neither
+  in the remote file name nor in the working directory.
+
+  Use -TI (-TimeInterval) to generate one remote file name per sub-period
+  within an update window; it must be a single count with a unit of Y, M, W,
+  D, or H (i.e., 6H, 5D). -BT (-BeginTime) and -ET (-EndTime) bound that range
+  and are used only when -TI is set; setting -BT or -ET without -TI is rejected
+  because they would otherwise be ignored.
 
   When a remote file is available from multiple servers, use
   -DO (-DownloadOrder) to set download order indices. The server with the
