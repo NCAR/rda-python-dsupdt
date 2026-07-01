@@ -1,0 +1,9 @@
+Read-only audit of all dsupdt update configurations in RDADB.
+Reports every invalid dcupdt/dlupdt/drupdt record (non-fatal) and
+exits 1 if any problem is found, 0 otherwise.
+
+Run (scan all datasets):
+    python3 -m rda_python_dsupdt._check_config
+
+Run (limit to specific dataset IDs):
+    python3 -m rda_python_dsupdt._check_config dNNNNNN [dNNNNNN ...]
