@@ -1683,7 +1683,7 @@ class DsUpdt(PgUpdt, PgSplit):
          acmd += " -VS {}".format(self.params['VS'])
          if 'VS' in tempinfo: options = re.sub(r'-VS\s+\d+\s*', '', options, flags=re.I)
       if re.search(r'(^|\s)-GX(\s|$)', options, re.I):
-         wfile = ainfo['wfile'] if 'wfile' in ainfo else ainfo['afile']
+         wfile = ainfo['afile'] if ainfo.get('afile') else ainfo.get('wfile')   # afile carries the full web path (with leading webpath) for gatherxml
          ms = re.search(r'(^|\s)-DF (\w+)(\s|$)', options, re.I)
          fmt = ms.group(2).lower() if ms else None
          if wfile and fmt:
@@ -2027,12 +2027,12 @@ class DsUpdt(PgUpdt, PgSplit):
             afile = self.replace_pattern(locrec['archfile'], edate, ehour, tempinfo['FQ'])
          else:
             afile = lfile if re.search(r'(^|\s)-KP(\s|$)', lfile, re.I) else op.basename(lfile)
-            ms =re.search(r'(^|\s)-WP\s+(\S+)', options, re.I)
-            if ms:
-               path = self.replace_pattern(ms.group(2), edate, ehour, tempinfo['FQ'])
-            else:
-               path = self.get_group_field_path(locrec['gindex'], dsid, 'webpath')
-            if path: afile = self.join_paths(path, afile)
+         ms = re.search(r'(^|\s)-WP\s+(\S+)', options, re.I)
+         if ms:
+            path = self.replace_pattern(ms.group(2), edate, ehour, tempinfo['FQ'])
+         else:
+            path = self.get_group_field_path(locrec['gindex'], dsid, 'webpath')
+         if path: afile = self.join_paths(path, afile)   # prepend webpath (join_paths de-dups if already present)
          ainfo['afile'] = afile
          wrec = self.pgget_wfile(dsid, "*", "{} AND type = '{}' AND wfile = '{}'".format(gcnd, type, afile), self.PGOPT['extlog'])
          if wrec:
