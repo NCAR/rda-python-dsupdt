@@ -1684,20 +1684,25 @@ class DsUpdt(PgUpdt, PgSplit):
          if 'VS' in tempinfo: options = re.sub(r'-VS\s+\d+\s*', '', options, flags=re.I)
       if re.search(r'(^|\s)-GX(\s|$)', options, re.I):
          wfile = ainfo['wfile'] if 'wfile' in ainfo else ainfo['afile']
-         if wfile:   # make sure webpath is prepended for gatherxml, in case missed in archfile
-            wms = re.search(r'(^|\s)-WP\s+(\S+)', options, re.I)
-            if wms:
-               wpath = self.replace_pattern(wms.group(2), tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
-            else:
-               wpath = self.get_group_field_path(locrec['gindex'], self.params['DS'], 'webpath')
-            if wpath: wfile = self.join_paths(wpath, wfile)
          ms = re.search(r'(^|\s)-DF (\w+)(\s|$)', options, re.I)
          fmt = ms.group(2).lower() if ms else None
          if wfile and fmt:
             if fmt == "netcdf": fmt = "cf" + fmt
             rs = " -R -S" if tempinfo['RS'] == 1 else ''
             if self.gm is None: self.gm = self.valid_command(self.PGOPT['gatherxml'], self.PGOPT['emlerr'])
-            if self.gm: gcmd = "{} -d {} -f {}{} {}".format(self.gm, self.params['DS'], fmt, rs, wfile)
+            gxfile = wfile
+            try:   # make sure the leading webpath is present for gatherxml only; never affects archiving
+               if not re.match(r'\S+/\S+', wfile):
+                  wms = re.search(r'(^|\s)-WP\s+(\S+)', options, re.I)
+                  if wms:
+                     wpath = self.replace_pattern(wms.group(2), tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
+                  else:
+                     wpath = self.get_group_field_path(locrec['gindex'], self.params['DS'], 'webpath')
+                  if wpath: gxfile = self.join_paths(wpath, wfile)
+            except Exception as e:
+               self.pglog("{}: failed to resolve webpath for gatherxml - {}".format(wfile, e), self.PGOPT['emllog'])
+               gxfile = wfile
+            if self.gm: gcmd = "{} -d {} -f {}{} {}".format(self.gm, self.params['DS'], fmt, rs, gxfile)
             options = re.sub(r'-GX\s*', '', options, flags=re.I)
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
