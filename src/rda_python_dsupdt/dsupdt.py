@@ -1307,7 +1307,7 @@ class DsUpdt(PgUpdt, PgSplit):
                            self.pglog("{}: Cannot check newer {} file {} via {}".format(cfile, ftype, sname, dcmd), self.PGOPT['emlsum'])
                         else:
                            self.pglog("{}: Cannot check newer {} file via {}".format(cfile, ftype, dcmd), self.PGOPT['emlsum'])
-                     if stat < -1:   # unrecoverable error
+                     if stat < -1 and not tempinfo['archived']:   # unrecoverable error for a not-yet-archived file
                         self.PGOPT['rstat'] = stat
                         ecnt += 1
                         break
@@ -1567,7 +1567,7 @@ class DsUpdt(PgUpdt, PgSplit):
             ret = self.convert_files(lfile, rfile, kr, self.PGOPT['emllog'])
             if ret: self.pglog("{}: BUILT from {}".format(lfile, rfile), emlsum)
          if ret:
-           fsize = self.local_file_size(lfile, 3, self.PGOPT['emerol'])
+           fsize = self.local_file_size(lfile, 7, self.PGOPT['emerol'])
            if fsize > 0:
                self.PGOPT['bcnt'] += 1
                if self.PGLOG['DSCHECK']: self.add_dscheck_dcount(0, fsize, self.PGOPT['extlog'])
