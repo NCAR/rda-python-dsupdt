@@ -1307,7 +1307,7 @@ class DsUpdt(PgUpdt, PgSplit):
                            self.pglog("{}: Cannot check newer {} file {} via {}".format(cfile, ftype, sname, dcmd), self.PGOPT['emlsum'])
                         else:
                            self.pglog("{}: Cannot check newer {} file via {}".format(cfile, ftype, dcmd), self.PGOPT['emlsum'])
-                     if stat < -1:   # unrecoverable error
+                     if stat < -1 and not (sinfo or rinfo or linfo or tempinfo['archived']):   # unrecoverable error with NO local copy to fall back on
                         self.PGOPT['rstat'] = stat
                         ecnt += 1
                         break
@@ -1567,7 +1567,7 @@ class DsUpdt(PgUpdt, PgSplit):
             ret = self.convert_files(lfile, rfile, kr, self.PGOPT['emllog'])
             if ret: self.pglog("{}: BUILT from {}".format(lfile, rfile), emlsum)
          if ret:
-           fsize = self.local_file_size(lfile, 3, self.PGOPT['emerol'])
+           fsize = self.local_file_size(lfile, 7, self.PGOPT['emerol'])
            if fsize > 0:
                self.PGOPT['bcnt'] += 1
                if self.PGLOG['DSCHECK']: self.add_dscheck_dcount(0, fsize, self.PGOPT['extlog'])
@@ -1684,20 +1684,25 @@ class DsUpdt(PgUpdt, PgSplit):
          if 'VS' in tempinfo: options = re.sub(r'-VS\s+\d+\s*', '', options, flags=re.I)
       if re.search(r'(^|\s)-GX(\s|$)', options, re.I):
          wfile = ainfo['wfile'] if 'wfile' in ainfo else ainfo['afile']
-         if wfile:   # make sure webpath is prepended for gatherxml, in case missed in archfile
-            wms = re.search(r'(^|\s)-WP\s+(\S+)', options, re.I)
-            if wms:
-               wpath = self.replace_pattern(wms.group(2), tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
-            else:
-               wpath = self.get_group_field_path(locrec['gindex'], self.params['DS'], 'webpath')
-            if wpath: wfile = self.join_paths(wpath, wfile)
          ms = re.search(r'(^|\s)-DF (\w+)(\s|$)', options, re.I)
          fmt = ms.group(2).lower() if ms else None
          if wfile and fmt:
             if fmt == "netcdf": fmt = "cf" + fmt
             rs = " -R -S" if tempinfo['RS'] == 1 else ''
             if self.gm is None: self.gm = self.valid_command(self.PGOPT['gatherxml'], self.PGOPT['emlerr'])
-            if self.gm: gcmd = "{} -d {} -f {}{} {}".format(self.gm, self.params['DS'], fmt, rs, wfile)
+            gxfile = wfile
+            try:   # make sure the leading webpath is present for gatherxml only; never affects archiving
+               if not re.match(r'\S+/\S+', wfile):
+                  wms = re.search(r'(^|\s)-WP\s+(\S+)', options, re.I)
+                  if wms:
+                     wpath = self.replace_pattern(wms.group(2), tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
+                  else:
+                     wpath = self.get_group_field_path(locrec['gindex'], self.params['DS'], 'webpath')
+                  if wpath: gxfile = self.join_paths(wpath, wfile)
+            except Exception as e:
+               self.pglog("{}: failed to resolve webpath for gatherxml - {}".format(wfile, e), self.PGOPT['emllog'])
+               gxfile = wfile
+            if self.gm: gcmd = "{} -d {} -f {}{} {}".format(self.gm, self.params['DS'], fmt, rs, gxfile)
             options = re.sub(r'-GX\s*', '', options, flags=re.I)
       fnote = None
       if locrec['note'] and not re.search(r'(^|\s)-DE(\s|$)', options, re.I):
@@ -2266,8 +2271,9 @@ class DsUpdt(PgUpdt, PgSplit):
    def check_newer_file(self, dcmd, cfile, ainfo):
       """Determine whether the server file is newer than the local/archived copy.
 
-      Compares size, checksum, and modification time.  For wget, re-downloads
-      and returns 2 if the file changed.
+      Compares size, checksum, and modification time.  For wget, uses a
+      --spider (HEAD-only) check, so a real download is always still needed
+      afterward when the file has changed.
 
       Args:
          dcmd (str): Download command pointing to the server file.
@@ -2276,9 +2282,8 @@ class DsUpdt(PgUpdt, PgSplit):
          ainfo (dict): Archive info dict (chksm, asize, adate, atime).
 
       Returns:
-         int: 1 = changed (download needed), 2 = new wget file retrieved,
-         3 = force re-download (cannot check), 0 = no change,
-         -1 = check error, -2 = unsupported command.
+         int: 1 = changed (download needed), 3 = force re-download (cannot
+         check), 0 = no change, -1 = check error, -2 = unsupported command.
       """
       if cfile:
          finfo = self.check_local_file(cfile, 33, self.PGOPT['wrnlog'])
@@ -2292,7 +2297,7 @@ class DsUpdt(PgUpdt, PgSplit):
          (stat, derr) = self.parse_download_error(self.PGOPT['STATUS'], sact)
          self.PGOPT['STATUS'] = derr
          return stat
-      stat = 2 if cinfo['ftype'] == "WGET" else 1
+      stat = 1   # wget check is now spider-only (no download), so always force a real download when newer
       if finfo['isfile'] and cfile == cinfo['fname'] and finfo['data_size'] and cinfo['data_size'] and cinfo['data_size'] != finfo['data_size']:
          return stat
       self.PGOPT['STATUS'] = ''

@@ -1432,27 +1432,29 @@ class PgUpdt(PgOPT, PgCMD):
       if docheck:
          ms = re.search(r'(^|\s|\||\S/)wget(\s.*)https{0,1}://(\S+)', dcmd, re.I)
          if ms:
-            obuf = ms.group(2)
             wbuf = ms.group(3)
             sfile = op.basename(wbuf)
             self.slow_web_access(wbuf)
             type = "WGET"
             docheck = 0
-            if not obuf or not re.search(r'\s-N\s', obuf): dcmd = re.sub(r'wget', 'wget -N', dcmd, 1)
-            flg = 0
-            if cfile and sfile != cfile:
-               if self.pgsystem("cp -p {} {}".format(cfile, sfile), self.PGOPT['emerol'], 4): flg = 1
-            buf = self.pgsystem(dcmd, self.PGOPT['wrnlog'], 16+32)
-            info = self.check_local_file(sfile, opt, self.PGOPT['wrnlog'])
+            # use --spider (HEAD-only) so the check never writes to disk and
+            # cannot hit filesystem errors (e.g. stale NFS handle) on write
+            scmd = re.sub(r'(^|\s|\||\S/)wget\s', r'\1wget --spider -S ', dcmd, 1)
+            buf = self.pgsystem(scmd, self.PGOPT['wrnlog'], 16+32)
+            info = None
             if buf:
+               lms = re.search(r'Last-Modified:\s*\w+,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+:\d+:\d+)\s+GMT', buf, re.I)
+               sms = re.search(r'Content-Length:\s*(\d+)', buf, re.I)
+               if sms and lms:
+                  mn = self.get_month(lms.group(2))
+                  info = {'isfile': 1, 'fname': sfile, 'data_size': int(sms.group(1)),
+                           'date_modified': "{}-{:02}-{:02}".format(int(lms.group(3)), mn, int(lms.group(1))),
+                           'time_modified': lms.group(4)}
+               elif re.search(r'(remote file exists|200 OK)', buf, re.I):
+                  info = {'isfile': 1, 'fname': sfile}   # exists but no header info to compare; force download
                if not info: self.PGOPT['STATUS'] = buf
-               if re.search(r'Saving to:\s', buf):
-                  flg = 0
-               elif not re.search(r'(Server file no newer|not modified on server)', buf):
-                  if info: info['note'] = "{}:\n{}".format(dcmd, buf)
             else:
-               if info: info['note'] = dcmd + ": Failed checking new file"   
-            if flg: self.pgsystem("rm -rf " + sfile, self.PGOPT['emerol'], 4)
+               self.PGOPT['STATUS'] = dcmd + ": Failed checking new file"
       if docheck:
          ms = re.match(r'^(\S+)\s+(.+)$', dcmd)
          if ms:
