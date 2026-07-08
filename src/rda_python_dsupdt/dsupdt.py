@@ -1307,7 +1307,7 @@ class DsUpdt(PgUpdt, PgSplit):
                            self.pglog("{}: Cannot check newer {} file {} via {}".format(cfile, ftype, sname, dcmd), self.PGOPT['emlsum'])
                         else:
                            self.pglog("{}: Cannot check newer {} file via {}".format(cfile, ftype, dcmd), self.PGOPT['emlsum'])
-                     if stat < -1 and not tempinfo['archived']:   # unrecoverable error for a not-yet-archived file
+                     if stat < -1 and not (sinfo or rinfo or linfo or tempinfo['archived']):   # unrecoverable error with NO local copy to fall back on
                         self.PGOPT['rstat'] = stat
                         ecnt += 1
                         break
@@ -2271,8 +2271,9 @@ class DsUpdt(PgUpdt, PgSplit):
    def check_newer_file(self, dcmd, cfile, ainfo):
       """Determine whether the server file is newer than the local/archived copy.
 
-      Compares size, checksum, and modification time.  For wget, re-downloads
-      and returns 2 if the file changed.
+      Compares size, checksum, and modification time.  For wget, uses a
+      --spider (HEAD-only) check, so a real download is always still needed
+      afterward when the file has changed.
 
       Args:
          dcmd (str): Download command pointing to the server file.
@@ -2281,9 +2282,8 @@ class DsUpdt(PgUpdt, PgSplit):
          ainfo (dict): Archive info dict (chksm, asize, adate, atime).
 
       Returns:
-         int: 1 = changed (download needed), 2 = new wget file retrieved,
-         3 = force re-download (cannot check), 0 = no change,
-         -1 = check error, -2 = unsupported command.
+         int: 1 = changed (download needed), 3 = force re-download (cannot
+         check), 0 = no change, -1 = check error, -2 = unsupported command.
       """
       if cfile:
          finfo = self.check_local_file(cfile, 33, self.PGOPT['wrnlog'])
@@ -2297,7 +2297,7 @@ class DsUpdt(PgUpdt, PgSplit):
          (stat, derr) = self.parse_download_error(self.PGOPT['STATUS'], sact)
          self.PGOPT['STATUS'] = derr
          return stat
-      stat = 2 if cinfo['ftype'] == "WGET" else 1
+      stat = 1   # wget check is now spider-only (no download), so always force a real download when newer
       if finfo['isfile'] and cfile == cinfo['fname'] and finfo['data_size'] and cinfo['data_size'] and cinfo['data_size'] != finfo['data_size']:
          return stat
       self.PGOPT['STATUS'] = ''
