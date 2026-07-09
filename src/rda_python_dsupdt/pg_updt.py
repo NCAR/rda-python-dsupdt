@@ -2074,8 +2074,9 @@ class PgUpdt(PgOPT, PgCMD):
       """Compute and write the next dcupdt.cntltime after a completed (or failed) run.
 
       If there were errors, the retry interval is used to schedule an earlier
-      retry provided it falls before the normal next run time.
-      """   
+      retry of now + retryint, provided it falls before the normal next run
+      time; otherwise the normal next run time is used instead.
+      """
       pgrec = self.PGOPT['UCNTL']
       cstr = "{}-C{}".format(self.params['DS'], pgrec['cindex'])
       gmt = self.PGLOG['GMTZ']
@@ -2089,9 +2090,8 @@ class PgUpdt(PgOPT, PgCMD):
       if self.PGLOG['ERRCNT']:
          cfreq = self.get_control_time(pgrec['retryint'], "Retry Interval")
          if cfreq:
-            while self.pgcmp(cntltime, curtime) <= 0:
-               cntltime = self.adddatetime(cntltime, cfreq[0], cfreq[1], cfreq[2], cfreq[3], cfreq[4], cfreq[5], cfreq[6])
-            if self.pgcmp(cntltime, nexttime) < 0: nexttime = cntltime
+            rtime = self.adddatetime(curtime, cfreq[0], cfreq[1], cfreq[2], cfreq[3], cfreq[4], cfreq[5], cfreq[6])
+            if self.pgcmp(rtime, nexttime) < 0: nexttime = rtime
       record = {}
       cstr += ": Next Control Time "
       if not pgrec['cntltime'] or self.pgcmp(nexttime, pgrec['cntltime']) > 0:
