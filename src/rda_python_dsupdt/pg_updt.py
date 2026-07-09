@@ -14,6 +14,7 @@
 #
 ###############################################################################
 #
+import calendar
 import os
 import re
 import time
@@ -1447,9 +1448,13 @@ class PgUpdt(PgOPT, PgCMD):
                sms = re.search(r'Content-Length:\s*(\d+)', buf, re.I)
                if sms and lms:
                   mn = self.get_month(lms.group(2))
+                  # Last-Modified header is always GMT; convert to local time
+                  # to match check_local_file()'s local-time-based mtime
+                  gmtstr = "{}-{:02}-{:02} {}".format(int(lms.group(3)), mn, int(lms.group(1)), lms.group(4))
+                  epoch = calendar.timegm(time.strptime(gmtstr, "%Y-%m-%d %H:%M:%S"))
+                  (ldate, ltime) = self.get_date_time(epoch)
                   info = {'isfile': 1, 'fname': sfile, 'data_size': int(sms.group(1)),
-                           'date_modified': "{}-{:02}-{:02}".format(int(lms.group(3)), mn, int(lms.group(1))),
-                           'time_modified': lms.group(4)}
+                           'date_modified': ldate, 'time_modified': ltime}
                elif re.search(r'(remote file exists|200 OK)', buf, re.I):
                   info = {'isfile': 1, 'fname': sfile}   # exists but no header info to compare; force download
                if not info: self.PGOPT['STATUS'] = buf
