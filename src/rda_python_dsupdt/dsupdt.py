@@ -1104,11 +1104,15 @@ class DsUpdt(PgUpdt, PgSplit):
       if self.PGOPT['wtidx']:
          if self.sm:
             sx = "{} -d {} -r".format(self.sm, dsid)
+            # cache stderr (256) instead of logging as error (4): metadata
+            # refresh failures should be reported but must NOT trigger a retry
             if 0 in self.PGOPT['wtidx']:
-               self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 1029) # 1+4+1024
+               self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 1281) # 1+256+1024
+               if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emllog'])
             else:
                for tidx in self.PGOPT['wtidx']:
-                  self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1029)  # 1+4+1024
+                  self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1281)  # 1+256+1024
+                  if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emllog'])
          self.PGOPT['wtidx'] = {}
 
    # retrieve remote files
@@ -1743,7 +1747,10 @@ class DsUpdt(PgUpdt, PgSplit):
       self.PGLOG['ERRFILE'] = "gatherxml.err"
       self.PGLOG['ERR2STD'] = ["Warning: ", "already up-to-date","process currently running",
                                "rsync", "No route to host", "''*'"]
-      self.pgsystem(gcmd, self.PGOPT['emerol'], 1029)  # 1+4+1024
+      # cache stderr (256) instead of logging as error (4): gatherxml
+      # failures should be reported but must NOT trigger a retry
+      self.pgsystem(gcmd, self.PGOPT['emerol'], 1281)  # 1+256+1024
+      if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emllog'])
       self.PGLOG['LOGFILE'] = logfile
       self.PGLOG['ERRFILE'] = errfile
       self.PGLOG['ERR2STD'] = []
