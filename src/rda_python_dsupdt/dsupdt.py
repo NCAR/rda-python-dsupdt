@@ -1108,11 +1108,11 @@ class DsUpdt(PgUpdt, PgSplit):
             # refresh failures should be reported but must NOT trigger a retry
             if 0 in self.PGOPT['wtidx']:
                self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 1281) # 1+256+1024
-               if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emllog'])
+               if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
             else:
                for tidx in self.PGOPT['wtidx']:
                   self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1281)  # 1+256+1024
-                  if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emllog'])
+                  if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
          self.PGOPT['wtidx'] = {}
 
    # retrieve remote files
@@ -1749,8 +1749,10 @@ class DsUpdt(PgUpdt, PgSplit):
                                "rsync", "No route to host", "''*'"]
       # cache stderr (256) instead of logging as error (4): gatherxml
       # failures should be reported but must NOT trigger a retry
-      self.pgsystem(gcmd, self.PGOPT['emerol'], 1281)  # 1+256+1024
-      if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emllog'])
+      # use emllog (not emerol) so the gatherxml command line is always
+      # included in the email report, matching the scm command in refresh_metadata()
+      self.pgsystem(gcmd, self.PGOPT['emllog'], 1281)  # 1+256+1024
+      if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
       self.PGLOG['LOGFILE'] = logfile
       self.PGLOG['ERRFILE'] = errfile
       self.PGLOG['ERR2STD'] = []
