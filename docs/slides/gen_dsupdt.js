@@ -62,7 +62,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   ], { x:0.72, y:4.35, w:11, h:0.5, fontFace:SANS, italic:true,
        fontSize:15, color:"8FB0C9", margin:0 });
   // meta chips
-  const chips = ["Developer Configuration", "General Usage", "rda_python_dsupdt v3.0.8"];
+  const chips = ["Developer Configuration", "General Usage", "rda_python_dsupdt v3.0.9"];
   let cx = 0.72;
   chips.forEach(c => {
     const w = 0.28 + c.length*0.098;
