@@ -17,10 +17,6 @@ The application supports the following capabilities:
   - Initiate update actions through the centralized daemon 'dscheck', via a
     cron job, or manually
 
-A dataset must already be configured for 'dsarch' before it can be set up for
-periodic updates with 'dsupdt'. See the 'dsarch' help document for information
-on placing a dataset under 'dsarch' control.
-
 Once update information has been configured in GDEXDB, 'dsupdt' downloads and
 archives data in the following stages:
 
