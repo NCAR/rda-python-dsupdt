@@ -742,7 +742,7 @@ class DsUpdt(PgUpdt, PgSplit):
             ucnt += self.PGOPT['ucnt']
             s = 's' if self.PGOPT['acnt'] > 1 else ''
             self.pglog("{}: {} of {} local file{} archived!".format(self.params['DS'], self.PGOPT['ucnt'], self.PGOPT['acnt'], s),
-                        (self.PGOPT['emlsum'] if dscnt > 1 else self.PGOPT['emllog']))
+                        self.PGOPT['emlsum'])
             self.PGOPT['acnt'] = self.PGOPT['ucnt'] = 0
          if self.PGSIG['PPID'] > 1: break   # stop loop child
       if acnt > 0:
@@ -926,6 +926,28 @@ class DsUpdt(PgUpdt, PgSplit):
       setmiss = 1 if tempinfo['VD'] else 0
       ufile = uinfo = None
       rscnt = ucnt = lcnt = 0
+      detail_on = not (self.PGOPT['emllog']&self.EMEROL)   # email detail section active for this mode
+      noop_pos = 0                                         # roll-up of consecutive no-op re-check periods
+      noop_list = []
+      def flush_noop():
+         if not noop_list: return
+         sep = self.PGLOG['SEPLINE'] if noop_pos > 0 else ''
+         if len(noop_list) >= 3:   # roll a run of 3+ into one range line
+            txt = "{} update periods UNCHANGED [{} .. {}] - already archived, no newer source file\n".format(len(noop_list), noop_list[0], noop_list[-1])
+         else:                     # keep a single line per period for a short run
+            txt = "".join("{} - already archived, no newer source file\n".format(e) for e in noop_list)
+         self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:noop_pos] + sep + txt + self.PGLOG['EMLMSG'][noop_pos:]
+      sum_cnt = 0                                          # Summary roll-up of consecutive archived periods (all modes)
+      sum_first = sum_last = sum_act = None
+      def flush_sum():
+         nonlocal sum_cnt
+         if sum_cnt <= 0: return
+         s = 's' if sum_cnt > 1 else ''
+         if sum_first == sum_last:
+            self.pglog("{}: {} file{} ARCHIVED({}) for {}".format(locrec['dsid'], sum_cnt, s, sum_act, sum_first), self.PGOPT['emlsum'])
+         else:
+            self.pglog("{}: {} file{} ARCHIVED({}) for [{} .. {}]".format(locrec['dsid'], sum_cnt, s, sum_act, sum_first, sum_last), self.PGOPT['emlsum'])
+         sum_cnt = 0
       for i in range(ecnt):
          if self.ALLCNT > 1 and i > 0:
             tempinfo = self.get_tempinfo(locrec, locinfo, i)
@@ -949,6 +971,11 @@ class DsUpdt(PgUpdt, PgSplit):
          locfiles = self.get_local_names(locrec['locfile'], tempinfo)
          lcnt = len(locfiles) if locfiles else 0
          if not lcnt: break
+         emlmark = len(self.PGLOG['EMLMSG'])   # start of this period's email detail
+         pucnt = ucnt
+         perrcnt = self.PGLOG['ERRCNT']
+         arch_lines = []                        # one compact line per file archived this period
+         gxerr = 0                              # gatherxml failures this period (noted inline, do not block compaction)
          rmtcnt = acnt = ccnt = ut = 0
          rfiles = rfile = None
          if tempinfo['RS'] == 0 and lcnt > 2: tempinfo['RS'] = 1
@@ -1035,9 +1062,17 @@ class DsUpdt(PgUpdt, PgSplit):
                         del tempinfo['lfile']
                if cnt != 0 and (self.PGOPT['ACTS']&self.OPTS['AF'][0]):
                   self.file_status_info(lfile, rfile, tempinfo)
+                  rearch = tempinfo['archived']   # capture before archive_data_file may reset it
                   cnt = self.archive_data_file(lfile, locrec, tempinfo, i)
                   if cnt > 0:
                      ucnt += 1
+                     gx = tempinfo.get('gxstat')
+                     if gx is not None and not gx: gxerr += 1
+                     if detail_on:
+                        aline = "{}-L{}-{}: {}ARCHIVED({}) for {}".format(locrec['dsid'], lindex, lfile, "RE-" if rearch else "", locrec['action'], tempinfo['einfo'])
+                        if gx is not None:
+                           aline += " - " + ("Metadata Gathered" if gx else "Failed Metadata Gathering")
+                        arch_lines.append(aline)
                      if tempinfo['RS'] == 1: rscnt += 1
                      if postcnt > -1: postcnt += 1
             elif cnt > 0:
@@ -1081,7 +1116,28 @@ class DsUpdt(PgUpdt, PgSplit):
          if rscnt >= self.PGOPT['RSMAX']:
             self.refresh_metadata(locrec['dsid'])
             rscnt = 0
+         if self.PGOPT['ACTS']&self.OPTS['AF'][0]:   # Summary: roll up consecutive archived periods (all modes)
+            if ucnt > pucnt and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:
+               if sum_cnt == 0: sum_first = tempinfo['einfo']
+               sum_last = tempinfo['einfo']
+               sum_cnt += ucnt - pucnt
+               sum_act = locrec['action']
+            else:
+               flush_sum()
+         if detail_on and self.PGOPT['ACTS']&self.OPTS['AF'][0]:
+            if ucnt == pucnt and self.PGLOG['ERRCNT'] == perrcnt:   # nothing archived, no error: collapse re-check detail
+               self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
+               if not noop_list: noop_pos = emlmark
+               noop_list.append(tempinfo['einfo'])
+            else:
+               if arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): one line per file
+                  self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark] + "".join(a + "\n" for a in arch_lines)
+               if noop_list:   # a run of no-ops ended before this working period: flush and restart the count
+                  flush_noop()
+                  noop_list.clear()
          if self.PGOPT['rstat'] < -1 or self.PGOPT['rstat'] < 0 and 'QE' in self.params: break  # unrecoverable errors
+      flush_noop()
+      flush_sum()
       if rscnt > 0: self.refresh_metadata(locrec['dsid'])
       if ufile and uinfo and ucnt == 0:
          self.pglog("{}: Last successful update - {}".format(uinfo, ufile), self.PGOPT['emlsum'])
@@ -1104,15 +1160,23 @@ class DsUpdt(PgUpdt, PgSplit):
       if self.PGOPT['wtidx']:
          if self.sm:
             sx = "{} -d {} -r".format(self.sm, dsid)
+            smpass = 1
             # cache stderr (256) instead of logging as error (4): metadata
-            # refresh failures should be reported but must NOT trigger a retry
+            # refresh failures should be reported but must NOT trigger a retry.
+            # run the scm command with wrnlog (log/stderr only, not email) and
+            # report a compact status line to the email instead of the raw command
             if 0 in self.PGOPT['wtidx']:
-               self.pgsystem(sx + 'w all', self.PGOPT['emllog'], 1281) # 1+256+1024
-               if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
+               self.pgsystem(sx + 'w all', self.PGOPT['wrnlog'], 1281) # 1+256+1024
+               if self.PGLOG['SYSERR']:
+                  self.pglog("Failed Metadata Summaring: {}\n{}".format(dsid, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
+                  smpass = 0
             else:
                for tidx in self.PGOPT['wtidx']:
-                  self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['emllog'], 1281)  # 1+256+1024
-                  if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
+                  self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['wrnlog'], 1281)  # 1+256+1024
+                  if self.PGLOG['SYSERR']:
+                     self.pglog("Failed Metadata Summaring: {}\n{}".format(dsid, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
+                     smpass = 0
+            self.pglog("{}: {}".format(dsid, "Metadata Summarized" if smpass else "Failed Metadata Summaring"), self.PGOPT['emllog'])
          self.PGOPT['wtidx'] = {}
 
    # retrieve remote files
@@ -1432,7 +1496,7 @@ class DsUpdt(PgUpdt, PgSplit):
             pcmd = self.executable_command(self.replace_pattern(pcmd, rfile['date'], rfile['hour'], tempinfo['FQ']),
                                              rname, self.params['DS'], rfile['date'], rfile['hour'])
             if not self.pgsystem(pcmd, self.PGOPT['emllog'], 259):
-               if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
+               if self.PGLOG['SYSERR']: self.pglog("{}: ERROR process remote\n{}".format(rname, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
                self.PGOPT['rstat'] = -1
                ecnt += 1
                break
@@ -1724,11 +1788,11 @@ class DsUpdt(PgUpdt, PgSplit):
          if locrec['cleancmd']: options = re.sub(r'(^-NW\s+|\s+-NW$)', '', options, 1, re.I)
          acmd += " " + self.replace_pattern(options, tempinfo['edate'], tempinfo['ehour'], tempinfo['FQ'])
       ret = self.pgsystem(acmd, self.PGOPT['emerol'], 69)   # 1 + 4 + 64
-      if gcmd: self.call_gatherxml(gcmd)
+      tempinfo['gxstat'] = self.call_gatherxml(gcmd) if gcmd else None
       if fnote: self.pgsystem("rm -f " + fnote, self.PGOPT['emerol'], 4)
       tempinfo['ainfo'] = self.file_archive_info(lfile, locrec, tempinfo)
       note = self.count_update_files(ainfo, tempinfo['ainfo'], ret, tempinfo['RS'])
-      self.pglog("{}: UPDATED({}) for {}".format(lfile, locrec['action'], tempinfo['einfo']), self.PGOPT['emlsum'])
+      self.pglog("{}: UPDATED({}) for {}".format(lfile, locrec['action'], tempinfo['einfo']), self.PGOPT['wrnlog'])
       return ret
 
    # call gatherxml
@@ -1752,10 +1816,12 @@ class DsUpdt(PgUpdt, PgSplit):
       # use emllog (not emerol) so the gatherxml command line is always
       # included in the email report, matching the scm command in refresh_metadata()
       self.pgsystem(gcmd, self.PGOPT['emllog'], 1281)  # 1+256+1024
-      if self.PGLOG['SYSERR']: self.pglog(self.PGLOG['SYSERR'], self.PGOPT['emlerr'])
+      gxpass = not self.PGLOG['SYSERR']
+      if self.PGLOG['SYSERR']: self.pglog("Failed Metadata Gathering: {}\n{}".format(gcmd, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
       self.PGLOG['LOGFILE'] = logfile
       self.PGLOG['ERRFILE'] = errfile
       self.PGLOG['ERR2STD'] = []
+      return gxpass
 
    # count files updated
    def count_update_files(self, oinfo, ninfo, success, rsopt):
