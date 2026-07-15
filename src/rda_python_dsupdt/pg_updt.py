@@ -283,6 +283,7 @@ class PgUpdt(PgOPT, PgCMD):
       self.PGOPT['ucnt'] = self.PGOPT['upcnt'] = self.PGOPT['ubcnt'] = self.PGOPT['uhcnt'] = 0
       self.PGOPT['uscnt'] = self.PGOPT['qbcnt'] = self.PGOPT['qdcnt'] = 0
       self.PGOPT['uwcnt'] = self.PGOPT['udcnt'] = self.PGOPT['uncnt'] = self.PGOPT['rdcnt'] = 0
+      self.PGOPT['sumfirst'] = self.PGOPT['sumlast'] = self.PGOPT['sumact'] = None   # archived-period range for the combined Summary line
       self.PGOPT['lindex'] = 0   # the current lindex is under updating
       self.WSLOWS = {
          'nomads.ncep.noaa.gov': 8
