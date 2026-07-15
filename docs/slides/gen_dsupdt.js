@@ -62,7 +62,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   ], { x:0.72, y:4.35, w:11, h:0.5, fontFace:SANS, italic:true,
        fontSize:15, color:"8FB0C9", margin:0 });
   // meta chips
-  const chips = ["Developer Configuration", "General Usage", "rda_python_dsupdt v3.0.9"];
+  const chips = ["Developer Configuration", "General Usage", "Updated 2026-07"];
   let cx = 0.72;
   chips.forEach(c => {
     const w = 0.28 + c.length*0.098;
@@ -72,6 +72,10 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       fontFace:SANS, fontSize:12, bold:true, color:"CADCFC", margin:0 });
     cx += w + 0.2;
   });
+  s.addText([
+    { text:"Zaihua Ji", options:{ bold:true } },
+    { text:"   zji@ucar.edu", options:{} },
+  ], { x:0.72, y:6.05, w:11, h:0.4, fontFace:SANS, fontSize:13, color:"8FB0C9", margin:0 });
   s.addText("Companion utility to  dsarch  \u2022  orchestrated by the  dscheck  daemon", {
     x:0.72, y:6.5, w:11, h:0.4, fontFace:MONO, fontSize:12, color:"6F8CA6", margin:0 });
 })();
