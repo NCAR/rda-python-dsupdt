@@ -962,6 +962,107 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   foot(s);
 })();
 
+// ============================================================ 15B TEMPORAL TIMELINE
+(() => {
+  const s = p.addSlide(); s.background = { color: LIGHT };
+  kicker(s, "Concepts", TEAL); title(s, "How the Temporal Intervals Fit Together");
+  s.addText([
+    { text:"Data advances one ", options:{} },
+    { text:"Frequency (FQ)", options:{ bold:true, color:DEEP } },
+    { text:" per period. A single ", options:{} },
+    { text:"-MU", options:{ fontFace:MONO, bold:true, color:GREEN } },
+    { text:" run walks every elapsed period inside the ", options:{} },
+    { text:"Valid Interval (VI)", options:{ bold:true, color:"B5701F" } },
+    { text:" look-back window, while the ", options:{} },
+    { text:"Due Interval (DI)", options:{ bold:true, color:TEAL } },
+    { text:" sets when each period becomes due.", options:{} },
+  ], { x:0.5, y:1.5, w:12.3, h:0.55, fontFace:SANS, fontSize:14, color:INK,
+       margin:0, valign:"top", lineSpacingMultiple:1.1 });
+
+  const tlx=1.3, tlw=10.2, dx=tlw/6, ty=3.55;
+  const xAt = k => tlx + k*dx;
+  const periods = [
+    {d:"07-09", c:GREEN, lbl:""},
+    {d:"07-10", c:GREEN, lbl:""},
+    {d:"07-11", c:TEAL,  lbl:"End Date"},
+    {d:"07-12", c:AMBER, lbl:""},
+    {d:"07-13", c:AMBER, lbl:""},
+    {d:"07-14", c:AMBER, lbl:""},
+    {d:"07-15", c:null,  lbl:"now"},
+  ];
+
+  // VI look-back band (now-VI .. now) => periods k=2..6
+  const bx = xAt(2)-0.18, bw = (xAt(6)-xAt(2))+0.36;
+  s.addShape(p.ShapeType.roundRect, { x:bx, y:2.55, w:bw, h:1.55, rectRadius:0.08,
+    fill:{color:"FBEDDC"}, line:{color:AMBER, width:1.25, dashType:"dash"} });
+  s.addText("VI \u2014 look-back re-check window   (now \u2212 VI \u2192 now)", {
+    x:bx+0.15, y:2.62, w:bw-0.3, h:0.32, fontFace:SANS, bold:true, fontSize:12,
+    color:"B5701F", margin:0 });
+
+  // axis
+  s.addShape(p.ShapeType.line, { x:tlx-0.2, y:ty, w:tlw+0.4, h:0, line:{color:"8AA6BC", width:2} });
+
+  // FQ bracket over the first period gap (above axis)
+  const fq0=xAt(0), fq1=xAt(1);
+  s.addShape(p.ShapeType.line, { x:fq0, y:ty-0.42, w:fq1-fq0, h:0, line:{color:DEEP, width:1.5} });
+  s.addShape(p.ShapeType.line, { x:fq0, y:ty-0.42, w:0, h:0.22, line:{color:DEEP, width:1.5} });
+  s.addShape(p.ShapeType.line, { x:fq1, y:ty-0.42, w:0, h:0.22, line:{color:DEEP, width:1.5} });
+  s.addText("FQ \u2014 one period", { x:fq0-0.3, y:ty-0.78, w:(fq1-fq0)+0.6, h:0.3,
+    align:"center", fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0 });
+
+  // ticks, date labels, End Date / now markers
+  periods.forEach((pd,k)=>{
+    const px = xAt(k);
+    if (pd.c) {
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
+    } else {
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+    }
+    s.addText(pd.d, { x:px-0.6, y:ty+0.22, w:1.2, h:0.3, align:"center", fontFace:MONO, fontSize:11, color:MUTE, margin:0 });
+    if (pd.lbl==="End Date") {
+      s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:TEAL, width:1.5, dashType:"dash"} });
+      s.addText("End Date", { x:px-1.0, y:2.18, w:2.0, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+    }
+    if (pd.lbl==="now") {
+      s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:INK, width:1.5, dashType:"dash"} });
+      s.addText("now", { x:px-0.6, y:2.18, w:1.2, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:INK, margin:0 });
+    }
+  });
+
+  // DI arrow (below axis) from End Date to next-due
+  const di0=xAt(2), di1=xAt(2)+dx*1.4;
+  s.addShape(p.ShapeType.line, { x:di0, y:ty+0.62, w:di1-di0, h:0, line:{color:TEAL, width:1.75, endArrowType:"triangle"} });
+  s.addText("DI \u2014 next-due = period end + DI", { x:di0-0.15, y:ty+0.72, w:3.9, h:0.3,
+    fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+
+  // tick-state legend
+  const leg = [
+    [GREEN, "Archived earlier"],
+    [TEAL,  "Re-checked \u2014 no newer source"],
+    [AMBER, "Archived / re-archived this run"],
+    [null,  "Not yet due (waiting DI)"],
+  ];
+  let lx=0.7; const lyy=5.4;
+  leg.forEach(g=>{
+    if (g[0]) s.addShape(p.ShapeType.ellipse, { x:lx, y:lyy, w:0.22, h:0.22, fill:{color:g[0]}, line:{type:"none"} });
+    else s.addShape(p.ShapeType.ellipse, { x:lx, y:lyy, w:0.22, h:0.22, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+    s.addText(g[1], { x:lx+0.3, y:lyy-0.06, w:2.9, h:0.34, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+    lx += 3.05;
+  });
+
+  // summary strip
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.05, w:12.33, h:0.7, rectRadius:0.08,
+    fill:{color:TINT2}, line:{color:LINE, width:1} });
+  s.addText([
+    { text:"Each run re-checks every period in the VI window: ", options:{ bold:true, color:DEEP } },
+    { text:"already-archived periods report \u201Cno newer file\u201D, newly available periods are archived, and periods still within DI of now are left for the next run.  ", options:{} },
+    { text:"VI = 0 \u2192 only the most recent period.", options:{ italic:true, color:MUTE } },
+  ], { x:0.75, y:6.05, w:11.85, h:0.7, fontFace:SANS, fontSize:12, color:INK,
+       margin:0, valign:"middle", lineSpacingMultiple:1.05 });
+
+  foot(s);
+})();
+
 // ============================================================ 16 EMAIL REPORTING
 (() => {
   const s = p.addSlide(); s.background = { color: LIGHT };
