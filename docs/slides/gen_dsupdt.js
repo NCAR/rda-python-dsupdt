@@ -1041,16 +1041,19 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("DI \u2014 next-due = period end + DI", { x:di0-0.15, y:ty+0.72, w:3.9, h:0.3,
     fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
 
-  // ControlTime marker (below axis, under 'now'): the scheduled wall-clock run,
-  // advancing by FQ + CO to the next run. Square marker to stand apart from the round data ticks.
+  // ControlTime marker (below axis, under 'now'): the scheduled wall-clock run.
+  // Each success steps CT by ONE FQ (Next CT = CT + FQ); CO only offsets the run
+  // from the period start, so it cancels in the step. Square marker to stand apart from round data ticks.
   const ctx=xAt(6), ctY=4.42;
   s.addShape(p.ShapeType.rect, { x:ctx-0.10, y:ctY-0.10, w:0.20, h:0.20, fill:{color:DEEP}, line:{type:"none"} });
   s.addText("CT \u2014 job runs", { x:ctx-2.25, y:ctY-0.13, w:2.0, h:0.26, align:"right",
     fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0, valign:"middle" });
+  s.addText("= period start + CO", { x:ctx-2.25, y:ctY+0.11, w:2.0, h:0.22, align:"right",
+    fontFace:SANS, italic:true, fontSize:9, color:MUTE, margin:0 });
   const cnx=13.0;
   s.addShape(p.ShapeType.line, { x:ctx+0.14, y:ctY, w:cnx-ctx-0.26, h:0, line:{color:DEEP, width:1.5, dashType:"dash", endArrowType:"triangle"} });
   s.addShape(p.ShapeType.rect, { x:cnx-0.09, y:ctY-0.09, w:0.18, h:0.18, fill:{color:LIGHT}, line:{color:DEEP, width:2} });
-  s.addText("+ FQ + CO", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
+  s.addText("+ FQ", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
     fontFace:SANS, fontSize:10, color:DEEP, margin:0 });
   s.addText("next CT", { x:cnx-0.75, y:ctY+0.10, w:1.5, h:0.24, align:"center",
     fontFace:SANS, italic:true, fontSize:9.5, color:MUTE, margin:0 });
@@ -1077,13 +1080,13 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     fontFace:SANS, bold:true, fontSize:12.5, color:DEEP, margin:0 });
   s.addText([
     { text:"-CT", options:{ fontFace:MONO, bold:true, color:DEEP } },
-    { text:" sets the scheduled run time (YYYY-MM-DD HH:NN:SS). After a success it advances by control ", options:{} },
+    { text:" sets the run time (YYYY-MM-DD HH:NN:SS). Each success steps it by one ", options:{} },
     { text:"-FQ", options:{ fontFace:MONO, bold:true, color:DEEP } },
-    { text:" + ", options:{} },
+    { text:" (Next CT = CT + FQ); ", options:{} },
     { text:"-CO", options:{ fontFace:MONO, bold:true, color:DEEP } },
-    { text:" offset; a failure retries after ", options:{} },
+    { text:" only offsets the run from the period start (daily \u2192 day start + CO), so it cancels in the step. Failure retries after ", options:{} },
     { text:"-RI", options:{ fontFace:MONO, bold:true, color:DEEP } },
-    { text:".    e.g.  ", options:{} },
+    { text:".   e.g.  ", options:{} },
     { text:"dsupdt d609000 -SU -CT \"2026-07-11 09:00:00\" -FQ 1D -CO 9H", options:{ fontFace:MONO, color:TEAL } },
   ], { x:0.72, y:5.68, w:11.9, h:0.4, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
 
