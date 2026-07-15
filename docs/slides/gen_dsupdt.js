@@ -1040,16 +1040,16 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     }
   });
 
-  // next-due cutoff = now - DI: periods to its right are not yet due (end + DI > now)
-  const cutx = xAt(6) - dx*0.5;
+  // next-due cutoff = local now - DI: periods to its right are not yet due (local end + DI > now)
+  const cutx = (xAt(6)-tzsh) - dx*0.5;
   s.addShape(p.ShapeType.line, { x:cutx, y:2.5, w:0, h:1.65, line:{color:MUTE, width:1.25, dashType:"dash"} });
   s.addText("due cutoff\n(now \u2212 DI)", { x:cutx-1.25, y:2.02, w:2.5, h:0.46, align:"center",
     fontFace:SANS, bold:true, fontSize:10.5, color:MUTE, margin:0, lineSpacingMultiple:0.95 });
 
-  // DI arrow (below axis) from End Date to next-due
-  const di0=xAt(2), di1=xAt(2)+dx*0.5;
+  // DI arrow (below axis) from the LOCAL (shifted) End Date circle to next-due
+  const di0=xAt(2)-tzsh, di1=di0+dx*0.5;
   s.addShape(p.ShapeType.line, { x:di0, y:ty+0.62, w:di1-di0, h:0, line:{color:TEAL, width:1.75, endArrowType:"triangle"} });
-  s.addText("DI \u2014 next-due = period end + DI", { x:di0-0.15, y:ty+0.72, w:3.9, h:0.3,
+  s.addText("DI \u2014 next-due = local period end + DI", { x:di0-0.15, y:ty+0.72, w:4.4, h:0.3,
     fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
 
   // ControlTime marker (below axis, under 'now'): the scheduled wall-clock run.
