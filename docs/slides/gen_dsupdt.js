@@ -1074,9 +1074,9 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   });
 
   // ControlTime -- the scheduled wall-clock run time (separate from the data periods above)
-  s.addShape(p.ShapeType.roundRect, { x:0.5, y:5.3, w:12.33, h:0.82, rectRadius:0.08,
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:5.22, w:12.33, h:1.02, rectRadius:0.08,
     fill:{color:TINT}, line:{color:DEEP, width:1} });
-  s.addText("ControlTime  \u2014  when the job itself runs", { x:0.72, y:5.37, w:11.8, h:0.3,
+  s.addText("ControlTime  \u2014  when the job itself runs", { x:0.72, y:5.28, w:11.8, h:0.3,
     fontFace:SANS, bold:true, fontSize:12.5, color:DEEP, margin:0 });
   s.addText([
     { text:"-CT", options:{ fontFace:MONO, bold:true, color:DEEP } },
@@ -1088,16 +1088,26 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"-RI", options:{ fontFace:MONO, bold:true, color:DEEP } },
     { text:".   e.g.  ", options:{} },
     { text:"dsupdt d609000 -SU -CT \"2026-07-11 09:00:00\" -FQ 1D -CO 9H", options:{ fontFace:MONO, color:TEAL } },
-  ], { x:0.72, y:5.68, w:11.9, h:0.4, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+  ], { x:0.72, y:5.58, w:11.9, h:0.34, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+  s.addText([
+    { text:"Time zones:  ", options:{ bold:true, color:"B5701F" } },
+    { text:"the data end date/hour (End Date, ", options:{} },
+    { text:"-ED", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:" / ", options:{} },
+    { text:"-EH", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:") is server time (e.g. GMT), while ", options:{} },
+    { text:"-CT", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:" is the local time the job runs \u2014 don\u2019t mix the two.", options:{} },
+  ], { x:0.72, y:5.90, w:11.9, h:0.3, fontFace:SANS, fontSize:11, color:INK, margin:0, valign:"middle" });
 
   // summary strip
-  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.24, w:12.33, h:0.6, rectRadius:0.08,
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.38, w:12.33, h:0.55, rectRadius:0.08,
     fill:{color:TINT2}, line:{color:LINE, width:1} });
   s.addText([
     { text:"Each run re-checks every period in the VI window: ", options:{ bold:true, color:DEEP } },
     { text:"already-archived periods report \u201Cno newer file\u201D, newly available periods are archived, and periods still within DI of now are left for the next run.  ", options:{} },
     { text:"VI = 0 \u2192 only the most recent period.", options:{ italic:true, color:MUTE } },
-  ], { x:0.75, y:6.24, w:11.85, h:0.6, fontFace:SANS, fontSize:11.5, color:INK,
+  ], { x:0.75, y:6.38, w:11.85, h:0.55, fontFace:SANS, fontSize:11.5, color:INK,
        margin:0, valign:"middle", lineSpacingMultiple:1.05 });
 
   foot(s);
