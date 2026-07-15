@@ -1061,7 +1061,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0, valign:"middle" });
   s.addText("= period start + CO", { x:ctx-2.25, y:ctY+0.11, w:2.0, h:0.22, align:"right",
     fontFace:SANS, italic:true, fontSize:9, color:MUTE, margin:0 });
-  const cnx=13.0;
+  const cnx=ctx+dx;   // next CT is exactly one FQ after CT
   s.addShape(p.ShapeType.line, { x:ctx+0.14, y:ctY, w:cnx-ctx-0.26, h:0, line:{color:DEEP, width:1.5, dashType:"dash", endArrowType:"triangle"} });
   s.addShape(p.ShapeType.rect, { x:cnx-0.09, y:ctY-0.09, w:0.18, h:0.18, fill:{color:LIGHT}, line:{color:DEEP, width:2} });
   s.addText("+ FQ", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
