@@ -987,7 +987,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     {d:"07-11", c:TEAL,  lbl:"End Date"},
     {d:"07-12", c:AMBER, lbl:""},
     {d:"07-13", c:AMBER, lbl:""},
-    {d:"07-14", c:null,  lbl:""},
+    {d:"07-14", c:AMBER, lbl:""},
     {d:"07-15", c:null,  lbl:"now"},
   ];
 
@@ -1041,13 +1041,13 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   });
 
   // next-due cutoff = now - DI: periods to its right are not yet due (end + DI > now)
-  const cutx = xAt(6) - dx*1.4;
+  const cutx = xAt(6) - dx*0.5;
   s.addShape(p.ShapeType.line, { x:cutx, y:2.5, w:0, h:1.65, line:{color:MUTE, width:1.25, dashType:"dash"} });
   s.addText("due cutoff\n(now \u2212 DI)", { x:cutx-1.25, y:2.02, w:2.5, h:0.46, align:"center",
     fontFace:SANS, bold:true, fontSize:10.5, color:MUTE, margin:0, lineSpacingMultiple:0.95 });
 
   // DI arrow (below axis) from End Date to next-due
-  const di0=xAt(2), di1=xAt(2)+dx*1.4;
+  const di0=xAt(2), di1=xAt(2)+dx*0.5;
   s.addShape(p.ShapeType.line, { x:di0, y:ty+0.62, w:di1-di0, h:0, line:{color:TEAL, width:1.75, endArrowType:"triangle"} });
   s.addText("DI \u2014 next-due = period end + DI", { x:di0-0.15, y:ty+0.72, w:3.9, h:0.3,
     fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
