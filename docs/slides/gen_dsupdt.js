@@ -1064,7 +1064,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   const cnx=ctx+dx;   // next CT is exactly one FQ after CT
   s.addShape(p.ShapeType.line, { x:ctx+0.14, y:ctY, w:cnx-ctx-0.26, h:0, line:{color:DEEP, width:1.5, dashType:"dash", endArrowType:"triangle"} });
   s.addShape(p.ShapeType.rect, { x:cnx-0.09, y:ctY-0.09, w:0.18, h:0.18, fill:{color:LIGHT}, line:{color:DEEP, width:2} });
-  s.addText("+ FQ", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
+  s.addText("+ Update FQ", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
     fontFace:SANS, fontSize:10, color:DEEP, margin:0 });
   s.addText("next CT", { x:cnx-0.75, y:ctY+0.10, w:1.5, h:0.24, align:"center",
     fontFace:SANS, italic:true, fontSize:9.5, color:MUTE, margin:0 });
