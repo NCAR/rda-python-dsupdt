@@ -553,7 +553,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("Add a remote record only in these three cases:", {
     x:0.5, y:1.55, w:12, h:0.35, fontFace:SANS, bold:true, fontSize:15, color:INK, margin:0 });
   const cases = [
-    ["\u2260","Different name","remote file name differs from the local file name"],
+    ["\u2260","Different name","remote or server file name differs from the local file name"],
     ["\u2211","Many \u2192 one","several remote files are tarred into one local file"],
     ["\u21C4","Multiple servers","one file available from several servers (-DO order)"],
   ];
