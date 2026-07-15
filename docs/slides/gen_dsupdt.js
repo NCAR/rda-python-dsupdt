@@ -1032,7 +1032,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:TEAL, width:2, dashType:"dash"} });
       s.addShape(p.ShapeType.ellipse, { x:lpx-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:TEAL}, line:{type:"none"} });
       s.addShape(p.ShapeType.line, { x:lpx+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:TEAL, width:1.5, beginArrowType:"triangle"} });
-      s.addText("GMT \u2192 local (\u22127h)", { x:lpx-0.6, y:ty-0.36, w:tzsh+1.2, h:0.26,
+      s.addText("GMT \u2192 Denver (\u22126h)", { x:lpx-0.65, y:ty-0.36, w:tzsh+1.3, h:0.26,
         align:"center", fontFace:SANS, bold:true, fontSize:9.5, color:TEAL, margin:0 });
     }
     if (pd.lbl==="now") {
@@ -1107,9 +1107,9 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"-ED", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
     { text:" / ", options:{} },
     { text:"-EH", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
-    { text:") is server time (e.g. GMT), while ", options:{} },
+    { text:") is server time (GMT), while ", options:{} },
     { text:"-CT", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
-    { text:" is the local time the job runs \u2014 don\u2019t mix the two.", options:{} },
+    { text:" is local time the job runs (Denver, MDT = GMT\u22126h in summer) \u2014 don\u2019t mix the two.", options:{} },
   ], { x:0.72, y:5.90, w:11.9, h:0.3, fontFace:SANS, fontSize:11, color:INK, margin:0, valign:"middle" });
 
   // summary strip
