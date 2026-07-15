@@ -62,7 +62,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   ], { x:0.72, y:4.35, w:11, h:0.5, fontFace:SANS, italic:true,
        fontSize:15, color:"8FB0C9", margin:0 });
   // meta chips
-  const chips = ["Developer Configuration", "General Usage", "rda_python_dsupdt v3.0.9"];
+  const chips = ["Developer Configuration", "General Usage", "Updated 2026-07"];
   let cx = 0.72;
   chips.forEach(c => {
     const w = 0.28 + c.length*0.098;
@@ -72,6 +72,10 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       fontFace:SANS, fontSize:12, bold:true, color:"CADCFC", margin:0 });
     cx += w + 0.2;
   });
+  s.addText([
+    { text:"Zaihua Ji", options:{ bold:true } },
+    { text:"   zji@ucar.edu", options:{} },
+  ], { x:0.72, y:6.05, w:11, h:0.4, fontFace:SANS, fontSize:13, color:"8FB0C9", margin:0 });
   s.addText("Companion utility to  dsarch  \u2022  orchestrated by the  dscheck  daemon", {
     x:0.72, y:6.5, w:11, h:0.4, fontFace:MONO, fontSize:12, color:"6F8CA6", margin:0 });
 })();
@@ -191,11 +195,11 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   kicker(s, "Data model", TEAL); title(s, "Three Record Types in GDEXDB");
   const cards = [
     ["dcupdt","Update Control","-SC / -GC", DEEP,
-      ["Schedules when updates run","Frequency, offset, retry, valid interval","Email & error controls","Launched by the dscheck daemon"]],
+      ["Schedules when updates run","Update frequency, offset, retry, valid interval","Email & error controls","Launched by the dscheck daemon"]],
     ["dlupdt","Local File","-SL / -GL", TEAL,
       ["Minimum config for an update","Local file name & dsarch action","Download / build / clean commands","Tracks next end date/hour"]],
     ["drupdt","Remote File","-SR / -GR", GREEN,
-      ["Only when remote \u2260 local name","Many remotes \u2192 one local file","Server file & download order","Time interval for sub-periods"]],
+      ["Only when remote \u2260 local name","Many remotes \u2192 one local file","Server file & download order","Remote-file frequency (many \u2192 one)"]],
   ];
   const y=1.7, cw=3.95, ch=4.5, gap=0.28; let x=0.5;
   cards.forEach(c=>{
@@ -397,7 +401,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   ], { x:0.78, y:2.35, w:12, h:0.55, fontFace:MONO, fontSize:13, valign:"middle", margin:0 });
   // three subsection cards mirroring the CLI record types
   const subs = [
-    ["Update Control","dsupdt_control.php","dcupdt \u2022 -SC / -GC","frequency, next-due, actions, e-mail & error controls", DEEP],
+    ["Update Control","dsupdt_control.php","dcupdt \u2022 -SC / -GC","update frequency, next-due, actions, e-mail & error controls", DEEP],
     ["Local File","dsupdt_localfile.php","dlupdt \u2022 -SL / -GL","file names, patterns, build / convert commands, archive action", TEAL],
     ["Remote File","dsupdt_remotefile.php","drupdt \u2022 -SR / -GR","remote & server names, download command & order", GREEN],
   ];
@@ -449,7 +453,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
   const rows = [
     ["-AN","ActionName","dsupdt task: UF, DR, BL, PB, CL, CU"],
-    ["-FQ","Frequency","how often, e.g. 1W, 1M, 6H, 1M/3"],
+    ["-FQ","Frequency","update frequency \u2014 how often updates run, e.g. 1W, 1M, 1M/3"],
     ["-CO","ControlOffset","delay after period end, e.g. 2D10H"],
     ["-CT","ControlTime","next scheduled run  YYYY-MM-DD HH:NN:SS"],
     ["-RI","RetryInterval","wait before retry after a failure"],
@@ -500,7 +504,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["-AN","ActionName","dsarch action: AS, AW, AQ"],
     ["-OP","Options","options string passed to dsarch"],
     ["-DC","DownloadCommand","fetch/copy/generate the file"],
-    ["-FQ","Frequency","data cadence, e.g. 1M, 1W, 6H"],
+    ["-FQ","Frequency","local data-file frequency, e.g. 1M, 6H"],
     ["-ED","EndDate","data end date of next update"],
     ["-EH","EndHour","end hour (sub-daily cadence)"],
   ];
@@ -549,7 +553,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("Add a remote record only in these three cases:", {
     x:0.5, y:1.55, w:12, h:0.35, fontFace:SANS, bold:true, fontSize:15, color:INK, margin:0 });
   const cases = [
-    ["\u2260","Different name","remote file name differs from the local file name"],
+    ["\u2260","Different name","remote or server file name differs from the local file name"],
     ["\u2211","Many \u2192 one","several remote files are tarred into one local file"],
     ["\u21C4","Multiple servers","one file available from several servers (-DO order)"],
   ];
@@ -570,7 +574,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["-SF","ServerFile","name on server if different from remote name"],
     ["-DC","DownloadCommand","overrides the local record's command"],
     ["-DO","DownloadOrder","try lowest index first, then ascending"],
-    ["-TI","TimeInterval","one name per sub-period, e.g. 6H, 5D"],
+    ["-TI","TimeInterval","remote-file frequency \u2014 only when many remotes \u2192 one local, e.g. 6H, 5D"],
     ["-BT","BeginTime","window start (with -TI)"],
     ["-ET","EndTime","window end (with -TI)"],
   ];
@@ -955,6 +959,168 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"  govern how errors interact with multi-period runs: skip & continue, quit, or normal.", options:{} },
   ], { x:0.5, y:6.55, w:6.3, h:0.5, fontFace:SANS, fontSize:12, color:MUTE,
        margin:0, valign:"top", lineSpacingMultiple:1.05 });
+  foot(s);
+})();
+
+// ============================================================ 15B TEMPORAL TIMELINE
+(() => {
+  const s = p.addSlide(); s.background = { color: LIGHT };
+  kicker(s, "Concepts", TEAL); title(s, "How the Temporal Intervals Fit Together");
+  s.addText([
+    { text:"Data advances one ", options:{} },
+    { text:"Frequency (FQ)", options:{ bold:true, color:DEEP } },
+    { text:" per period. A single ", options:{} },
+    { text:"-MU", options:{ fontFace:MONO, bold:true, color:GREEN } },
+    { text:" run walks every elapsed period inside the ", options:{} },
+    { text:"Valid Interval (VI)", options:{ bold:true, color:"B5701F" } },
+    { text:" look-back window, while the ", options:{} },
+    { text:"Due Interval (DI)", options:{ bold:true, color:TEAL } },
+    { text:" sets when each period becomes due.", options:{} },
+  ], { x:0.5, y:1.5, w:12.3, h:0.55, fontFace:SANS, fontSize:14, color:INK,
+       margin:0, valign:"top", lineSpacingMultiple:1.1 });
+
+  const tlx=1.3, tlw=10.2, dx=tlw/6, ty=3.55;
+  const xAt = k => tlx + k*dx;
+  // Time-zone shift: data end date/hour is stored in SERVER time (GMT); each solid marker is the
+  // SAME instant in LOCAL time (Denver), which lands earlier -> shifted left by the TZ offset.
+  const tzsh = 0.7;
+  const periods = [
+    {d:"07-09", c:GREEN, lbl:""},
+    {d:"07-10", c:GREEN, lbl:""},
+    {d:"07-11", c:TEAL,  lbl:"End Date"},
+    {d:"07-12", c:AMBER, lbl:""},
+    {d:"07-13", c:AMBER, lbl:""},
+    {d:"07-14", c:AMBER, lbl:""},
+    {d:"07-15", c:null,  lbl:"now"},
+  ];
+
+  // VI look-back band (now-VI .. now) => periods k=2..6, in LOCAL frame so it ends at local now
+  const bx = xAt(2)-tzsh-0.18, bw = (xAt(6)-xAt(2))+0.36;
+  s.addShape(p.ShapeType.roundRect, { x:bx, y:2.55, w:bw, h:1.55, rectRadius:0.08,
+    fill:{color:"FBEDDC"}, line:{color:AMBER, width:1.25, dashType:"dash"} });
+  s.addText("VI \u2014 look-back re-check window   (now \u2212 VI \u2192 now)", {
+    x:bx+0.15, y:2.62, w:bw-0.3, h:0.32, fontFace:SANS, bold:true, fontSize:12,
+    color:"B5701F", margin:0 });
+
+  // axis (extended left to cover the local-time shifted markers)
+  s.addShape(p.ShapeType.line, { x:tlx-0.9, y:ty, w:tlw+1.1, h:0, line:{color:"8AA6BC", width:2} });
+
+  // FQ bracket over the first period gap (above axis)
+  const fq0=xAt(0), fq1=xAt(1);
+  s.addShape(p.ShapeType.line, { x:fq0, y:ty-0.42, w:fq1-fq0, h:0, line:{color:DEEP, width:1.5} });
+  s.addShape(p.ShapeType.line, { x:fq0, y:ty-0.42, w:0, h:0.22, line:{color:DEEP, width:1.5} });
+  s.addShape(p.ShapeType.line, { x:fq1, y:ty-0.42, w:0, h:0.22, line:{color:DEEP, width:1.5} });
+  s.addText("FQ \u2014 one period", { x:fq0-0.3, y:ty-0.78, w:(fq1-fq0)+0.6, h:0.3,
+    align:"center", fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0 });
+
+  // ticks, date labels, End Date / now markers.
+  // Dashed circle at the date tick = GMT value (before shift); solid circle = local time (after shift).
+  periods.forEach((pd,k)=>{
+    const px = xAt(k);
+    const isEnd = (pd.lbl==="End Date");
+    if (pd.c) {
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:pd.c, width:2, dashType:"dash"} });
+      s.addShape(p.ShapeType.ellipse, { x:px-tzsh-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
+      s.addShape(p.ShapeType.line, { x:px-tzsh+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:pd.c, width:1.25, beginArrowType:"triangle"} });
+    } else {
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:1.5, dashType:"dash"} });
+      s.addShape(p.ShapeType.ellipse, { x:px-tzsh-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+      s.addShape(p.ShapeType.line, { x:px-tzsh+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:MUTE, width:1.25, beginArrowType:"triangle"} });
+    }
+    s.addText(pd.d, { x:px-0.6, y:ty+0.22, w:1.2, h:0.3, align:"center", fontFace:MONO, fontSize:11, color:MUTE, margin:0 });
+    if (isEnd) {
+      s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:TEAL, width:1.5, dashType:"dash"} });
+      s.addText("End Date (GMT)", { x:px-1.05, y:2.18, w:2.1, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+      s.addText("GMT \u2192 Denver (\u22126h)", { x:px-tzsh-0.65, y:ty-0.36, w:tzsh+1.3, h:0.26,
+        align:"center", fontFace:SANS, bold:true, fontSize:9.5, color:TEAL, margin:0 });
+    }
+    if (pd.lbl==="now") {
+      s.addShape(p.ShapeType.line, { x:px-tzsh, y:2.5, w:0, h:1.65, line:{color:INK, width:1.5, dashType:"dash"} });
+      s.addText("now", { x:px-tzsh+0.12, y:2.18, w:1.0, h:0.3, align:"left", fontFace:SANS, bold:true, fontSize:11, color:INK, margin:0 });
+    }
+  });
+
+  // next-due cutoff = local now - DI: periods to its right are not yet due (local end + DI > now)
+  const cutx = (xAt(6)-tzsh) - dx*0.5;
+  s.addShape(p.ShapeType.line, { x:cutx, y:2.5, w:0, h:1.65, line:{color:MUTE, width:1.25, dashType:"dash"} });
+  s.addText("due cutoff\n(now \u2212 DI)", { x:cutx-1.25, y:2.02, w:2.5, h:0.46, align:"center",
+    fontFace:SANS, bold:true, fontSize:10.5, color:MUTE, margin:0, lineSpacingMultiple:0.95 });
+
+  // DI arrow (below axis) from the LOCAL (shifted) End Date circle to next-due
+  const di0=xAt(2)-tzsh, di1=di0+dx*0.5;
+  s.addShape(p.ShapeType.line, { x:di0, y:ty+0.62, w:di1-di0, h:0, line:{color:TEAL, width:1.75, endArrowType:"triangle"} });
+  s.addText("DI \u2014 next-due = local period end + DI", { x:di0-0.15, y:ty+0.72, w:4.4, h:0.3,
+    fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+
+  // ControlTime marker (below axis, under 'now'): the scheduled wall-clock run.
+  // Each success steps CT by ONE FQ (Next CT = CT + FQ); CO only offsets the run
+  // from the period start, so it cancels in the step. Square marker to stand apart from round data ticks.
+  const ctx=xAt(6)-tzsh, ctY=4.42;
+  s.addShape(p.ShapeType.rect, { x:ctx-0.10, y:ctY-0.10, w:0.20, h:0.20, fill:{color:DEEP}, line:{type:"none"} });
+  s.addText("CT \u2014 job runs", { x:ctx-2.25, y:ctY-0.13, w:2.0, h:0.26, align:"right",
+    fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0, valign:"middle" });
+  s.addText("= period start + CO", { x:ctx-2.25, y:ctY+0.11, w:2.0, h:0.22, align:"right",
+    fontFace:SANS, italic:true, fontSize:9, color:MUTE, margin:0 });
+  const cnx=ctx+dx;   // next CT is exactly one FQ after CT
+  s.addShape(p.ShapeType.line, { x:ctx+0.14, y:ctY, w:cnx-ctx-0.26, h:0, line:{color:DEEP, width:1.5, dashType:"dash", endArrowType:"triangle"} });
+  s.addShape(p.ShapeType.rect, { x:cnx-0.09, y:ctY-0.09, w:0.18, h:0.18, fill:{color:LIGHT}, line:{color:DEEP, width:2} });
+  s.addText("+ Update FQ", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
+    fontFace:SANS, fontSize:10, color:DEEP, margin:0 });
+  s.addText("next CT", { x:cnx-0.75, y:ctY+0.10, w:1.5, h:0.24, align:"center",
+    fontFace:SANS, italic:true, fontSize:9.5, color:MUTE, margin:0 });
+
+  // tick-state legend
+  const leg = [
+    [GREEN, "Archived earlier"],
+    [TEAL,  "Re-checked \u2014 no newer source"],
+    [AMBER, "Archived / re-archived this run"],
+    [null,  "Not yet due (waiting DI)"],
+  ];
+  let lx=0.7; const lyy=4.85;
+  leg.forEach(g=>{
+    if (g[0]) s.addShape(p.ShapeType.ellipse, { x:lx, y:lyy, w:0.22, h:0.22, fill:{color:g[0]}, line:{type:"none"} });
+    else s.addShape(p.ShapeType.ellipse, { x:lx, y:lyy, w:0.22, h:0.22, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+    s.addText(g[1], { x:lx+0.3, y:lyy-0.06, w:2.9, h:0.34, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+    lx += 3.05;
+  });
+
+  // ControlTime -- the scheduled wall-clock run time (separate from the data periods above)
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:5.22, w:12.33, h:1.02, rectRadius:0.08,
+    fill:{color:TINT}, line:{color:DEEP, width:1} });
+  s.addText("ControlTime  \u2014  when the job itself runs", { x:0.72, y:5.28, w:11.8, h:0.3,
+    fontFace:SANS, bold:true, fontSize:12.5, color:DEEP, margin:0 });
+  s.addText([
+    { text:"-CT", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" sets the run time (YYYY-MM-DD HH:NN:SS). Each success steps it by one ", options:{} },
+    { text:"-FQ", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" (Next CT = CT + FQ); ", options:{} },
+    { text:"-CO", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" only offsets the run from the period start (daily \u2192 day start + CO), so it cancels in the step. Failure retries after ", options:{} },
+    { text:"-RI", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:".   e.g.  ", options:{} },
+    { text:"dsupdt d609000 -SU -CT \"2026-07-11 09:00:00\" -FQ 1D -CO 9H", options:{ fontFace:MONO, color:TEAL } },
+  ], { x:0.72, y:5.58, w:11.9, h:0.34, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+  s.addText([
+    { text:"Time zones:  ", options:{ bold:true, color:"B5701F" } },
+    { text:"the data end date/hour (End Date, ", options:{} },
+    { text:"-ED", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:" / ", options:{} },
+    { text:"-EH", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:") is server time (GMT), while ", options:{} },
+    { text:"-CT", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:" is local time the job runs (Denver, MDT = GMT\u22126h in summer) \u2014 don\u2019t mix the two.", options:{} },
+  ], { x:0.72, y:5.90, w:11.9, h:0.3, fontFace:SANS, fontSize:11, color:INK, margin:0, valign:"middle" });
+
+  // summary strip
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.38, w:12.33, h:0.55, rectRadius:0.08,
+    fill:{color:TINT2}, line:{color:LINE, width:1} });
+  s.addText([
+    { text:"Each run re-checks every period in the VI window: ", options:{ bold:true, color:DEEP } },
+    { text:"already-archived periods report \u201Cno newer file\u201D, newly available periods are archived, and periods still within DI of now are left for the next run.  ", options:{} },
+    { text:"VI = 0 \u2192 only the most recent period.", options:{ italic:true, color:MUTE } },
+  ], { x:0.75, y:6.38, w:11.85, h:0.55, fontFace:SANS, fontSize:11.5, color:INK,
+       margin:0, valign:"middle", lineSpacingMultiple:1.05 });
+
   foot(s);
 })();
 

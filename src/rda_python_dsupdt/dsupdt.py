@@ -741,8 +741,13 @@ class DsUpdt(PgUpdt, PgSplit):
             acnt += self.PGOPT['acnt']
             ucnt += self.PGOPT['ucnt']
             s = 's' if self.PGOPT['acnt'] > 1 else ''
-            self.pglog("{}: {} of {} local file{} archived!".format(self.params['DS'], self.PGOPT['ucnt'], self.PGOPT['acnt'], s),
-                        self.PGOPT['emlsum'])
+            fstr = ", {} FAILED".format(self.PGOPT['sumfail']) if self.PGOPT['sumfail'] else ''   # note failed periods inline (detail in Error section)
+            if self.PGOPT['sumfirst']:   # combine count and archived-period range into one Summary line
+               rng = self.PGOPT['sumfirst'] if self.PGOPT['sumfirst'] == self.PGOPT['sumlast'] else "[{} .. {}]".format(self.PGOPT['sumfirst'], self.PGOPT['sumlast'])
+               amsg = "{}: {} of {} local file{} ARCHIVED({}){} for {}".format(self.params['DS'], self.PGOPT['ucnt'], self.PGOPT['acnt'], s, self.PGOPT['sumact'], fstr, rng)
+            else:
+               amsg = "{}: {} of {} local file{} archived{}!".format(self.params['DS'], self.PGOPT['ucnt'], self.PGOPT['acnt'], s, fstr)
+            self.pglog(amsg, self.PGOPT['emlsum'])
             self.PGOPT['acnt'] = self.PGOPT['ucnt'] = 0
          if self.PGSIG['PPID'] > 1: break   # stop loop child
       if acnt > 0:
@@ -926,28 +931,19 @@ class DsUpdt(PgUpdt, PgSplit):
       setmiss = 1 if tempinfo['VD'] else 0
       ufile = uinfo = None
       rscnt = ucnt = lcnt = 0
+      self.PGOPT['sumfirst'] = self.PGOPT['sumlast'] = self.PGOPT['sumact'] = None   # archived-period range for the combined Summary line
+      self.PGOPT['sumfail'] = 0   # count of periods that failed archiving (for the combined Summary line)
       detail_on = not (self.PGOPT['emllog']&self.EMEROL)   # email detail section active for this mode
       noop_pos = 0                                         # roll-up of consecutive no-op re-check periods
       noop_list = []
       def flush_noop():
          if not noop_list: return
-         sep = self.PGLOG['SEPLINE'] if noop_pos > 0 else ''
+         sep = "\n" if noop_pos > 0 else ''
          if len(noop_list) >= 3:   # roll a run of 3+ into one range line
-            txt = "{} update periods UNCHANGED [{} .. {}] - already archived, no newer source file\n".format(len(noop_list), noop_list[0], noop_list[-1])
+            txt = "{} update periods UNCHANGED [{} .. {}] - already archived, no newer source file\n\n".format(len(noop_list), noop_list[0], noop_list[-1])
          else:                     # keep a single line per period for a short run
-            txt = "".join("{} - already archived, no newer source file\n".format(e) for e in noop_list)
+            txt = "".join("{} - already archived, no newer source file\n\n".format(e) for e in noop_list)
          self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:noop_pos] + sep + txt + self.PGLOG['EMLMSG'][noop_pos:]
-      sum_cnt = 0                                          # Summary roll-up of consecutive archived periods (all modes)
-      sum_first = sum_last = sum_act = None
-      def flush_sum():
-         nonlocal sum_cnt
-         if sum_cnt <= 0: return
-         s = 's' if sum_cnt > 1 else ''
-         if sum_first == sum_last:
-            self.pglog("{}: {} file{} ARCHIVED({}) for {}".format(locrec['dsid'], sum_cnt, s, sum_act, sum_first), self.PGOPT['emlsum'])
-         else:
-            self.pglog("{}: {} file{} ARCHIVED({}) for [{} .. {}]".format(locrec['dsid'], sum_cnt, s, sum_act, sum_first, sum_last), self.PGOPT['emlsum'])
-         sum_cnt = 0
       for i in range(ecnt):
          if self.ALLCNT > 1 and i > 0:
             tempinfo = self.get_tempinfo(locrec, locinfo, i)
@@ -1116,14 +1112,13 @@ class DsUpdt(PgUpdt, PgSplit):
          if rscnt >= self.PGOPT['RSMAX']:
             self.refresh_metadata(locrec['dsid'])
             rscnt = 0
-         if self.PGOPT['ACTS']&self.OPTS['AF'][0]:   # Summary: roll up consecutive archived periods (all modes)
+         if self.PGOPT['ACTS']&self.OPTS['AF'][0]:   # Summary: track archived-period range and failed periods for the combined roll-up line
             if ucnt > pucnt and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:
-               if sum_cnt == 0: sum_first = tempinfo['einfo']
-               sum_last = tempinfo['einfo']
-               sum_cnt += ucnt - pucnt
-               sum_act = locrec['action']
-            else:
-               flush_sum()
+               if self.PGOPT['sumfirst'] is None: self.PGOPT['sumfirst'] = tempinfo['einfo']
+               self.PGOPT['sumlast'] = tempinfo['einfo']
+               self.PGOPT['sumact'] = locrec['action']
+            elif (self.PGLOG['ERRCNT'] - perrcnt) > gxerr:   # a real (non-gatherxml) error this period: failed to archive (no-op periods have no error)
+               self.PGOPT['sumfail'] += 1
          if detail_on and self.PGOPT['ACTS']&self.OPTS['AF'][0]:
             if ucnt == pucnt and self.PGLOG['ERRCNT'] == perrcnt:   # nothing archived, no error: collapse re-check detail
                self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
@@ -1137,7 +1132,6 @@ class DsUpdt(PgUpdt, PgSplit):
                   noop_list.clear()
          if self.PGOPT['rstat'] < -1 or self.PGOPT['rstat'] < 0 and 'QE' in self.params: break  # unrecoverable errors
       flush_noop()
-      flush_sum()
       if rscnt > 0: self.refresh_metadata(locrec['dsid'])
       if ufile and uinfo and ucnt == 0:
          self.pglog("{}: Last successful update - {}".format(uinfo, ufile), self.PGOPT['emlsum'])
