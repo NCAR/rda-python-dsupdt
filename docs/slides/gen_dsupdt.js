@@ -987,7 +987,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     {d:"07-11", c:TEAL,  lbl:"End Date"},
     {d:"07-12", c:AMBER, lbl:""},
     {d:"07-13", c:AMBER, lbl:""},
-    {d:"07-14", c:AMBER, lbl:""},
+    {d:"07-14", c:null,  lbl:""},
     {d:"07-15", c:null,  lbl:"now"},
   ];
 
@@ -1028,6 +1028,12 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       s.addText("now", { x:px-0.6, y:2.18, w:1.2, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:INK, margin:0 });
     }
   });
+
+  // next-due cutoff = now - DI: periods to its right are not yet due (end + DI > now)
+  const cutx = xAt(6) - dx*1.4;
+  s.addShape(p.ShapeType.line, { x:cutx, y:2.5, w:0, h:1.65, line:{color:MUTE, width:1.25, dashType:"dash"} });
+  s.addText("due cutoff\n(now \u2212 DI)", { x:cutx-1.25, y:2.02, w:2.5, h:0.46, align:"center",
+    fontFace:SANS, bold:true, fontSize:10.5, color:MUTE, margin:0, lineSpacingMultiple:0.95 });
 
   // DI arrow (below axis) from End Date to next-due
   const di0=xAt(2), di1=xAt(2)+dx*1.4;
