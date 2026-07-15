@@ -1021,7 +1021,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addText(pd.d, { x:px-0.6, y:ty+0.22, w:1.2, h:0.3, align:"center", fontFace:MONO, fontSize:11, color:MUTE, margin:0 });
     if (pd.lbl==="End Date") {
       s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:TEAL, width:1.5, dashType:"dash"} });
-      s.addText("End Date", { x:px-1.0, y:2.18, w:2.0, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+      s.addText("End Date", { x:px-0.9, y:2.18, w:1.8, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
     }
     if (pd.lbl==="now") {
       s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:INK, width:1.5, dashType:"dash"} });
@@ -1042,7 +1042,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     [AMBER, "Archived / re-archived this run"],
     [null,  "Not yet due (waiting DI)"],
   ];
-  let lx=0.7; const lyy=5.4;
+  let lx=0.7; const lyy=4.85;
   leg.forEach(g=>{
     if (g[0]) s.addShape(p.ShapeType.ellipse, { x:lx, y:lyy, w:0.22, h:0.22, fill:{color:g[0]}, line:{type:"none"} });
     else s.addShape(p.ShapeType.ellipse, { x:lx, y:lyy, w:0.22, h:0.22, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
@@ -1050,14 +1050,31 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     lx += 3.05;
   });
 
+  // ControlTime -- the scheduled wall-clock run time (separate from the data periods above)
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:5.3, w:12.33, h:0.82, rectRadius:0.08,
+    fill:{color:TINT}, line:{color:DEEP, width:1} });
+  s.addText("ControlTime  \u2014  when the job itself runs", { x:0.72, y:5.37, w:11.8, h:0.3,
+    fontFace:SANS, bold:true, fontSize:12.5, color:DEEP, margin:0 });
+  s.addText([
+    { text:"-CT", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" sets the scheduled run time (YYYY-MM-DD HH:NN:SS). After a success it advances by control ", options:{} },
+    { text:"-FQ", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" + ", options:{} },
+    { text:"-CO", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" offset; a failure retries after ", options:{} },
+    { text:"-RI", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:".    e.g.  ", options:{} },
+    { text:"dsupdt d609000 -SU -CT \"2026-07-11 09:00:00\" -FQ 1D -CO 9H", options:{ fontFace:MONO, color:TEAL } },
+  ], { x:0.72, y:5.68, w:11.9, h:0.4, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+
   // summary strip
-  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.05, w:12.33, h:0.7, rectRadius:0.08,
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.24, w:12.33, h:0.6, rectRadius:0.08,
     fill:{color:TINT2}, line:{color:LINE, width:1} });
   s.addText([
     { text:"Each run re-checks every period in the VI window: ", options:{ bold:true, color:DEEP } },
     { text:"already-archived periods report \u201Cno newer file\u201D, newly available periods are archived, and periods still within DI of now are left for the next run.  ", options:{} },
     { text:"VI = 0 \u2192 only the most recent period.", options:{ italic:true, color:MUTE } },
-  ], { x:0.75, y:6.05, w:11.85, h:0.7, fontFace:SANS, fontSize:12, color:INK,
+  ], { x:0.75, y:6.24, w:11.85, h:0.6, fontFace:SANS, fontSize:11.5, color:INK,
        margin:0, valign:"middle", lineSpacingMultiple:1.05 });
 
   foot(s);
