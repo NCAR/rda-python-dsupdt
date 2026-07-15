@@ -999,8 +999,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     x:bx+0.15, y:2.62, w:bw-0.3, h:0.32, fontFace:SANS, bold:true, fontSize:12,
     color:"B5701F", margin:0 });
 
-  // axis
-  s.addShape(p.ShapeType.line, { x:tlx-0.2, y:ty, w:tlw+0.4, h:0, line:{color:"8AA6BC", width:2} });
+  // axis (extended left to cover the local-time shifted markers)
+  s.addShape(p.ShapeType.line, { x:tlx-0.9, y:ty, w:tlw+1.1, h:0, line:{color:"8AA6BC", width:2} });
 
   // FQ bracket over the first period gap (above axis)
   const fq0=xAt(0), fq1=xAt(1);
@@ -1010,29 +1010,26 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("FQ \u2014 one period", { x:fq0-0.3, y:ty-0.78, w:(fq1-fq0)+0.6, h:0.3,
     align:"center", fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0 });
 
-  // ticks, date labels, End Date / now markers
+  // ticks, date labels, End Date / now markers.
+  // Time-zone shift: data end date/hour is stored in SERVER time (GMT); each solid marker is the
+  // SAME instant in LOCAL time (Denver), which lands earlier -> shifted left by the TZ offset.
+  // Dashed circle at the date tick = GMT value (before shift); solid circle = local time (after shift).
+  const tzsh = 0.7;
   periods.forEach((pd,k)=>{
     const px = xAt(k);
     const isEnd = (pd.lbl==="End Date");
-    if (!isEnd) {
-      if (pd.c) {
-        s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
-      } else {
-        s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
-      }
+    if (pd.c) {
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:pd.c, width:2, dashType:"dash"} });
+      s.addShape(p.ShapeType.ellipse, { x:px-tzsh-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
+      s.addShape(p.ShapeType.line, { x:px-tzsh+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:pd.c, width:1.25, beginArrowType:"triangle"} });
+    } else {
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
     }
     s.addText(pd.d, { x:px-0.6, y:ty+0.22, w:1.2, h:0.3, align:"center", fontFace:MONO, fontSize:11, color:MUTE, margin:0 });
     if (isEnd) {
       s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:TEAL, width:1.5, dashType:"dash"} });
       s.addText("End Date (GMT)", { x:px-1.05, y:2.18, w:2.1, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
-      // time-zone shift: the data end date/hour is stored in SERVER time (GMT).
-      // Dashed circle = that GMT value (before shift); solid circle = the same instant in
-      // LOCAL time (e.g. Mountain), which lands earlier -> shifted left by the TZ offset.
-      const tzsh = 0.7, lpx = px - tzsh;
-      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:TEAL, width:2, dashType:"dash"} });
-      s.addShape(p.ShapeType.ellipse, { x:lpx-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:TEAL}, line:{type:"none"} });
-      s.addShape(p.ShapeType.line, { x:lpx+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:TEAL, width:1.5, beginArrowType:"triangle"} });
-      s.addText("GMT \u2192 Denver (\u22126h)", { x:lpx-0.65, y:ty-0.36, w:tzsh+1.3, h:0.26,
+      s.addText("GMT \u2192 Denver (\u22126h)", { x:px-tzsh-0.65, y:ty-0.36, w:tzsh+1.3, h:0.26,
         align:"center", fontFace:SANS, bold:true, fontSize:9.5, color:TEAL, margin:0 });
     }
     if (pd.lbl==="now") {
