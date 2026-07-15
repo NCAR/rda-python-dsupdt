@@ -1035,8 +1035,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
         align:"center", fontFace:SANS, bold:true, fontSize:9.5, color:TEAL, margin:0 });
     }
     if (pd.lbl==="now") {
-      s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:INK, width:1.5, dashType:"dash"} });
-      s.addText("now", { x:px-0.6, y:2.18, w:1.2, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:INK, margin:0 });
+      s.addShape(p.ShapeType.line, { x:px-tzsh, y:2.5, w:0, h:1.65, line:{color:INK, width:1.5, dashType:"dash"} });
+      s.addText("now", { x:px-tzsh+0.12, y:2.18, w:1.0, h:0.3, align:"left", fontFace:SANS, bold:true, fontSize:11, color:INK, margin:0 });
     }
   });
 
@@ -1055,7 +1055,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   // ControlTime marker (below axis, under 'now'): the scheduled wall-clock run.
   // Each success steps CT by ONE FQ (Next CT = CT + FQ); CO only offsets the run
   // from the period start, so it cancels in the step. Square marker to stand apart from round data ticks.
-  const ctx=xAt(6), ctY=4.42;
+  const ctx=xAt(6)-tzsh, ctY=4.42;
   s.addShape(p.ShapeType.rect, { x:ctx-0.10, y:ctY-0.10, w:0.20, h:0.20, fill:{color:DEEP}, line:{type:"none"} });
   s.addText("CT \u2014 job runs", { x:ctx-2.25, y:ctY-0.13, w:2.0, h:0.26, align:"right",
     fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0, valign:"middle" });
