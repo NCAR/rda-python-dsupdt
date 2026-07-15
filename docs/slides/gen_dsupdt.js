@@ -195,11 +195,11 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   kicker(s, "Data model", TEAL); title(s, "Three Record Types in GDEXDB");
   const cards = [
     ["dcupdt","Update Control","-SC / -GC", DEEP,
-      ["Schedules when updates run","Frequency, offset, retry, valid interval","Email & error controls","Launched by the dscheck daemon"]],
+      ["Schedules when updates run","Update frequency, offset, retry, valid interval","Email & error controls","Launched by the dscheck daemon"]],
     ["dlupdt","Local File","-SL / -GL", TEAL,
       ["Minimum config for an update","Local file name & dsarch action","Download / build / clean commands","Tracks next end date/hour"]],
     ["drupdt","Remote File","-SR / -GR", GREEN,
-      ["Only when remote \u2260 local name","Many remotes \u2192 one local file","Server file & download order","Time interval for sub-periods"]],
+      ["Only when remote \u2260 local name","Many remotes \u2192 one local file","Server file & download order","Remote-file frequency (many \u2192 one)"]],
   ];
   const y=1.7, cw=3.95, ch=4.5, gap=0.28; let x=0.5;
   cards.forEach(c=>{
@@ -401,7 +401,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   ], { x:0.78, y:2.35, w:12, h:0.55, fontFace:MONO, fontSize:13, valign:"middle", margin:0 });
   // three subsection cards mirroring the CLI record types
   const subs = [
-    ["Update Control","dsupdt_control.php","dcupdt \u2022 -SC / -GC","frequency, next-due, actions, e-mail & error controls", DEEP],
+    ["Update Control","dsupdt_control.php","dcupdt \u2022 -SC / -GC","update frequency, next-due, actions, e-mail & error controls", DEEP],
     ["Local File","dsupdt_localfile.php","dlupdt \u2022 -SL / -GL","file names, patterns, build / convert commands, archive action", TEAL],
     ["Remote File","dsupdt_remotefile.php","drupdt \u2022 -SR / -GR","remote & server names, download command & order", GREEN],
   ];
@@ -453,7 +453,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
   const rows = [
     ["-AN","ActionName","dsupdt task: UF, DR, BL, PB, CL, CU"],
-    ["-FQ","Frequency","how often, e.g. 1W, 1M, 6H, 1M/3"],
+    ["-FQ","Frequency","update frequency \u2014 how often updates run, e.g. 1W, 1M, 1M/3"],
     ["-CO","ControlOffset","delay after period end, e.g. 2D10H"],
     ["-CT","ControlTime","next scheduled run  YYYY-MM-DD HH:NN:SS"],
     ["-RI","RetryInterval","wait before retry after a failure"],
@@ -504,7 +504,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["-AN","ActionName","dsarch action: AS, AW, AQ"],
     ["-OP","Options","options string passed to dsarch"],
     ["-DC","DownloadCommand","fetch/copy/generate the file"],
-    ["-FQ","Frequency","data cadence, e.g. 1M, 1W, 6H"],
+    ["-FQ","Frequency","local data-file frequency, e.g. 1M, 6H"],
     ["-ED","EndDate","data end date of next update"],
     ["-EH","EndHour","end hour (sub-daily cadence)"],
   ];
@@ -574,7 +574,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["-SF","ServerFile","name on server if different from remote name"],
     ["-DC","DownloadCommand","overrides the local record's command"],
     ["-DO","DownloadOrder","try lowest index first, then ascending"],
-    ["-TI","TimeInterval","one name per sub-period, e.g. 6H, 5D"],
+    ["-TI","TimeInterval","remote-file frequency \u2014 only when many remotes \u2192 one local, e.g. 6H, 5D"],
     ["-BT","BeginTime","window start (with -TI)"],
     ["-ET","EndTime","window end (with -TI)"],
   ];
