@@ -981,6 +981,9 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
   const tlx=1.3, tlw=10.2, dx=tlw/6, ty=3.55;
   const xAt = k => tlx + k*dx;
+  // Time-zone shift: data end date/hour is stored in SERVER time (GMT); each solid marker is the
+  // SAME instant in LOCAL time (Denver), which lands earlier -> shifted left by the TZ offset.
+  const tzsh = 0.7;
   const periods = [
     {d:"07-09", c:GREEN, lbl:""},
     {d:"07-10", c:GREEN, lbl:""},
@@ -991,8 +994,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     {d:"07-15", c:null,  lbl:"now"},
   ];
 
-  // VI look-back band (now-VI .. now) => periods k=2..6
-  const bx = xAt(2)-0.18, bw = (xAt(6)-xAt(2))+0.36;
+  // VI look-back band (now-VI .. now) => periods k=2..6, in LOCAL frame so it ends at local now
+  const bx = xAt(2)-tzsh-0.18, bw = (xAt(6)-xAt(2))+0.36;
   s.addShape(p.ShapeType.roundRect, { x:bx, y:2.55, w:bw, h:1.55, rectRadius:0.08,
     fill:{color:"FBEDDC"}, line:{color:AMBER, width:1.25, dashType:"dash"} });
   s.addText("VI \u2014 look-back re-check window   (now \u2212 VI \u2192 now)", {
@@ -1011,10 +1014,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     align:"center", fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0 });
 
   // ticks, date labels, End Date / now markers.
-  // Time-zone shift: data end date/hour is stored in SERVER time (GMT); each solid marker is the
-  // SAME instant in LOCAL time (Denver), which lands earlier -> shifted left by the TZ offset.
   // Dashed circle at the date tick = GMT value (before shift); solid circle = local time (after shift).
-  const tzsh = 0.7;
   periods.forEach((pd,k)=>{
     const px = xAt(k);
     const isEnd = (pd.lbl==="End Date");
