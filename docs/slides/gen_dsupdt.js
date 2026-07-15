@@ -1023,7 +1023,9 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       s.addShape(p.ShapeType.ellipse, { x:px-tzsh-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
       s.addShape(p.ShapeType.line, { x:px-tzsh+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:pd.c, width:1.25, beginArrowType:"triangle"} });
     } else {
-      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:1.5, dashType:"dash"} });
+      s.addShape(p.ShapeType.ellipse, { x:px-tzsh-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+      s.addShape(p.ShapeType.line, { x:px-tzsh+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:MUTE, width:1.25, beginArrowType:"triangle"} });
     }
     s.addText(pd.d, { x:px-0.6, y:ty+0.22, w:1.2, h:0.3, align:"center", fontFace:MONO, fontSize:11, color:MUTE, margin:0 });
     if (isEnd) {
