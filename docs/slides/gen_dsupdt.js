@@ -1013,15 +1013,27 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   // ticks, date labels, End Date / now markers
   periods.forEach((pd,k)=>{
     const px = xAt(k);
-    if (pd.c) {
-      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
-    } else {
-      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+    const isEnd = (pd.lbl==="End Date");
+    if (!isEnd) {
+      if (pd.c) {
+        s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:pd.c}, line:{type:"none"} });
+      } else {
+        s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:MUTE, width:2} });
+      }
     }
     s.addText(pd.d, { x:px-0.6, y:ty+0.22, w:1.2, h:0.3, align:"center", fontFace:MONO, fontSize:11, color:MUTE, margin:0 });
-    if (pd.lbl==="End Date") {
+    if (isEnd) {
       s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:TEAL, width:1.5, dashType:"dash"} });
-      s.addText("End Date", { x:px-0.9, y:2.18, w:1.8, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+      s.addText("End Date (GMT)", { x:px-1.05, y:2.18, w:2.1, h:0.3, align:"center", fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
+      // time-zone shift: the data end date/hour is stored in SERVER time (GMT).
+      // Dashed circle = that GMT value (before shift); solid circle = the same instant in
+      // LOCAL time (e.g. Mountain), which lands earlier -> shifted left by the TZ offset.
+      const tzsh = 0.7, lpx = px - tzsh;
+      s.addShape(p.ShapeType.ellipse, { x:px-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:LIGHT}, line:{color:TEAL, width:2, dashType:"dash"} });
+      s.addShape(p.ShapeType.ellipse, { x:lpx-0.13, y:ty-0.13, w:0.26, h:0.26, fill:{color:TEAL}, line:{type:"none"} });
+      s.addShape(p.ShapeType.line, { x:lpx+0.15, y:ty, w:tzsh-0.30, h:0, line:{color:TEAL, width:1.5, beginArrowType:"triangle"} });
+      s.addText("GMT \u2192 local (\u22127h)", { x:lpx-0.6, y:ty-0.36, w:tzsh+1.2, h:0.26,
+        align:"center", fontFace:SANS, bold:true, fontSize:9.5, color:TEAL, margin:0 });
     }
     if (pd.lbl==="now") {
       s.addShape(p.ShapeType.line, { x:px, y:2.5, w:0, h:1.65, line:{color:INK, width:1.5, dashType:"dash"} });
