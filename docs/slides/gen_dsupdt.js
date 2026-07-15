@@ -146,15 +146,18 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { c:DEEP,  ic:"\u2325", t:"GitHub Repository",
       d:"Source code, issues, and contributions.",
       cmd:"git clone https://github.com/\n  NCAR/rda-python-dsupdt.git",
-      link:"github.com/NCAR/rda-python-dsupdt" },
+      link:"github.com/NCAR/rda-python-dsupdt",
+      url:"https://github.com/NCAR/rda-python-dsupdt" },
     { c:GREEN, ic:"\u25BC", t:"PyPI Package",
       d:"Install the released package with pip.",
       cmd:"pip install rda_python_dsupdt",
-      link:"pypi.org/project/rda-python-dsupdt" },
+      link:"pypi.org/project/rda-python-dsupdt",
+      url:"https://pypi.org/project/rda-python-dsupdt" },
     { c:AMBER, ic:"\u25A4", t:"Documentation",
       d:"Read the Docs, built from the GitHub repo gdex-docs-dsupdt.",
       cmd:"",
-      link:"gdex-docs-dsupdt.readthedocs.io" },
+      link:"gdex-docs-dsupdt.readthedocs.io",
+      url:"https://gdex-docs-dsupdt.readthedocs.io" },
   ];
   const y0=1.85, cw=3.94, ch=3.9, gapx=0.26;
   cards.forEach((c,i)=>{
@@ -180,7 +183,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.line, { x:x+0.3, y:y0+ch-0.5, w:cw-0.6, h:0, line:{color:LINE, width:1} });
     s.addText([
       { text:"\u2192  ", options:{ color:c.c, bold:true } },
-      { text:c.link, options:{ color:DEEP, bold:true } },
+      { text:c.link, options:{ color:DEEP, bold:true, hyperlink:{ url:c.url } } },
     ], { x:x+0.3, y:y0+ch-0.44, w:cw-0.6, h:0.34, fontFace:MONO, fontSize:10.5,
       margin:0, valign:"middle" });
   });
@@ -1380,7 +1383,10 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText([
     { text:"Learn more   ", options:{ bold:true, color:AMBER } },
     { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"9FE0C9" } },
-    { text:"   \u2022   full guide: dsupdt.usg   \u2022   docs: gdex-docs-dsupdt.readthedocs.io   \u2022   repo: github.com/NCAR/rda-python-dsupdt", options:{ color:"8FB0C9" } },
+    { text:"   \u2022   full guide: dsupdt.usg   \u2022   docs: ", options:{ color:"8FB0C9" } },
+    { text:"gdex-docs-dsupdt.readthedocs.io", options:{ color:"8FB0C9", hyperlink:{ url:"https://gdex-docs-dsupdt.readthedocs.io" } } },
+    { text:"   \u2022   repo: ", options:{ color:"8FB0C9" } },
+    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"8FB0C9", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
   ], { x:0.95, y:5.75, w:11.4, h:1.1, fontFace:SANS, fontSize:13, margin:0,
        valign:"middle", lineSpacingMultiple:1.1 });
 })();
@@ -1402,7 +1408,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText([
     { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"9FE0C9" } },
     { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"8FB0C9" } },
-    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"8FB0C9" } },
+    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"8FB0C9", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
   ], { x:W/2-4.75, y:5.55, w:9.5, h:0.9, fontFace:SANS, fontSize:13, align:"center",
        valign:"middle", margin:0 });
 })();
