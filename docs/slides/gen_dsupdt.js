@@ -1035,6 +1035,20 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("DI \u2014 next-due = period end + DI", { x:di0-0.15, y:ty+0.72, w:3.9, h:0.3,
     fontFace:SANS, bold:true, fontSize:11, color:TEAL, margin:0 });
 
+  // ControlTime marker (below axis, under 'now'): the scheduled wall-clock run,
+  // advancing by FQ + CO to the next run. Square marker to stand apart from the round data ticks.
+  const ctx=xAt(6), ctY=4.42;
+  s.addShape(p.ShapeType.rect, { x:ctx-0.10, y:ctY-0.10, w:0.20, h:0.20, fill:{color:DEEP}, line:{type:"none"} });
+  s.addText("CT \u2014 job runs", { x:ctx-2.25, y:ctY-0.13, w:2.0, h:0.26, align:"right",
+    fontFace:SANS, bold:true, fontSize:11, color:DEEP, margin:0, valign:"middle" });
+  const cnx=13.0;
+  s.addShape(p.ShapeType.line, { x:ctx+0.14, y:ctY, w:cnx-ctx-0.26, h:0, line:{color:DEEP, width:1.5, dashType:"dash", endArrowType:"triangle"} });
+  s.addShape(p.ShapeType.rect, { x:cnx-0.09, y:ctY-0.09, w:0.18, h:0.18, fill:{color:LIGHT}, line:{color:DEEP, width:2} });
+  s.addText("+ FQ + CO", { x:ctx+0.10, y:ctY-0.32, w:1.6, h:0.24, align:"center",
+    fontFace:SANS, fontSize:10, color:DEEP, margin:0 });
+  s.addText("next CT", { x:cnx-0.75, y:ctY+0.10, w:1.5, h:0.24, align:"center",
+    fontFace:SANS, italic:true, fontSize:9.5, color:MUTE, margin:0 });
+
   // tick-state legend
   const leg = [
     [GREEN, "Archived earlier"],
