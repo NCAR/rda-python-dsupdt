@@ -3,31 +3,32 @@ const p = new pptxgen();
 p.layout = "LAYOUT_WIDE";           // 13.333 x 7.5
 const W = 13.333, H = 7.5;
 
-// ---- palette (Ocean) ----
-const INK   = "12212E";   // near-black text
-const DEEP  = "065A82";   // deep blue (primary)
-const TEAL  = "1C7293";   // teal (secondary)
-const MID   = "0E1B2E";   // midnight (dark bg)
-const AMBER = "E8963A";   // accent
-const MUTE  = "5C6E7C";   // muted text
+// ---- palette (NCAR/UCAR Brand Standards, Feb 2019) ----
+const INK   = "012169";   // NCAR Blue (PMS 2152) - headers / strong text
+const DEEP  = "1A658F";   // NCAR medium blue - primary
+const TEAL  = "007FA3";   // NCAR cyan-blue - secondary
+const MID   = "012169";   // NCAR Blue - dark background
+const AMBER   = "6E8300"; // Highlight green (dark) - readable emphasis on light
+const AMBERLT = "A8C700"; // Highlight green (bright) - accents on dark backgrounds
+const MUTE  = "53565A";   // Cool Gray 11 - muted text
 const LIGHT = "FFFFFF";
-const TINT  = "EEF4F8";   // card tint
-const TINT2 = "E3EEF3";   // deeper tint
-const LINE  = "CBDCE6";
-const GREEN = "2E8B7A";
+const TINT  = "DBE2E9";   // Background Blue 3 - card tint
+const TINT2 = "CED9E5";   // Background Blue 2 - deeper tint
+const LINE  = "C3D7EE";   // Background Blue 1 - hairline
+const GREEN = "00797C";   // UCAR green
 const MONO  = "Courier New";
-const SERIF = "Cambria";
-const SANS  = "Calibri";
+const SERIF = "Poppins";  // brand font (headers) - install free Poppins to render
+const SANS  = "Poppins";  // brand font (body) - install free Poppins to render
 
 let n = 0;
 function foot(s, dark) {
   n++;
   s.addText("dsupdt  \u2022  Developer & General Usage Guide", {
     x:0.5, y:H-0.42, w:8, h:0.3, fontFace:SANS, fontSize:9,
-    color: dark?"7C93A8":MUTE, align:"left", margin:0 });
+    color: dark?"97999B":MUTE, align:"left", margin:0 });
   s.addText(String(n), {
     x:W-0.9, y:H-0.42, w:0.4, h:0.3, fontFace:SANS, fontSize:9,
-    color: dark?"7C93A8":MUTE, align:"right", margin:0 });
+    color: dark?"97999B":MUTE, align:"right", margin:0 });
 }
 function kicker(s, txt, color) {
   s.addText(txt.toUpperCase(), { x:0.5, y:0.42, w:9, h:0.3, fontFace:SANS,
@@ -50,34 +51,34 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   // faint concentric motif circles (top-right)
   [3.4,2.5,1.6].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:10.2-d/2, y:1.1-d/2+0.2, w:d, h:d, fill:{type:"none"},
-      line:{color:i===2?AMBER:"1C3A55", width:i===2?2:1} }));
-  circ(s, 9.55, 0.9, 0.9, AMBER, "\u21BB", MID, 30);
+      line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
+  circ(s, 9.55, 0.9, 0.9, AMBERLT, "\u21BB", MID, 30);
   s.addText("dsupdt", { x:0.7, y:2.35, w:9, h:1.4, fontFace:SERIF,
     fontSize:78, bold:true, color:LIGHT, margin:0 });
   s.addText("Periodic Dataset Updates for the GDEX Servers", {
     x:0.72, y:3.7, w:11.5, h:0.6, fontFace:SANS, fontSize:24,
-    color:"CADCFC", margin:0 });
+    color:"C3D7EE", margin:0 });
   s.addText([
     { text:"Download \u2192 Build \u2192 Archive, scheduled and automated", options:{} }
   ], { x:0.72, y:4.35, w:11, h:0.5, fontFace:SANS, italic:true,
-       fontSize:15, color:"8FB0C9", margin:0 });
+       fontSize:15, color:"C3D7EE", margin:0 });
   // meta chips
   const chips = ["Developer Configuration", "General Usage", "Updated 2026-07"];
   let cx = 0.72;
   chips.forEach(c => {
     const w = 0.28 + c.length*0.098;
     s.addShape(p.ShapeType.roundRect, { x:cx, y:5.35, w, h:0.5,
-      rectRadius:0.1, fill:{color:"16273D"}, line:{color:"2A425C", width:1} });
+      rectRadius:0.1, fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
     s.addText(c, { x:cx, y:5.35, w, h:0.5, align:"center", valign:"middle",
-      fontFace:SANS, fontSize:12, bold:true, color:"CADCFC", margin:0 });
+      fontFace:SANS, fontSize:12, bold:true, color:"C3D7EE", margin:0 });
     cx += w + 0.2;
   });
   s.addText([
     { text:"Zaihua Ji", options:{ bold:true } },
     { text:"   zji@ucar.edu", options:{} },
-  ], { x:0.72, y:6.05, w:11, h:0.4, fontFace:SANS, fontSize:13, color:"8FB0C9", margin:0 });
+  ], { x:0.72, y:6.05, w:11, h:0.4, fontFace:SANS, fontSize:13, color:"C3D7EE", margin:0 });
   s.addText("Companion utility to  dsarch  \u2022  orchestrated by the  dscheck  daemon", {
-    x:0.72, y:6.5, w:11, h:0.4, fontFace:MONO, fontSize:12, color:"6F8CA6", margin:0 });
+    x:0.72, y:6.5, w:11, h:0.4, fontFace:MONO, fontSize:12, color:"97999B", margin:0 });
 })();
 
 // ============================================================ 2 OVERVIEW
@@ -128,7 +129,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const x=gx0+col*(cw+gapx), y=gy0+row*(ch+gapy);
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.08,
       fill:{color:LIGHT}, line:{color:LINE, width:1},
-      shadow:{type:"outer", color:"9FB6C6", blur:5, offset:2, angle:90, opacity:0.35} });
+      shadow:{type:"outer", color:"C3D7EE", blur:5, offset:2, angle:90, opacity:0.35} });
     circ(s, x+0.22, y+0.24, 0.62, i%2?TEAL:DEEP, c[0], LIGHT, 20);
     s.addText(c[1], { x:x+1.0, y:y+0.22, w:cw-1.15, h:0.4, fontFace:SANS,
       bold:true, fontSize:15, color:INK, margin:0, valign:"middle" });
@@ -164,7 +165,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const x=0.5+i*(cw+gapx);
     s.addShape(p.ShapeType.roundRect, { x, y:y0, w:cw, h:ch, rectRadius:0.08,
       fill:{color:LIGHT}, line:{color:LINE, width:1},
-      shadow:{type:"outer", color:"9FB6C6", blur:5, offset:2, angle:90, opacity:0.3} });
+      shadow:{type:"outer", color:"C3D7EE", blur:5, offset:2, angle:90, opacity:0.3} });
     s.addShape(p.ShapeType.rect, { x, y:y0, w:cw, h:0.14, fill:{color:c.c}, line:{type:"none"} });
     s.addShape(p.ShapeType.ellipse, { x:x+0.3, y:y0+0.42, w:0.62, h:0.62,
       fill:{color:c.c}, line:{type:"none"} });
@@ -178,7 +179,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       s.addShape(p.ShapeType.roundRect, { x:x+0.3, y:y0+2.2, w:cw-0.6, h:0.82,
         rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
       s.addText(c.cmd, { x:x+0.44, y:y0+2.2, w:cw-0.84, h:0.82, fontFace:MONO,
-        fontSize:10.5, color:"9FE0C9", margin:0, valign:"middle" });
+        fontSize:10.5, color:"40C1AC", margin:0, valign:"middle" });
     }
     s.addShape(p.ShapeType.line, { x:x+0.3, y:y0+ch-0.5, w:cw-0.6, h:0, line:{color:LINE, width:1} });
     s.addText([
@@ -221,7 +222,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addText(st[1], { x:x+0.1, y:y+1.08, w:cw-0.2, h:0.55, align:"center",
       fontFace:SANS, bold:true, fontSize:15, color: i===4?LIGHT:INK, margin:0, valign:"middle" });
     s.addText(st[2], { x:x+0.15, y:y+1.6, w:cw-0.3, h:0.8, align:"center",
-      fontFace:SANS, fontSize:11.5, color: i===4?"CADCFC":MUTE, margin:0, valign:"top",
+      fontFace:SANS, fontSize:11.5, color: i===4?"C3D7EE":MUTE, margin:0, valign:"top",
       lineSpacingMultiple:1.05 });
     if (i<4){
       const ax = x+cw+0.02;
@@ -268,7 +269,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   cards.forEach(c=>{
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.1,
       fill:{color:LIGHT}, line:{color:c[3], width:2},
-      shadow:{type:"outer", color:"9FB6C6", blur:6, offset:2, angle:90, opacity:0.3} });
+      shadow:{type:"outer", color:"C3D7EE", blur:6, offset:2, angle:90, opacity:0.3} });
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:1.15, rectRadius:0.1,
       fill:{color:c[3]}, line:{type:"none"} });
     // mask bottom corners of header
@@ -276,7 +277,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addText(c[1], { x:x+0.25, y:y+0.14, w:cw-0.5, h:0.45, fontFace:SERIF,
       bold:true, fontSize:20, color:LIGHT, margin:0, valign:"middle" });
     s.addText([
-      { text:c[0]+"   ", options:{ fontFace:MONO, fontSize:12, color:"E8F2F8" } },
+      { text:c[0]+"   ", options:{ fontFace:MONO, fontSize:12, color:"DBE2E9" } },
       { text:c[2], options:{ fontFace:MONO, fontSize:12, bold:true, color:"FFFFFF" } },
     ], { x:x+0.25, y:y+0.62, w:cw-0.5, h:0.4, margin:0, valign:"middle" });
     s.addText(c[4].map((t,i)=>({ text:t, options:{ bullet:{code:"2022", indent:14},
@@ -305,16 +306,16 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     rectRadius:0.08, fill:{color:MID}, line:{type:"none"} });
   s.addText([
     { text:"dsupdt ", options:{ color:LIGHT } },
-    { text:"[-DS dNNNNNN] ", options:{ color:"8FB0C9" } },
+    { text:"[-DS dNNNNNN] ", options:{ color:"C3D7EE" } },
     { text:"<Action> ", options:{ color:AMBER, bold:true } },
-    { text:"[Mode\u2026] ", options:{ color:"7FD1B9", bold:true } },
-    { text:"[Info\u2026]", options:{ color:"9FC4E0", bold:true } },
+    { text:"[Mode\u2026] ", options:{ color:"40C1AC", bold:true } },
+    { text:"[Info\u2026]", options:{ color:"C3D7EE", bold:true } },
   ], { x:0.75, y:1.65, w:11.8, h:0.95, fontFace:MONO, fontSize:22, margin:0, valign:"middle" });
 
   const blocks = [
-    ["Action","One per run","Selects the task. Takes no value. E.g. -UF, -GC, -SL, -AF. Some actions imply others.", AMBER, "9C6416"],
-    ["Mode","Zero or more","Modifies behavior; takes no value. E.g. -MU, -FU, -RA, -NE, -GZ.", GREEN, "1F5E4F"],
-    ["Info","Carries data","Supplies values: dataset, indices, dates, file names, commands. E.g. -CI, -ED, -LF.", TEAL, "0F4A61"],
+    ["Action","One per run","Selects the task. Takes no value. E.g. -UF, -GC, -SL, -AF. Some actions imply others.", AMBER, "6E8300"],
+    ["Mode","Zero or more","Modifies behavior; takes no value. E.g. -MU, -FU, -RA, -NE, -GZ.", GREEN, "00797C"],
+    ["Info","Carries data","Supplies values: dataset, indices, dates, file names, commands. E.g. -CI, -ED, -LF.", TEAL, "1A658F"],
   ];
   const y=2.95, cw=3.95, ch=2.35, gap=0.28; let x=0.5;
   blocks.forEach(b=>{
@@ -363,7 +364,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const x=0.5+col*(cw+gapx), y=y0+row*(ch+gapy);
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.08,
       fill:{color:LIGHT}, line:{color:LINE, width:1},
-      shadow:{type:"outer", color:"9FB6C6", blur:5, offset:2, angle:90, opacity:0.3} });
+      shadow:{type:"outer", color:"C3D7EE", blur:5, offset:2, angle:90, opacity:0.3} });
     s.addShape(p.ShapeType.ellipse, { x:x+0.28, y:y+0.5, w:0.42, h:0.42,
       fill:{color:c[2]}, line:{type:"none"} });
     s.addText("\u203A", { x:x+0.28, y:y+0.47, w:0.42, h:0.42, align:"center",
@@ -373,7 +374,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.roundRect, { x:x+0.9, y:y+0.62, w:cw-1.15, h:0.55,
       rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
     s.addText(c[1], { x:x+1.05, y:y+0.62, w:cw-1.4, h:0.55, fontFace:MONO,
-      fontSize:13, color:"9FE0C9", margin:0, valign:"middle" });
+      fontSize:13, color:"40C1AC", margin:0, valign:"middle" });
     i++;
   });
   s.addText([
@@ -410,7 +411,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.roundRect, { x:x+0.25, y:y+1.15, w:cw-0.5, h:0.62,
       rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
     s.addText(st[2], { x:x+0.38, y:y+1.15, w:cw-0.72, h:0.62, fontFace:MONO,
-      fontSize:11, color:"9FE0C9", margin:0, valign:"middle" });
+      fontSize:11, color:"40C1AC", margin:0, valign:"middle" });
     s.addText(st[3], { x:x+0.28, y:y+1.85, w:cw-0.5, h:0.65, fontFace:SANS,
       fontSize:12.5, color:INK, margin:0, valign:"top", lineSpacingMultiple:1.05 });
     if (i<2) s.addText("\u2192", { x:x+cw-0.05, y:y+0.6, w:gap+0.1, h:0.7,
@@ -459,8 +460,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.roundRect, { x:0.5, y:2.35, w:12.33, h:0.55, rectRadius:0.06,
     fill:{color:MID} });
   s.addText([
-    { text:"gdex.ucar.edu/rda_pg_config", options:{ color:"9FE0C9" } },
-    { text:"      \u203A  DSUPDT  \u203A  Update Control | Local File | Remote File", options:{ color:AMBER } },
+    { text:"gdex.ucar.edu/rda_pg_config", options:{ color:"40C1AC" } },
+    { text:"      \u203A  DSUPDT  \u203A  Update Control | Local File | Remote File", options:{ color:AMBERLT } },
   ], { x:0.78, y:2.35, w:12, h:0.55, fontFace:MONO, fontSize:13, valign:"middle", margin:0 });
   // three subsection cards mirroring the CLI record types
   const subs = [
@@ -677,13 +678,13 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const x=0.5+col*(cw+gapx), y=y0+row*(ch+gapy);
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.08,
       fill:{color: a[4]?a[3]:LIGHT}, line:{color:a[3], width: a[4]?0:1.5},
-      shadow:{type:"outer", color:"9FB6C6", blur:4, offset:2, angle:90, opacity:0.25} });
+      shadow:{type:"outer", color:"C3D7EE", blur:4, offset:2, angle:90, opacity:0.25} });
     s.addText(a[0], { x:x+0.2, y:y+0.15, w:cw-0.4, h:0.42, fontFace:MONO,
       bold:true, fontSize:20, color: a[4]?LIGHT:a[3], margin:0 });
     s.addText(a[1], { x:x+0.2, y:y+0.55, w:cw-0.4, h:0.35, fontFace:SANS,
       bold:true, fontSize:13.5, color: a[4]?LIGHT:INK, margin:0 });
     s.addText(a[2], { x:x+0.2, y:y+0.9, w:cw-0.35, h:0.55, fontFace:SANS,
-      fontSize:10.5, color: a[4]?"F0E4D4":MUTE, margin:0, valign:"top",
+      fontSize:10.5, color: a[4]?"DBE2E9":MUTE, margin:0, valign:"top",
       lineSpacingMultiple:1.02 });
     i++;
   });
@@ -741,7 +742,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"Effect", options:{ bold:true, color:LIGHT, fill:{color:AMBER} } },
   ]];
   modes.forEach((m,i)=>{ const bg=i%2?TINT:LIGHT; rr.push([
-    { text:m[0], options:{ fontFace:MONO, bold:true, color:"9C6416", fill:{color:bg} } },
+    { text:m[0], options:{ fontFace:MONO, bold:true, color:"6E8300", fill:{color:bg} } },
     { text:m[1], options:{ color:INK, fill:{color:bg} } },
   ]); });
   s.addTable(rr, { x:6.78, y:1.7, w:6.05, colW:[1.5,4.55], rowH:0.42,
@@ -750,7 +751,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.roundRect, { x:6.78, y:6.5, w:6.05, h:0.42, rectRadius:0.06,
     fill:{color:INK} });
   s.addText("dsupdt d337000 -UF -MU -IE -CC schuster", { x:6.98, y:6.5, w:5.65, h:0.42,
-    fontFace:MONO, fontSize:12, color:"9FE0C9", valign:"middle", margin:0 });
+    fontFace:MONO, fontSize:12, color:"40C1AC", valign:"middle", margin:0 });
   foot(s);
 })();
 
@@ -833,12 +834,12 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("Example", { x:9.1, y:2.45, w:3.5, h:0.35, fontFace:SANS, bold:true,
     fontSize:14, color:AMBER, margin:0 });
   s.addText([
-    { text:"-LF ", options:{ color:"9FC4E0" } },
-    { text:"uv.<YYYYMM>.bln\n\n", options:{ color:"9FE0C9" } },
-    { text:"end date ", options:{ color:"9FC4E0" } },
+    { text:"-LF ", options:{ color:"C3D7EE" } },
+    { text:"uv.<YYYYMM>.bln\n\n", options:{ color:"40C1AC" } },
+    { text:"end date ", options:{ color:"C3D7EE" } },
     { text:"2007-10-31\n\n", options:{ color:"FFFFFF" } },
     { text:"\u2193 becomes\n\n", options:{ color:AMBER, bold:true } },
-    { text:"uv.200710.bln", options:{ color:"9FE0C9", bold:true } },
+    { text:"uv.200710.bln", options:{ color:"40C1AC", bold:true } },
   ], { x:9.1, y:2.95, w:3.55, h:2.8, fontFace:MONO, fontSize:14, margin:0,
        valign:"top", lineSpacingMultiple:1.0 });
 
@@ -892,10 +893,10 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("Example  \u2014  pick the newest matching file at update time", { x:0.75, y:5.85,
     w:12, h:0.35, fontFace:SANS, bold:true, fontSize:13, color:AMBER, margin:0 });
   s.addText([
-    { text:"dsupdt ", options:{ color:"9FC4E0" } },
+    { text:"dsupdt ", options:{ color:"C3D7EE" } },
     { text:"d540000 SR -LI 1 ", options:{ color:"FFFFFF" } },
-    { text:"-RF ", options:{ color:"9FC4E0" } },
-    { text:"'!ls -t /glade/incoming/<YYYYMM>*.grib | head -1'", options:{ color:"9FE0C9" } },
+    { text:"-RF ", options:{ color:"C3D7EE" } },
+    { text:"'!ls -t /glade/incoming/<YYYYMM>*.grib | head -1'", options:{ color:"40C1AC" } },
   ], { x:0.75, y:6.28, w:12, h:0.6, fontFace:MONO, fontSize:13.5, margin:0,
        valign:"middle", lineSpacingMultiple:1.0 });
   foot(s);
@@ -926,7 +927,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   cards.forEach((c,i)=>{
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.1,
       fill:{color:LIGHT}, line:{color:c[4], width:2},
-      shadow:{type:"outer", color:"9FB6C6", blur:6, offset:2, angle:90, opacity:0.3} });
+      shadow:{type:"outer", color:"C3D7EE", blur:6, offset:2, angle:90, opacity:0.3} });
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:0.8, rectRadius:0.1,
       fill:{color:c[4]}, line:{type:"none"} });
     s.addShape(p.ShapeType.rect, { x, y:y+0.42, w:cw, h:0.38, fill:{color:c[4]}, line:{type:"none"} });
@@ -986,24 +987,24 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.roundRect, { x:6.9, y:1.75, w:5.93, h:3.05, rectRadius:0.1,
     fill:{color:MID}, line:{type:"none"} });
   s.addText("Re-check window  (VI = 4D, FQ = 1D)", { x:7.15, y:1.9, w:5.5, h:0.4,
-    fontFace:SANS, bold:true, fontSize:14, color:AMBER, margin:0 });
+    fontFace:SANS, bold:true, fontSize:14, color:AMBERLT, margin:0 });
   // timeline
   const tlx=7.25, tlw=5.2, tly=2.9;
-  s.addShape(p.ShapeType.line, { x:tlx, y:tly, w:tlw, h:0, line:{color:"5A7A94", width:2} });
+  s.addShape(p.ShapeType.line, { x:tlx, y:tly, w:tlw, h:0, line:{color:"97999B", width:2} });
   for (let k=0;k<5;k++){
     const px = tlx + k*(tlw/4);
     const past = k<4;
     s.addShape(p.ShapeType.ellipse, { x:px-0.11, y:tly-0.11, w:0.22, h:0.22,
-      fill:{color: past?AMBER:"9FE0C9"}, line:{type:"none"} });
+      fill:{color: past?AMBERLT:"40C1AC"}, line:{type:"none"} });
   }
   s.addText("now \u2212 VI", { x:tlx-0.4, y:tly+0.2, w:1.2, h:0.3, fontFace:SANS,
-    fontSize:10, color:"9FC4E0", margin:0, align:"center" });
+    fontSize:10, color:"C3D7EE", margin:0, align:"center" });
   s.addText("now", { x:tlx+tlw-0.6, y:tly+0.2, w:1.2, h:0.3, fontFace:SANS,
-    fontSize:10, color:"9FC4E0", margin:0, align:"center" });
+    fontSize:10, color:"C3D7EE", margin:0, align:"center" });
   s.addText([
-    { text:"Each period is re-checked. Already-archived periods report \u201Cno newer file\u201D; a newer source file triggers ", options:{ color:"D8E6F0" } },
-    { text:"re-archive", options:{ color:"9FE0C9", bold:true } },
-    { text:".  VI = 0 \u2192 single period, no newer-file check.", options:{ color:"D8E6F0" } },
+    { text:"Each period is re-checked. Already-archived periods report \u201Cno newer file\u201D; a newer source file triggers ", options:{ color:"DBE2E9" } },
+    { text:"re-archive", options:{ color:"40C1AC", bold:true } },
+    { text:".  VI = 0 \u2192 single period, no newer-file check.", options:{ color:"DBE2E9" } },
   ], { x:7.15, y:3.5, w:5.5, h:1.2, fontFace:SANS, fontSize:12.5, margin:0,
        valign:"top", lineSpacingMultiple:1.12 });
 
@@ -1035,7 +1036,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:" per period. A single ", options:{} },
     { text:"-MU", options:{ fontFace:MONO, bold:true, color:GREEN } },
     { text:" run walks every elapsed period inside the ", options:{} },
-    { text:"Valid Interval (VI)", options:{ bold:true, color:"B5701F" } },
+    { text:"Valid Interval (VI)", options:{ bold:true, color:"1A658F" } },
     { text:" look-back window, while the ", options:{} },
     { text:"Due Interval (DI)", options:{ bold:true, color:TEAL } },
     { text:" sets when each period becomes due.", options:{} },
@@ -1060,13 +1061,13 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   // VI look-back band (now-VI .. now) => periods k=2..6, in LOCAL frame so it ends at local now
   const bx = xAt(2)-tzsh-0.18, bw = (xAt(6)-xAt(2))+0.36;
   s.addShape(p.ShapeType.roundRect, { x:bx, y:2.55, w:bw, h:1.55, rectRadius:0.08,
-    fill:{color:"FBEDDC"}, line:{color:AMBER, width:1.25, dashType:"dash"} });
+    fill:{color:"DBE2E9"}, line:{color:AMBER, width:1.25, dashType:"dash"} });
   s.addText("VI \u2014 look-back re-check window   (now \u2212 VI \u2192 now)", {
     x:bx+0.15, y:2.62, w:bw-0.3, h:0.32, fontFace:SANS, bold:true, fontSize:12,
-    color:"B5701F", margin:0 });
+    color:"1A658F", margin:0 });
 
   // axis (extended left to cover the local-time shifted markers)
-  s.addShape(p.ShapeType.line, { x:tlx-0.9, y:ty, w:tlw+1.1, h:0, line:{color:"8AA6BC", width:2} });
+  s.addShape(p.ShapeType.line, { x:tlx-0.9, y:ty, w:tlw+1.1, h:0, line:{color:"97999B", width:2} });
 
   // FQ bracket over the first period gap (above axis)
   const fq0=xAt(0), fq1=xAt(1);
@@ -1148,10 +1149,10 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   });
 
   // ControlTime -- the scheduled wall-clock run time (separate from the data periods above)
-  s.addShape(p.ShapeType.roundRect, { x:0.5, y:5.22, w:12.33, h:1.02, rectRadius:0.08,
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:5.16, w:12.33, h:1.2, rectRadius:0.08,
     fill:{color:TINT}, line:{color:DEEP, width:1} });
-  s.addText("ControlTime  \u2014  when the job itself runs", { x:0.72, y:5.28, w:11.8, h:0.3,
-    fontFace:SANS, bold:true, fontSize:12.5, color:DEEP, margin:0 });
+  s.addText("ControlTime  \u2014  when the job itself runs", { x:0.72, y:5.22, w:11.8, h:0.28,
+    fontFace:SANS, bold:true, fontSize:12, color:DEEP, margin:0 });
   s.addText([
     { text:"-CT", options:{ fontFace:MONO, bold:true, color:DEEP } },
     { text:" sets the run time (YYYY-MM-DD HH:NN:SS). Each success steps it by one ", options:{} },
@@ -1162,27 +1163,27 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"-RI", options:{ fontFace:MONO, bold:true, color:DEEP } },
     { text:".   e.g.  ", options:{} },
     { text:"dsupdt d609000 -SU -CT \"2026-07-11 09:00:00\" -FQ 1D -CO 9H", options:{ fontFace:MONO, color:TEAL } },
-  ], { x:0.72, y:5.58, w:11.9, h:0.34, fontFace:SANS, fontSize:11.5, color:INK, margin:0, valign:"middle" });
+  ], { x:0.72, y:5.5, w:11.9, h:0.44, fontFace:SANS, fontSize:10.5, color:INK, margin:0, valign:"top", lineSpacingMultiple:1.0 });
   s.addText([
-    { text:"Time zones:  ", options:{ bold:true, color:"B5701F" } },
+    { text:"Time zones:  ", options:{ bold:true, color:"1A658F" } },
     { text:"the data end date/hour (End Date, ", options:{} },
-    { text:"-ED", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:"-ED", options:{ fontFace:MONO, bold:true, color:"1A658F" } },
     { text:" / ", options:{} },
-    { text:"-EH", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:"-EH", options:{ fontFace:MONO, bold:true, color:"1A658F" } },
     { text:") is server time (GMT), while ", options:{} },
-    { text:"-CT", options:{ fontFace:MONO, bold:true, color:"B5701F" } },
+    { text:"-CT", options:{ fontFace:MONO, bold:true, color:"1A658F" } },
     { text:" is local time the job runs (Denver, MDT = GMT\u22126h in summer) \u2014 don\u2019t mix the two.", options:{} },
-  ], { x:0.72, y:5.90, w:11.9, h:0.3, fontFace:SANS, fontSize:11, color:INK, margin:0, valign:"middle" });
+  ], { x:0.72, y:5.96, w:11.9, h:0.4, fontFace:SANS, fontSize:10.5, color:INK, margin:0, valign:"top", lineSpacingMultiple:1.0 });
 
   // summary strip
-  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.38, w:12.33, h:0.55, rectRadius:0.08,
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.5, w:12.33, h:0.52, rectRadius:0.08,
     fill:{color:TINT2}, line:{color:LINE, width:1} });
   s.addText([
     { text:"Each run re-checks every period in the VI window: ", options:{ bold:true, color:DEEP } },
     { text:"already-archived periods report \u201Cno newer file\u201D, newly available periods are archived, and periods still within DI of now are left for the next run.  ", options:{} },
     { text:"VI = 0 \u2192 only the most recent period.", options:{ italic:true, color:MUTE } },
-  ], { x:0.75, y:6.38, w:11.85, h:0.55, fontFace:SANS, fontSize:11.5, color:INK,
-       margin:0, valign:"middle", lineSpacingMultiple:1.05 });
+  ], { x:0.75, y:6.5, w:11.85, h:0.52, fontFace:SANS, fontSize:11, color:INK,
+       margin:0, valign:"middle", lineSpacingMultiple:1.0 });
 
   foot(s);
 })();
@@ -1202,7 +1203,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   codes.forEach(c=>{
     s.addShape(p.ShapeType.roundRect, { x, y:y0, w:cw, h:ch, rectRadius:0.1,
       fill:{color:LIGHT}, line:{color:c[3], width:2},
-      shadow:{type:"outer", color:"9FB6C6", blur:4, offset:2, angle:90, opacity:0.25} });
+      shadow:{type:"outer", color:"C3D7EE", blur:4, offset:2, angle:90, opacity:0.25} });
     circ(s, x+cw/2-0.4, y0+0.22, 0.8, c[3], c[0], LIGHT, 30);
     s.addText(c[1], { x:x+0.1, y:y0+1.05, w:cw-0.2, h:0.4, align:"center",
       fontFace:SANS, bold:true, fontSize:14, color:INK, margin:0 });
@@ -1307,7 +1308,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const x=0.5+col*(cw+gapx), y=y0+row*(ch+gapy);
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.08,
       fill:{color:LIGHT}, line:{color:LINE, width:1},
-      shadow:{type:"outer", color:"9FB6C6", blur:4, offset:2, angle:90, opacity:0.25} });
+      shadow:{type:"outer", color:"C3D7EE", blur:4, offset:2, angle:90, opacity:0.25} });
     circ(s, x+0.24, y+0.24, 0.62, it[3], it[0], LIGHT, 18);
     s.addText(it[1], { x:x+1.0, y:y+0.2, w:cw-1.2, h:0.4, fontFace:SANS,
       bold:true, fontSize:15, color:INK, margin:0, valign:"middle" });
@@ -1338,7 +1339,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const x=0.5+col*(cw+gapx), y=y0+row*(ch+gapy);
     s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.1,
       fill:{color:LIGHT}, line:{color:c[3], width:2},
-      shadow:{type:"outer", color:"9FB6C6", blur:5, offset:2, angle:90, opacity:0.28} });
+      shadow:{type:"outer", color:"C3D7EE", blur:5, offset:2, angle:90, opacity:0.28} });
     circ(s, x+0.25, y+0.25, 0.55, c[3], String.fromCharCode(9679), LIGHT, 10);
     s.addText(c[0], { x:x+0.95, y:y+0.22, w:cw-1.15, h:0.45, fontFace:SERIF,
       bold:true, fontSize:18, color:INK, margin:0, valign:"middle" });
@@ -1347,7 +1348,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.roundRect, { x:x+0.28, y:y+ch-0.85, w:cw-0.56, h:0.68,
       rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
     s.addText(c[2], { x:x+0.42, y:y+ch-0.85, w:cw-0.8, h:0.68, fontFace:MONO,
-      fontSize:11, color:"9FE0C9", margin:0, valign:"middle", lineSpacingMultiple:0.95 });
+      fontSize:11, color:"40C1AC", margin:0, valign:"middle", lineSpacingMultiple:0.95 });
     i++;
   });
   foot(s);
@@ -1358,9 +1359,9 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   const s = p.addSlide(); s.background = { color: MID };
   [3.0,2.2,1.4].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:11.6-d/2, y:6.2-d/2, w:d, h:d, fill:{type:"none"},
-      line:{color:i===2?AMBER:"1C3A55", width:i===2?2:1} }));
+      line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
   s.addText("Recap", { x:0.7, y:0.75, w:8, h:0.4, fontFace:SANS, bold:true,
-    fontSize:13, color:AMBER, charSpacing:2, margin:0 });
+    fontSize:13, color:AMBERLT, charSpacing:2, margin:0 });
   s.addText("From Config to Archive", { x:0.7, y:1.15, w:11, h:0.8, fontFace:SERIF,
     bold:true, fontSize:38, color:LIGHT, margin:0 });
   const points = [
@@ -1374,19 +1375,19 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     circ(s, 0.7, yy, 0.55, i%2?TEAL:DEEP, String(i+1), LIGHT, 18);
     s.addText([
       { text:pt[0]+"  ", options:{ bold:true, color:LIGHT } },
-      { text:pt[1], options:{ color:"9FC4E0" } },
+      { text:pt[1], options:{ color:"C3D7EE" } },
     ], { x:1.45, y:yy, w:9.5, h:0.55, fontFace:SANS, fontSize:15, margin:0, valign:"middle" });
     yy += 0.78;
   });
   s.addShape(p.ShapeType.roundRect, { x:0.7, y:5.75, w:11.9, h:1.1, rectRadius:0.1,
-    fill:{color:"16273D"}, line:{color:"2A425C", width:1} });
+    fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
   s.addText([
-    { text:"Learn more   ", options:{ bold:true, color:AMBER } },
-    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"9FE0C9" } },
-    { text:"   \u2022   full guide: dsupdt.usg   \u2022   docs: ", options:{ color:"8FB0C9" } },
-    { text:"gdex-docs-dsupdt.readthedocs.io", options:{ color:"8FB0C9", hyperlink:{ url:"https://gdex-docs-dsupdt.readthedocs.io" } } },
-    { text:"   \u2022   repo: ", options:{ color:"8FB0C9" } },
-    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"8FB0C9", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
+    { text:"Learn more   ", options:{ bold:true, color:AMBERLT } },
+    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"40C1AC" } },
+    { text:"   \u2022   full guide: dsupdt.usg   \u2022   docs: ", options:{ color:"C3D7EE" } },
+    { text:"gdex-docs-dsupdt.readthedocs.io", options:{ color:"C3D7EE", hyperlink:{ url:"https://gdex-docs-dsupdt.readthedocs.io" } } },
+    { text:"   \u2022   repo: ", options:{ color:"C3D7EE" } },
+    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"C3D7EE", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
   ], { x:0.95, y:5.75, w:11.4, h:1.1, fontFace:SANS, fontSize:13, margin:0,
        valign:"middle", lineSpacingMultiple:1.1 });
 })();
@@ -1397,18 +1398,18 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   // concentric motif, centered behind the mark
   [4.4,3.3,2.2].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:W/2-d/2, y:2.55-d/2, w:d, h:d, fill:{type:"none"},
-      line:{color:i===2?AMBER:"1C3A55", width:i===2?2:1} }));
-  circ(s, W/2-0.55, 2.0, 1.1, AMBER, "?", MID, 46);
+      line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
+  circ(s, W/2-0.55, 2.0, 1.1, AMBERLT, "?", MID, 46);
   s.addText("Any Questions?", { x:0.5, y:3.55, w:12.33, h:0.9, fontFace:SERIF,
     bold:true, fontSize:52, color:LIGHT, align:"center", margin:0 });
   s.addText("Thank you", { x:0.5, y:4.55, w:12.33, h:0.5, fontFace:SANS, italic:true,
-    fontSize:18, color:"8FB0C9", align:"center", margin:0 });
+    fontSize:18, color:"C3D7EE", align:"center", margin:0 });
   s.addShape(p.ShapeType.roundRect, { x:W/2-4.75, y:5.55, w:9.5, h:0.9, rectRadius:0.1,
-    fill:{color:"16273D"}, line:{color:"2A425C", width:1} });
+    fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
   s.addText([
-    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"9FE0C9" } },
-    { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"8FB0C9" } },
-    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"8FB0C9", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
+    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"40C1AC" } },
+    { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"C3D7EE" } },
+    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"C3D7EE", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
   ], { x:W/2-4.75, y:5.55, w:9.5, h:0.9, fontFace:SANS, fontSize:13, align:"center",
        valign:"middle", margin:0 });
 })();
