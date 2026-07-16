@@ -3,26 +3,35 @@ const p = new pptxgen();
 p.layout = "LAYOUT_WIDE";           // 13.333 x 7.5
 const W = 13.333, H = 7.5;
 
-// ---- palette (NCAR/UCAR Brand Standards, Feb 2019) ----
-const INK   = "012169";   // NCAR Blue (PMS 2152) - headers / strong text
-const DEEP  = "1A658F";   // NCAR medium blue - primary
-const TEAL  = "007FA3";   // NCAR cyan-blue - secondary
-const MID   = "012169";   // NCAR Blue - dark background
-const AMBER   = "6E8300"; // Highlight green (dark) - readable emphasis on light
-const AMBERLT = "A8C700"; // Highlight green (bright) - accents on dark backgrounds
+// ---- palette (NSF NCAR GDEX Brand template, 2026) ----
+const INK   = "00357A";   // NSF NCAR dark blue - headers / strong text
+const DEEP  = "0057C2";   // NSF NCAR medium blue - primary
+const TEAL  = "0092DB";   // NSF NCAR link blue - secondary / links
+const MID   = "011837";   // NSF NCAR deep navy - dark background
+const AMBER   = "C25E00"; // Dark orange (from brand orange) - readable emphasis on light
+const AMBERLT = "42C0FF"; // Bright cyan - accents on dark backgrounds
 const MUTE  = "53565A";   // Cool Gray 11 - muted text
 const LIGHT = "FFFFFF";
-const TINT  = "DBE2E9";   // Background Blue 3 - card tint
-const TINT2 = "CED9E5";   // Background Blue 2 - deeper tint
-const LINE  = "C3D7EE";   // Background Blue 1 - hairline
-const GREEN = "00797C";   // UCAR green
+const TINT  = "DCEBF7";   // light blue - card tint
+const TINT2 = "C7E4F5";   // deeper light blue tint
+const LINE  = "A9D6F2";   // light blue hairline
+const GREEN = "0097A7";   // NSF NCAR teal - accent on light
 const MONO  = "Courier New";
-const SERIF = "Poppins";  // brand font (headers) - install free Poppins to render
-const SANS  = "Poppins";  // brand font (body) - install free Poppins to render
+const SERIF = "Poppins";  // brand font (headers) - embedded in official template
+const SANS  = "Poppins";  // brand font (body) - embedded in official template
+// ---- official NSF NCAR logos (from GDEX 2026 template) ----
+const LOGO_COLOR = "nsf_ncar_logo_color.png"; // full-colour, for light backgrounds
+const LOGO_WHITE = "nsf_ncar_logo_white.png"; // white text, for dark backgrounds
+const LOGO_W = 2.05, LOGO_H = 0.56;           // aspect 1005:276
 
 let n = 0;
+function logo(s, dark) {
+  s.addImage({ path: dark ? LOGO_WHITE : LOGO_COLOR,
+    x: W-LOGO_W-0.4, y: 0.3, w: LOGO_W, h: LOGO_H });
+}
 function foot(s, dark) {
   n++;
+  logo(s, dark);
   s.addText("dsupdt  \u2022  Developer & General Usage Guide", {
     x:0.5, y:H-0.42, w:8, h:0.3, fontFace:SANS, fontSize:9,
     color: dark?"97999B":MUTE, align:"left", margin:0 });
@@ -35,7 +44,7 @@ function kicker(s, txt, color) {
     fontSize:12, bold:true, color:color||TEAL, charSpacing:2, margin:0 });
 }
 function title(s, txt) {
-  s.addText(txt, { x:0.5, y:0.72, w:12.3, h:0.7, fontFace:SERIF,
+  s.addText(txt, { x:0.5, y:0.72, w:10.2, h:0.7, fontFace:SERIF,
     fontSize:32, bold:true, color:INK, margin:0 });
 }
 function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
@@ -48,6 +57,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 // ============================================================ 1 TITLE
 (() => {
   const s = p.addSlide(); s.background = { color: MID };
+  // official NSF NCAR logo, top-left
+  s.addImage({ path: LOGO_WHITE, x:0.7, y:0.6, w:2.8, h:0.77 });
   // faint concentric motif circles (top-right)
   [3.4,2.5,1.6].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:10.2-d/2, y:1.1-d/2+0.2, w:d, h:d, fill:{type:"none"},
@@ -179,7 +190,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       s.addShape(p.ShapeType.roundRect, { x:x+0.3, y:y0+2.2, w:cw-0.6, h:0.82,
         rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
       s.addText(c.cmd, { x:x+0.44, y:y0+2.2, w:cw-0.84, h:0.82, fontFace:MONO,
-        fontSize:10.5, color:"40C1AC", margin:0, valign:"middle" });
+        fontSize:10.5, color:"0097A7", margin:0, valign:"middle" });
     }
     s.addShape(p.ShapeType.line, { x:x+0.3, y:y0+ch-0.5, w:cw-0.6, h:0, line:{color:LINE, width:1} });
     s.addText([
@@ -308,7 +319,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"dsupdt ", options:{ color:LIGHT } },
     { text:"[-DS dNNNNNN] ", options:{ color:"C3D7EE" } },
     { text:"<Action> ", options:{ color:AMBER, bold:true } },
-    { text:"[Mode\u2026] ", options:{ color:"40C1AC", bold:true } },
+    { text:"[Mode\u2026] ", options:{ color:"0097A7", bold:true } },
     { text:"[Info\u2026]", options:{ color:"C3D7EE", bold:true } },
   ], { x:0.75, y:1.65, w:11.8, h:0.95, fontFace:MONO, fontSize:22, margin:0, valign:"middle" });
 
@@ -374,7 +385,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.roundRect, { x:x+0.9, y:y+0.62, w:cw-1.15, h:0.55,
       rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
     s.addText(c[1], { x:x+1.05, y:y+0.62, w:cw-1.4, h:0.55, fontFace:MONO,
-      fontSize:13, color:"40C1AC", margin:0, valign:"middle" });
+      fontSize:13, color:"0097A7", margin:0, valign:"middle" });
     i++;
   });
   s.addText([
@@ -411,7 +422,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.roundRect, { x:x+0.25, y:y+1.15, w:cw-0.5, h:0.62,
       rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
     s.addText(st[2], { x:x+0.38, y:y+1.15, w:cw-0.72, h:0.62, fontFace:MONO,
-      fontSize:11, color:"40C1AC", margin:0, valign:"middle" });
+      fontSize:11, color:"0097A7", margin:0, valign:"middle" });
     s.addText(st[3], { x:x+0.28, y:y+1.85, w:cw-0.5, h:0.65, fontFace:SANS,
       fontSize:12.5, color:INK, margin:0, valign:"top", lineSpacingMultiple:1.05 });
     if (i<2) s.addText("\u2192", { x:x+cw-0.05, y:y+0.6, w:gap+0.1, h:0.7,
@@ -460,7 +471,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.roundRect, { x:0.5, y:2.35, w:12.33, h:0.55, rectRadius:0.06,
     fill:{color:MID} });
   s.addText([
-    { text:"gdex.ucar.edu/rda_pg_config", options:{ color:"40C1AC" } },
+    { text:"gdex.ucar.edu/rda_pg_config", options:{ color:"0097A7" } },
     { text:"      \u203A  DSUPDT  \u203A  Update Control | Local File | Remote File", options:{ color:AMBERLT } },
   ], { x:0.78, y:2.35, w:12, h:0.55, fontFace:MONO, fontSize:13, valign:"middle", margin:0 });
   // three subsection cards mirroring the CLI record types
@@ -751,7 +762,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.roundRect, { x:6.78, y:6.5, w:6.05, h:0.42, rectRadius:0.06,
     fill:{color:INK} });
   s.addText("dsupdt d337000 -UF -MU -IE -CC schuster", { x:6.98, y:6.5, w:5.65, h:0.42,
-    fontFace:MONO, fontSize:12, color:"40C1AC", valign:"middle", margin:0 });
+    fontFace:MONO, fontSize:12, color:"0097A7", valign:"middle", margin:0 });
   foot(s);
 })();
 
@@ -835,11 +846,11 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     fontSize:14, color:AMBER, margin:0 });
   s.addText([
     { text:"-LF ", options:{ color:"C3D7EE" } },
-    { text:"uv.<YYYYMM>.bln\n\n", options:{ color:"40C1AC" } },
+    { text:"uv.<YYYYMM>.bln\n\n", options:{ color:"0097A7" } },
     { text:"end date ", options:{ color:"C3D7EE" } },
     { text:"2007-10-31\n\n", options:{ color:"FFFFFF" } },
     { text:"\u2193 becomes\n\n", options:{ color:AMBER, bold:true } },
-    { text:"uv.200710.bln", options:{ color:"40C1AC", bold:true } },
+    { text:"uv.200710.bln", options:{ color:"0097A7", bold:true } },
   ], { x:9.1, y:2.95, w:3.55, h:2.8, fontFace:MONO, fontSize:14, margin:0,
        valign:"top", lineSpacingMultiple:1.0 });
 
@@ -896,7 +907,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"dsupdt ", options:{ color:"C3D7EE" } },
     { text:"d540000 SR -LI 1 ", options:{ color:"FFFFFF" } },
     { text:"-RF ", options:{ color:"C3D7EE" } },
-    { text:"'!ls -t /glade/incoming/<YYYYMM>*.grib | head -1'", options:{ color:"40C1AC" } },
+    { text:"'!ls -t /glade/incoming/<YYYYMM>*.grib | head -1'", options:{ color:"0097A7" } },
   ], { x:0.75, y:6.28, w:12, h:0.6, fontFace:MONO, fontSize:13.5, margin:0,
        valign:"middle", lineSpacingMultiple:1.0 });
   foot(s);
@@ -995,7 +1006,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     const px = tlx + k*(tlw/4);
     const past = k<4;
     s.addShape(p.ShapeType.ellipse, { x:px-0.11, y:tly-0.11, w:0.22, h:0.22,
-      fill:{color: past?AMBERLT:"40C1AC"}, line:{type:"none"} });
+      fill:{color: past?AMBERLT:"0097A7"}, line:{type:"none"} });
   }
   s.addText("now \u2212 VI", { x:tlx-0.4, y:tly+0.2, w:1.2, h:0.3, fontFace:SANS,
     fontSize:10, color:"C3D7EE", margin:0, align:"center" });
@@ -1003,7 +1014,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     fontSize:10, color:"C3D7EE", margin:0, align:"center" });
   s.addText([
     { text:"Each period is re-checked. Already-archived periods report \u201Cno newer file\u201D; a newer source file triggers ", options:{ color:"DBE2E9" } },
-    { text:"re-archive", options:{ color:"40C1AC", bold:true } },
+    { text:"re-archive", options:{ color:"0097A7", bold:true } },
     { text:".  VI = 0 \u2192 single period, no newer-file check.", options:{ color:"DBE2E9" } },
   ], { x:7.15, y:3.5, w:5.5, h:1.2, fontFace:SANS, fontSize:12.5, margin:0,
        valign:"top", lineSpacingMultiple:1.12 });
@@ -1348,7 +1359,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     s.addShape(p.ShapeType.roundRect, { x:x+0.28, y:y+ch-0.85, w:cw-0.56, h:0.68,
       rectRadius:0.05, fill:{color:MID}, line:{type:"none"} });
     s.addText(c[2], { x:x+0.42, y:y+ch-0.85, w:cw-0.8, h:0.68, fontFace:MONO,
-      fontSize:11, color:"40C1AC", margin:0, valign:"middle", lineSpacingMultiple:0.95 });
+      fontSize:11, color:"0097A7", margin:0, valign:"middle", lineSpacingMultiple:0.95 });
     i++;
   });
   foot(s);
@@ -1357,6 +1368,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 // ============================================================ 20 CLOSING
 (() => {
   const s = p.addSlide(); s.background = { color: MID };
+  s.addImage({ path: LOGO_WHITE, x:W-LOGO_W-0.4, y:0.3, w:LOGO_W, h:LOGO_H });
   [3.0,2.2,1.4].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:11.6-d/2, y:6.2-d/2, w:d, h:d, fill:{type:"none"},
       line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
@@ -1383,7 +1395,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
   s.addText([
     { text:"Learn more   ", options:{ bold:true, color:AMBERLT } },
-    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"40C1AC" } },
+    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"0097A7" } },
     { text:"   \u2022   full guide: dsupdt.usg   \u2022   docs: ", options:{ color:"C3D7EE" } },
     { text:"gdex-docs-dsupdt.readthedocs.io", options:{ color:"C3D7EE", hyperlink:{ url:"https://gdex-docs-dsupdt.readthedocs.io" } } },
     { text:"   \u2022   repo: ", options:{ color:"C3D7EE" } },
@@ -1395,6 +1407,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 // ============================================================ 21 QUESTIONS
 (() => {
   const s = p.addSlide(); s.background = { color: MID };
+  s.addImage({ path: LOGO_WHITE, x:W-LOGO_W-0.4, y:0.3, w:LOGO_W, h:LOGO_H });
   // concentric motif, centered behind the mark
   [4.4,3.3,2.2].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:W/2-d/2, y:2.55-d/2, w:d, h:d, fill:{type:"none"},
@@ -1407,7 +1420,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.roundRect, { x:W/2-4.75, y:5.55, w:9.5, h:0.9, rectRadius:0.1,
     fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
   s.addText([
-    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"40C1AC" } },
+    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"0097A7" } },
     { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"C3D7EE" } },
     { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"C3D7EE", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
   ], { x:W/2-4.75, y:5.55, w:9.5, h:0.9, fontFace:SANS, fontSize:13, align:"center",
