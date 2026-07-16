@@ -23,6 +23,10 @@ const SANS  = "Poppins";  // brand font (body) - embedded in official template
 const LOGO_COLOR = "nsf_ncar_logo_color.png"; // full-colour, for light backgrounds
 const LOGO_WHITE = "nsf_ncar_logo_white.png"; // white text, for dark backgrounds
 const LOGO_W = 2.05, LOGO_H = 0.56;           // aspect 1005:276
+// ---- official GDEX lockup logos (from GDEX 2026 template) ----
+const GDEX_COLOR = "gdex_lockup_color.png";   // full-colour, for light backgrounds (bottom NSF|NCAR cropped off)
+const GDEX_WHITE = "gdex_lockup_white.png";   // white text, for dark backgrounds (bottom NSF|NCAR cropped off)
+const GDEX_W = 1.9, GDEX_H = 0.96;            // aspect 1000:505
 
 let n = 0;
 function logo(s, dark) {
@@ -59,11 +63,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   const s = p.addSlide(); s.background = { color: MID };
   // official NSF NCAR logo, top-left
   s.addImage({ path: LOGO_WHITE, x:0.7, y:0.6, w:2.8, h:0.77 });
-  // faint concentric motif circles (top-right)
-  [3.4,2.5,1.6].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
-    { x:10.2-d/2, y:1.1-d/2+0.2, w:d, h:d, fill:{type:"none"},
-      line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
-  circ(s, 9.55, 0.9, 0.9, AMBERLT, "\u21BB", MID, 30);
+  // official GDEX lockup, top-right (the platform brand)
+  s.addImage({ path: GDEX_WHITE, x:W-GDEX_W-0.6, y:0.7, w:GDEX_W, h:GDEX_H });
   s.addText("dsupdt", { x:0.7, y:2.35, w:9, h:1.4, fontFace:SERIF,
     fontSize:78, bold:true, color:LIGHT, margin:0 });
   s.addText("Periodic Dataset Updates for the GDEX Servers", {
@@ -1307,11 +1308,11 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   kicker(s, "Developer configuration", DEEP); title(s, "Environment & Prerequisites");
   const items = [
     ["\u2318","Under dsarch/dsupdt","All operational datasets run under dsupdt/dsarch control; dsupdt hands its local files to dsarch for archiving onto GDEX.", DEEP],
-    ["$","$UPDTWKP","Root for working dirs. If set to /lustre/gdex/work, then $UPDTWKP/zji/icoads resolves under it; if unset, -WD is used as given.", TEAL],
+    ["$","$UPDTWKP","Root for working dirs (unset \u2192 -WD used as-is). Hourly files sharing a name across days need a date pattern in -WD to keep each workdir/server-file pair unique, e.g. -WD $UPDTWKP/zji/ds084.1/<YYYYMMDD>.", TEAL],
     ["\uD83D\uDD12","Ownership","Only the owning specialist may run a record. Use -MD to override, or -LN to run on behalf of another (auto-adds -MD to dsarch).", AMBER],
     ["d","dNNNNNN.*","Input files must start with the dataset number and match -DS \u2014 a guard against operating on the wrong dataset.", GREEN],
     ["\u2225","-PL parallelism","Fork N child processes, each handling one record, for datasets with many independent, time-consuming updates.", DEEP],
-    ["\u2709","-DB / logs","Debug logging via -DB level [path] [file]; default log path $DSSHOME/dssdb/log, file pgdss.dbg.", TEAL],
+    ["\u2709","-DB / logs","Debug logging via -DB level [path] [file]; default log path $GDEXHOME/dssdb/log, file pgdss.dbg.", TEAL],
   ];
   const y0=1.7, cw=6.05, ch=1.5, gapx=0.23, gapy=0.2; let i=0;
   items.forEach(it=>{
@@ -1369,6 +1370,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 (() => {
   const s = p.addSlide(); s.background = { color: MID };
   s.addImage({ path: LOGO_WHITE, x:W-LOGO_W-0.4, y:0.3, w:LOGO_W, h:LOGO_H });
+  s.addImage({ path: GDEX_WHITE, x:W-GDEX_W-0.4, y:0.3+LOGO_H+0.12, w:GDEX_W, h:GDEX_H });
   [3.0,2.2,1.4].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:11.6-d/2, y:6.2-d/2, w:d, h:d, fill:{type:"none"},
       line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
@@ -1408,6 +1410,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 (() => {
   const s = p.addSlide(); s.background = { color: MID };
   s.addImage({ path: LOGO_WHITE, x:W-LOGO_W-0.4, y:0.3, w:LOGO_W, h:LOGO_H });
+  s.addImage({ path: GDEX_WHITE, x:W-GDEX_W-0.4, y:0.3+LOGO_H+0.12, w:GDEX_W, h:GDEX_H });
   // concentric motif, centered behind the mark
   [4.4,3.3,2.2].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
     { x:W/2-d/2, y:2.55-d/2, w:d, h:d, fill:{type:"none"},
