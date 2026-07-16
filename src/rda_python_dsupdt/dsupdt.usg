@@ -383,6 +383,14 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   'filename.<YYYYMM>.ext' updated to end date 2007-10-31 becomes
   'filename.200710.ext'.
 
+  A pattern may also be embedded in the working directory (-WD). When hourly
+  remote/server files reuse the same name on different days, include a date
+  pattern in the -WD path so each workdir/server-file combination is unique
+  and a freshly downloaded file is not overwritten before it is archived.
+  For example, -WD '$UPDTWKP/zji/ds084.1/<YYYYMMDD>' resolves to
+  '$UPDTWKP/zji/ds084.1/20071031' for end date 2007-10-31, keeping each day's
+  download and build isolated.
+
   Linking a local file record to an update control record (via -CI) causes
   the control record's scheduled action to run automatically against that
   local file.
@@ -1458,7 +1466,7 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
   option accepts up to 3 values: Debug Level, debug log file path, and
   debug log file name. The debug level is required and may be a single
   integer (e.g., 1000 to log levels 1 through 1000) or a range (e.g.,
-  200-1000). The default log path is '$DSSHOME/dssdb/log' and the default
+  200-1000). The default log path is '$GDEXHOME/dssdb/log' and the default
   log file name is 'pgdss.dbg'. Provide the second and third values to
   override these defaults.
 
