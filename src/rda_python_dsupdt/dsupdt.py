@@ -681,8 +681,8 @@ class DsUpdt(PgUpdt, PgSplit):
             s = "-UC{}".format(self.params['CI'][0]) if ('CI' in self.params and len(self.params['CI']) == 1) else ""
             self.pglog("{}{}: no config record of local file found to update for '{}'".format(self.params['DS'], s, self.params['LN']), self.PGOPT['wrnlog'])
             continue
-         s = 's' if loccnt > 1 else ''
-         self.pglog("{}: {} for {} update record{}".format(self.params['DS'], self.PGOPT['CACT'], loccnt, s), logact)
+         if loccnt > 1:
+            self.pglog("{}: {} for {} update records".format(self.params['DS'], self.PGOPT['CACT'], loccnt), logact)
          logact = self.PGOPT['emlsep']
          for j in range(loccnt):
             locrec = self.onerecord(locrecs, j)
@@ -939,10 +939,11 @@ class DsUpdt(PgUpdt, PgSplit):
       def flush_noop():
          if not noop_list: return
          sep = "\n" if noop_pos > 0 else ''
+         lpfx = "{}-L{}".format(locrec['dsid'], lindex)
          if len(noop_list) >= 3:   # roll a run of 3+ into one range line
-            txt = "{} update periods UNCHANGED [{} .. {}] - already archived, no newer source file\n\n".format(len(noop_list), noop_list[0], noop_list[-1])
+            txt = "{}: {} update periods UNCHANGED [{} .. {}] - already archived, no newer source file\n\n".format(lpfx, len(noop_list), noop_list[0], noop_list[-1])
          else:                     # keep a single line per period for a short run
-            txt = "".join("{} - already archived, no newer source file\n\n".format(e) for e in noop_list)
+            txt = "".join("{}: {} - already archived, no newer source file\n\n".format(lpfx, e) for e in noop_list)
          self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:noop_pos] + sep + txt + self.PGLOG['EMLMSG'][noop_pos:]
       for i in range(ecnt):
          if self.ALLCNT > 1 and i > 0:
