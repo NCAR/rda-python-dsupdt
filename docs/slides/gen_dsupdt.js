@@ -1259,6 +1259,88 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   foot(s);
 })();
 
+// ============================================================ 16b EMAIL REPORT EXAMPLE
+(() => {
+  const s = p.addSlide(); s.background = { color: LIGHT };
+  kicker(s, "Reporting", AMBER); title(s, "Reading the Email Report");
+  s.addText("A worked example (-MC A) \u2014 d609000, one 4D valid-interval run", {
+    x:0.5, y:1.28, w:12.3, h:0.3, fontFace:SANS, italic:true, fontSize:12.5, color:MUTE, margin:0 });
+  // --- the email panel (dark, mono) ---
+  const PX=0.5, PY=1.7, PW=8.35, PH=5.0;
+  s.addShape(p.ShapeType.roundRect, { x:PX, y:PY, w:PW, h:PH, rectRadius:0.08,
+    fill:{color:MID}, line:{color:"2C4E7D", width:1} });
+  const P_SUB="FFFFFF", P_HDR="42C0FF", P_MUTE="9AB6D6", P_ARCH="7FD1A6", P_RLINE="FAA119", P_CTRL="C3D7EE", P_TXT="E6EEF8", P_ERR="FF8A80";
+  const L=(t,c,b)=>({text:t,options:{color:c,bold:!!b,breakLine:true}});
+  s.addText([
+    L("Subject: 4 local files archived for",P_SUB,true),
+    L("         DSUPDT of D609000-C57 on casper61",P_SUB,true),
+    L(" ",P_MUTE),
+    L("ERROR MESSAGE:",P_ERR,true),
+    L("Failed Metadata Summaring: d609000",P_ERR),
+    L("  scm: connection timed out to metadata DB",P_MUTE),
+    L(" ",P_MUTE),
+    L("SUMMARY:",P_HDR,true),
+    L("d609000: 4 of 16 local files ARCHIVED(AW) for",P_TXT),
+    L("  [2026-07-16:12(UTC) .. 2026-07-17:06(UTC)]",P_MUTE),
+    L(" ",P_MUTE),
+    L("DETAIL INFORMATION:",P_HDR,true),
+    L("d609000-L480: 12 update periods UNCHANGED",P_MUTE),
+    L("  [..07-13:12(UTC) .. 07-16:06(UTC)] already archived",P_MUTE),
+    L(" ",P_MUTE),
+    L("d609000-R329-20260716.nam.t12z\u2026grib2: got new file",P_RLINE,true),
+    L("d609000-L480-20260716.nam.t12z\u2026grib2:",P_ARCH),
+    L("   ARCHIVED(AW) for \u202607-16:12(UTC) - Metadata Gathered",P_ARCH),
+    L("   \u2026 t18z, t00z, t06z (3 more archived) \u2026",P_MUTE),
+    L(" ",P_MUTE),
+    L("d609000: Failed Metadata Summaring",P_ERR),
+    L("d609000-C57: Next Control Time 2026-07-18 03:00:00",P_CTRL),
+  ], { x:PX+0.22, y:PY+0.16, w:PW-0.44, h:PH-0.32, fontFace:MONO, fontSize:9.6,
+       color:P_TXT, margin:0, valign:"top", lineSpacingMultiple:1.08 });
+  // --- annotation column ---
+  const AX=9.05, AW=3.78;
+  s.addText("How to read it", { x:AX, y:1.62, w:AW, h:0.3, fontFace:SANS, bold:true, fontSize:15, color:DEEP, margin:0 });
+  const notes = [
+    ["Subject", "headline count archived across all periods this run.", INK],
+    ["ERROR", "raw failures, prefixed with the failing target; shown in every mode.", "C0392B"],
+    ["SUMMARY", "one combined line per record: M of N + period range.", DEEP],
+    ["Roll-up", "no-op re-check periods collapse into one UNCHANGED line.", TEAL],
+    ["R-line", "d609000-R<n>-<remote file>: per-remote-record source status.", AMBER],
+  ];
+  let ay=2.0;
+  notes.forEach(nn=>{
+    s.addShape(p.ShapeType.roundRect, { x:AX, y:ay, w:AW, h:0.66, rectRadius:0.06,
+      fill:{color:TINT}, line:{color:LINE, width:1} });
+    s.addShape(p.ShapeType.roundRect, { x:AX, y:ay, w:0.12, h:0.66, rectRadius:0.02, fill:{color:nn[2]}, line:{type:"none"} });
+    s.addText([
+      {text:nn[0]+"  ",options:{bold:true,color:nn[2]}},
+      {text:nn[1],options:{color:INK}},
+    ], { x:AX+0.24, y:ay, w:AW-0.36, h:0.66, fontFace:SANS, fontSize:10.5, margin:0, valign:"middle", lineSpacingMultiple:0.96 });
+    ay += 0.72;
+  });
+  // status legend
+  s.addText("Source status", { x:AX, y:ay-0.04, w:AW, h:0.3, fontFace:SANS, bold:true, fontSize:13, color:DEEP, margin:0 });
+  ay += 0.34;
+  const st = [
+    ["got new file","fresh download, no prior copy", GREEN],
+    ["got change file","server file changed, redownloaded", AMBER],
+    ["local file used","local copy current, nothing fetched", MUTE],
+  ];
+  st.forEach(t=>{
+    circ(s, AX+0.02, ay+0.04, 0.14, t[2], "", LIGHT, 8);
+    s.addText([
+      {text:t[0]+"  ",options:{fontFace:MONO,bold:true,color:t[2]}},
+      {text:"\u2014 "+t[1],options:{color:MUTE}},
+    ], { x:AX+0.28, y:ay-0.04, w:AW-0.28, h:0.3, fontFace:SANS, fontSize:10.5, margin:0, valign:"middle" });
+    ay += 0.30;
+  });
+  s.addText([
+    {text:"No remote record?  ",options:{bold:true,color:AMBER}},
+    {text:"the status folds into the archived line:   ",options:{color:MUTE}},
+    {text:"\u2026 ARCHIVED(AW) for \u2026 - local file used - Metadata Gathered",options:{fontFace:MONO,color:INK}},
+  ], { x:0.5, y:6.82, w:12.3, h:0.32, fontFace:SANS, fontSize:11, margin:0, align:"center" });
+  foot(s);
+})();
+
 // ============================================================ 17 KEY MODE OPTIONS
 (() => {
   const s = p.addSlide(); s.background = { color: LIGHT };

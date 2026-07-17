@@ -891,6 +891,7 @@ class DsUpdt(PgUpdt, PgSplit):
       if rcnd: rmtcnd += " AND " + rcnd
       rmtrecs = self.pgmget("drupdt", "*", rmtcnd + " ORDER BY dindex, remotefile", self.PGOPT['extlog'])
       rcnt = len(rmtrecs['remotefile']) if rmtrecs else 0
+      has_rmtrec = rcnt > 0   # real remote (drupdt) record(s) exist for this local file
       if rcnt == 0:
          if rcnd and self.pgget("drupdt", "", loccnd):
             return self.pglog("{}: NO remote file record matched for {}".format(locinfo, rcnd), self.PGOPT['emlerr'])
@@ -975,6 +976,7 @@ class DsUpdt(PgUpdt, PgSplit):
          gxerr = 0                              # gatherxml failures this period (noted inline, do not block compaction)
          rmtcnt = acnt = ccnt = ut = 0
          rfiles = rfile = None
+         rridx = None                           # rindex of the remote (drupdt) record that produced the file
          if tempinfo['RS'] == 0 and lcnt > 2: tempinfo['RS'] = 1
          for l in range(lcnt):
             if self.PGLOG['DSCHECK'] and ((l+1)%20) == 0:
@@ -982,6 +984,7 @@ class DsUpdt(PgUpdt, PgSplit):
             lfile = locfiles[l]
             locinfo = "{}-L{}-{}".format(locrec['dsid'], lindex, lfile)
             tempinfo['gotnew'] = tempinfo['archived'] = 0
+            tempinfo['dlstat'] = 0                 # 1 got new file, 2 got change file, 3 local file used
             tempinfo['ainfo'] = None
             tempinfo['ainfo'] = self.file_archive_info(lfile, locrec, tempinfo)
             if not tempinfo['ainfo']: continue
@@ -1018,6 +1021,7 @@ class DsUpdt(PgUpdt, PgSplit):
                      if dfiles and pgrec['remotefile'] == rfile and not self.PGOPT['mcnt']:
                         continue  # skip
                      rfile = pgrec['remotefile']
+                     rridx = pgrec['rindex']
                      act = 0 if locrec['action'] == 'AQ' else self.PGOPT['ACTS']&self.OPTS['DR'][0]
                      dfiles = self.download_remote_files(pgrec, lfile, linfo, locrec, locinfo, tempinfo, act)
                      if self.PGOPT['rstat'] < 0:
@@ -1066,7 +1070,14 @@ class DsUpdt(PgUpdt, PgSplit):
                      gx = tempinfo.get('gxstat')
                      if gx is not None and not gx: gxerr += 1
                      if detail_on:
+                        dlmap = {1: "got new file", 2: "got change file", 3: "local file used"}
+                        status = dlmap.get(tempinfo.get('dlstat', 0))
+                        rmt_line = has_rmtrec and rridx is not None and status
+                        if rmt_line:   # a remote file record is involved: report its download status on its own line
+                           arch_lines.append("{}-R{}-{}: {}".format(locrec['dsid'], rridx, rfile if rfile else lfile, status))
                         aline = "{}-L{}-{}: {}ARCHIVED({}) for {}".format(locrec['dsid'], lindex, lfile, "RE-" if rearch else "", locrec['action'], tempinfo['einfo'])
+                        if not rmt_line and status:   # no remote file record: fold the status into the archived local file line
+                           aline += " - " + status
                         if gx is not None:
                            aline += " - " + ("Metadata Gathered" if gx else "Failed Metadata Gathering")
                         arch_lines.append(aline)
@@ -1126,8 +1137,8 @@ class DsUpdt(PgUpdt, PgSplit):
                if not noop_list: noop_pos = emlmark
                noop_list.append(tempinfo['einfo'])
             else:
-               if arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): one line per file
-                  self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark] + "".join(a + "\n" for a in arch_lines)
+               if arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): one line per file, blank line after the list
+                  self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark] + "".join(a + "\n" for a in arch_lines) + "\n"
                if noop_list:   # a run of no-ops ended before this working period: flush and restart the count
                   flush_noop()
                   noop_list.clear()
@@ -1155,23 +1166,25 @@ class DsUpdt(PgUpdt, PgSplit):
       if self.PGOPT['wtidx']:
          if self.sm:
             sx = "{} -d {} -r".format(self.sm, dsid)
-            smpass = 1
             # cache stderr (256) instead of logging as error (4): metadata
             # refresh failures should be reported but must NOT trigger a retry.
             # run the scm command with wrnlog (log/stderr only, not email) and
             # report a compact status line to the email instead of the raw command
             if 0 in self.PGOPT['wtidx']:
+               smpass = 1
                self.pgsystem(sx + 'w all', self.PGOPT['wrnlog'], 1281) # 1+256+1024
                if self.PGLOG['SYSERR']:
                   self.pglog("Failed Metadata Summaring: {}\n{}".format(dsid, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
                   smpass = 0
-            else:
+               self.pglog("{}: {}".format(dsid, "Metadata Summarized" if smpass else "Failed Metadata Summaring"), self.PGOPT['emllog'])
+            else:   # a specific top group was passed to scm: report per group index
                for tidx in self.PGOPT['wtidx']:
+                  smpass = 1
                   self.pgsystem("{}w {}".format(sx, tidx), self.PGOPT['wrnlog'], 1281)  # 1+256+1024
                   if self.PGLOG['SYSERR']:
-                     self.pglog("Failed Metadata Summaring: {}\n{}".format(dsid, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
+                     self.pglog("Failed Metadata Summaring: {}-G{}\n{}".format(dsid, tidx, self.PGLOG['SYSERR']), self.PGOPT['emlerr'])
                      smpass = 0
-            self.pglog("{}: {}".format(dsid, "Metadata Summarized" if smpass else "Failed Metadata Summaring"), self.PGOPT['emllog'])
+                  self.pglog("{}-G{}: {}".format(dsid, tidx, "Metadata Summarized" if smpass else "Failed Metadata Summaring"), self.PGOPT['emllog'])
          self.PGOPT['wtidx'] = {}
 
    # retrieve remote files
@@ -1200,6 +1213,7 @@ class DsUpdt(PgUpdt, PgSplit):
          list[str] | None: List of downloaded local filenames, or None on error.
       """
       emlsum = self.PGOPT['emlsum'] if self.PGOPT['CACT'] == "DR" else self.PGOPT['emllog']
+      tempinfo['dlstat'] = 3   # default: no newer source, same file found locally (overridden below when a file is fetched)
       rfile = rmtrec['remotefile']
       rmtinfo = locinfo
       dfiles = []
@@ -1408,6 +1422,7 @@ class DsUpdt(PgUpdt, PgSplit):
                   if self.compare_md5sum(bname, sname, self.PGOPT['emlsum']):
                      self.pglog("{}: GOT same size, but different content, {} file via {}".format(sname, ftype, dact), self.PGOPT['emlsum'])
                      tempinfo['gotnew'] = gotnew = 1
+                     tempinfo['dlstat'] = 2   # had a local copy, server file changed: redownloaded
                      self.PGOPT['rdcnt'] += rdcnt
                      scnt += 1
                   else:
@@ -1420,11 +1435,13 @@ class DsUpdt(PgUpdt, PgSplit):
                else:
                   self.pglog("{}: GOT different {} file via {}".format(sname, ftype, dact), self.PGOPT['emlsum'])
                   tempinfo['gotnew'] = gotnew = 1
+                  tempinfo['dlstat'] = 2   # had a local copy, server file changed: redownloaded
                   self.PGOPT['rdcnt'] += rdcnt
                   scnt += 1
                if bname: self.pgsystem("rm -rf " + bname, self.PGOPT['emerol'], 4)
             elif rcmd:
                self.pglog("{}: GOT {} file via {}".format(sname, ftype, dact), emlsum)
+               tempinfo['dlstat'] = 1   # no prior local copy: fresh download
                self.PGOPT['rdcnt'] += rdcnt
                scnt += 1
             self.PGOPT['dcnt'] += 1
