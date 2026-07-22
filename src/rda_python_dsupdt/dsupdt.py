@@ -898,7 +898,7 @@ class DsUpdt(PgUpdt, PgSplit):
          # create a empty record remote file
          rcnt = 1
          rmtrecs = {'lindex': [lindex], 'dindex': [0]}
-         rflds = ['remotefile', 'serverfile', 'download', 'begintime', 'endtime', 'tinterval']
+         rflds = ['rindex', 'remotefile', 'serverfile', 'download', 'begintime', 'endtime', 'tinterval']
          for rfld in rflds: rmtrecs[rfld] = [None]
       if rcnt == 1:
          if 'RF' in self.params and len(self.params['RF']) == 1 and not (rmtrecs['remotefile'][0] and self.params['RF'][0] == rmtrecs['remotefile'][0]):
