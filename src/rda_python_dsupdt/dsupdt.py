@@ -127,6 +127,7 @@ class DsUpdt(PgUpdt, PgSplit):
             self.unlock_update_info()
       if self.SUBJECT and 'NE' not in self.params and (self.PGLOG['ERRCNT'] or 'EE' not in self.params):
          self.SUBJECT += " on " + self.PGLOG['HOSTNAME']
+         if self.PGLOG['ERRMSG']: self.PGLOG['ERRMSG'] = self.compact_repeated_errors(self.PGLOG['ERRMSG'])
          self.set_email("{}: {}".format(self.SUBJECT, self.TOPMSG), self.EMLTOP)
          if self.ACTSTR: self.SUBJECT = "{} for {}".format(self.ACTSTR, self.SUBJECT)
          if self.PGSIG['PPID'] > 1: self.SUBJECT += " in CPID {}".format(self.PGSIG['PID'])
@@ -145,6 +146,47 @@ class DsUpdt(PgUpdt, PgSplit):
          else:
             self.record_dscheck_status("D")
       if self.OPTS[self.PGOPT['CACT']][2]: self.cmdlog()   # log end time if not getting only action
+
+   # collapse repeated identical error bodies (e.g. the same download/gatherxml
+   # failure text recurring for many different remote/local files) into one entry
+   def compact_repeated_errors(self, errmsg):
+      """Merge numbered ERROR MESSAGE entries that share the same error body.
+
+      Entries are stored by pg_log.py as "{n}. {header}\\n{body}" blocks separated
+      by a blank line. When the same underlying error (e.g. an OpenBao/network
+      failure message) repeats for several different files or commands, only the
+      per-entry header differs while the body text is identical. This groups
+      such entries together into a single "N similar errors:" block listing all
+      the headers once, followed by the shared body - instead of repeating the
+      full error text for every file.
+
+      Args:
+         errmsg (str): Current PGLOG['ERRMSG'] content.
+
+      Returns:
+         str: Possibly-compacted error message text.
+      """
+      entries = errmsg.split("\n\n")
+      groups = []      # [body, [headers]]
+      index = {}       # body (or full text if single-line) -> group index
+      for entry in entries:
+         m = re.match(r'^\d+\.\s(.*)', entry, re.S)
+         text = m.group(1) if m else entry
+         (header, body) = text.split('\n', 1) if '\n' in text else (text, '')
+         key = body if body else text
+         if key in index:
+            groups[index[key]][1].append(header)
+         else:
+            index[key] = len(groups)
+            groups.append([body, [header]])
+      if len(groups) == len(entries): return errmsg   # nothing repeats: leave as is
+      out = []
+      for (n, (body, headers)) in enumerate(groups, 1):
+         if len(headers) > 1:
+            out.append("{}. {} similar errors:\n   - {}\n{}".format(n, len(headers), "\n   - ".join(headers), body))
+         else:
+            out.append("{}. {}{}".format(n, headers[0], ("\n" + body) if body else ''))
+      return "\n\n".join(out)
 
    # delete update control records for given dsid and control indices
    def delete_control_info(self):
@@ -974,9 +1016,10 @@ class DsUpdt(PgUpdt, PgSplit):
          perrcnt = self.PGLOG['ERRCNT']
          arch_lines = []                        # one compact line per file archived this period
          gxerr = 0                              # gatherxml failures this period (noted inline, do not block compaction)
+         statcnt = {}                           # tally of download status (new/changed/used) this period, for >4-file compaction
          rmtcnt = acnt = ccnt = ut = 0
          rfiles = rfile = None
-         rridx = None                           # rindex of the remote (drupdt) record that produced the file
+         ridx = None                             # rindex of the remote (drupdt) record that produced the file
          if tempinfo['RS'] == 0 and lcnt > 2: tempinfo['RS'] = 1
          for l in range(lcnt):
             if self.PGLOG['DSCHECK'] and ((l+1)%20) == 0:
@@ -1021,7 +1064,7 @@ class DsUpdt(PgUpdt, PgSplit):
                      if dfiles and pgrec['remotefile'] == rfile and not self.PGOPT['mcnt']:
                         continue  # skip
                      rfile = pgrec['remotefile']
-                     rridx = pgrec['rindex']
+                     ridx = pgrec['rindex']
                      act = 0 if locrec['action'] == 'AQ' else self.PGOPT['ACTS']&self.OPTS['DR'][0]
                      dfiles = self.download_remote_files(pgrec, lfile, linfo, locrec, locinfo, tempinfo, act)
                      if self.PGOPT['rstat'] < 0:
@@ -1072,9 +1115,13 @@ class DsUpdt(PgUpdt, PgSplit):
                      if detail_on:
                         dlmap = {1: "got new file", 2: "got change file", 3: "local file used"}
                         status = dlmap.get(tempinfo.get('dlstat', 0))
-                        rmt_line = has_rmtrec and rridx is not None and status
+                        if status: statcnt[status] = statcnt.get(status, 0) + 1
+                        rmt_line = has_rmtrec and ridx is not None and status
                         if rmt_line:   # a remote file record is involved: report its download status on its own line
-                           arch_lines.append("{}-R{}-{}: {}".format(locrec['dsid'], rridx, rfile if rfile else lfile, status))
+                           rlabel = rfile if rfile else lfile
+                           sname = tempinfo.get('sname')
+                           if sname and sname != rlabel: rlabel += "-" + sname
+                           arch_lines.append("{}-R{}-{}: {}".format(locrec['dsid'], ridx, rlabel, status))
                         aline = "{}-L{}-{}: {}ARCHIVED({}) for {}".format(locrec['dsid'], lindex, lfile, "RE-" if rearch else "", locrec['action'], tempinfo['einfo'])
                         if not rmt_line and status:   # no remote file record: fold the status into the archived local file line
                            aline += " - " + status
@@ -1138,7 +1185,16 @@ class DsUpdt(PgUpdt, PgSplit):
                noop_list.append(tempinfo['einfo'])
             else:
                if arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): one line per file, blank line after the list
-                  self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark] + "".join(a + "\n" for a in arch_lines) + "\n"
+                  narch = ucnt - pucnt   # files actually archived this period (arch_lines may also hold R- download-status lines)
+                  if narch > 4:   # too many files for a per-file listing: roll into one compact summary line
+                     statlbl = {"got new file": "new", "got change file": "changed", "local file used": "used"}
+                     statparts = ["{} {}".format(statcnt[s], statlbl[s]) for s in statlbl if statcnt.get(s)]
+                     statsuf = " - " + ", ".join(statparts) if statparts else ''
+                     gxsuf = " - {} Failed Metadata Gathering".format(gxerr) if gxerr else ''
+                     txt = "{}-L{}: {} files ARCHIVED({}) for {}{}{}\n\n".format(locrec['dsid'], lindex, narch, locrec['action'], tempinfo['einfo'], statsuf, gxsuf)
+                  else:
+                     txt = "".join(a + "\n" for a in arch_lines) + "\n"
+                  self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark] + txt
                if noop_list:   # a run of no-ops ended before this working period: flush and restart the count
                   flush_noop()
                   noop_list.clear()
@@ -1214,6 +1270,7 @@ class DsUpdt(PgUpdt, PgSplit):
       """
       emlsum = self.PGOPT['emlsum'] if self.PGOPT['CACT'] == "DR" else self.PGOPT['emllog']
       tempinfo['dlstat'] = 3   # default: no newer source, same file found locally (overridden below when a file is fetched)
+      tempinfo['sname'] = None   # server filename actually fetched, when different from the remote filename
       rfile = rmtrec['remotefile']
       rmtinfo = locinfo
       dfiles = []
@@ -1423,6 +1480,7 @@ class DsUpdt(PgUpdt, PgSplit):
                      self.pglog("{}: GOT same size, but different content, {} file via {}".format(sname, ftype, dact), self.PGOPT['emlsum'])
                      tempinfo['gotnew'] = gotnew = 1
                      tempinfo['dlstat'] = 2   # had a local copy, server file changed: redownloaded
+                     if sname != rname: tempinfo['sname'] = sname
                      self.PGOPT['rdcnt'] += rdcnt
                      scnt += 1
                   else:
@@ -1436,12 +1494,14 @@ class DsUpdt(PgUpdt, PgSplit):
                   self.pglog("{}: GOT different {} file via {}".format(sname, ftype, dact), self.PGOPT['emlsum'])
                   tempinfo['gotnew'] = gotnew = 1
                   tempinfo['dlstat'] = 2   # had a local copy, server file changed: redownloaded
+                  if sname != rname: tempinfo['sname'] = sname
                   self.PGOPT['rdcnt'] += rdcnt
                   scnt += 1
                if bname: self.pgsystem("rm -rf " + bname, self.PGOPT['emerol'], 4)
             elif rcmd:
                self.pglog("{}: GOT {} file via {}".format(sname, ftype, dact), emlsum)
                tempinfo['dlstat'] = 1   # no prior local copy: fresh download
+               if sname != rname: tempinfo['sname'] = sname
                self.PGOPT['rdcnt'] += rdcnt
                scnt += 1
             self.PGOPT['dcnt'] += 1
