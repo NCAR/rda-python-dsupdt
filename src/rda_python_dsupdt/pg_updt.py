@@ -2077,7 +2077,9 @@ class PgUpdt(PgOPT, PgCMD):
 
       If there were errors, the retry interval is used to schedule an earlier
       retry of now + retryint, provided it falls before the normal next run
-      time; otherwise the normal next run time is used instead.
+      time; otherwise the normal next run time is used instead. When the
+      archive action ran and every local file was archived successfully
+      (no failed periods), errors logged elsewhere do not trigger a retry.
       """
       pgrec = self.PGOPT['UCNTL']
       cstr = "{}-C{}".format(self.params['DS'], pgrec['cindex'])
@@ -2089,7 +2091,9 @@ class PgUpdt(PgOPT, PgCMD):
       if not freq: return self.pglog("{}: {}".format(cstr, unit), self.PGOPT['emlerr'])
       cntltime = self.check_datetime(pgrec['cntltime'], curtime)
       nexttime = self.adjust_control_time(cntltime, freq, unit, pgrec['cntloffset'], curtime)
-      if self.PGLOG['ERRCNT']:
+      archok = self.PGOPT['ACTS']&self.OPTS['AF'][0] and not self.PGOPT['sumfail']
+      retry = self.PGLOG['ERRCNT'] and not archok
+      if retry:
          cfreq = self.get_control_time(pgrec['retryint'], "Retry Interval")
          if cfreq:
             rtime = self.adddatetime(curtime, cfreq[0], cfreq[1], cfreq[2], cfreq[3], cfreq[4], cfreq[5], cfreq[6])
@@ -2099,7 +2103,7 @@ class PgUpdt(PgOPT, PgCMD):
       if not pgrec['cntltime'] or self.pgcmp(nexttime, pgrec['cntltime']) > 0:
          record['cntltime'] = nexttime
          cstr += "set to {}".format(nexttime)
-         if self.PGLOG['ERRCNT']: cstr += " to retry"
+         if retry: cstr += " to retry"
       else:
          cstr += "already set to {}".format(pgrec['cntltime'])
       cstr += " for Action {}({})".format(self.PGOPT['CACT'], self.OPTS[self.PGOPT['CACT']][1])
