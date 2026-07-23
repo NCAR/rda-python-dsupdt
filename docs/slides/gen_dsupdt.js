@@ -1272,28 +1272,28 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   const P_SUB="FFFFFF", P_HDR="42C0FF", P_MUTE="9AB6D6", P_ARCH="7FD1A6", P_RLINE="FAA119", P_CTRL="C3D7EE", P_TXT="E6EEF8", P_ERR="FF8A80";
   const L=(t,c,b)=>({text:t,options:{color:c,bold:!!b,breakLine:true}});
   s.addText([
-    L("Subject: 4 local files archived for",P_SUB,true),
+    L("Subject: 6 local files archived for",P_SUB,true),
     L("         DSUPDT of D609000-C57 on casper61",P_SUB,true),
     L(" ",P_MUTE),
     L("ERROR MESSAGE:",P_ERR,true),
-    L("Failed Metadata Summaring: d609000",P_ERR),
-    L("  scm: connection timed out to metadata DB",P_MUTE),
+    L("2 similar errors:",P_ERR),
+    L("  - Failed Metadata Gathering: \u2026t18z\u2026grib2",P_MUTE),
+    L("  - Failed Metadata Gathering: \u2026t00z\u2026grib2",P_MUTE),
+    L("  gatherxml: connection timed out to metadata DB",P_MUTE),
     L(" ",P_MUTE),
     L("SUMMARY:",P_HDR,true),
-    L("d609000: 4 of 16 local files ARCHIVED(AW) for",P_TXT),
+    L("d609000: 6 of 18 local files ARCHIVED(AW) for",P_TXT),
     L("  [2026-07-16:12(UTC) .. 2026-07-17:06(UTC)]",P_MUTE),
     L(" ",P_MUTE),
     L("DETAIL INFORMATION:",P_HDR,true),
     L("d609000-L480: 12 update periods UNCHANGED",P_MUTE),
     L("  [..07-13:12(UTC) .. 07-16:06(UTC)] already archived",P_MUTE),
     L(" ",P_MUTE),
-    L("d609000-R329-20260716.nam.t12z\u2026grib2: got new file",P_RLINE,true),
-    L("d609000-L480-20260716.nam.t12z\u2026grib2:",P_ARCH),
-    L("   ARCHIVED(AW) for \u202607-16:12(UTC) - Metadata Gathered",P_ARCH),
-    L("   \u2026 t18z, t00z, t06z (3 more archived) \u2026",P_MUTE),
+    L("d609000-L480: 6 files ARCHIVED(AW) for",P_ARCH,true),
+    L("  07-16:12(UTC) - 4 new, 2 changed",P_ARCH),
+    L("  - 2 Failed Metadata Gathering",P_ARCH),
     L(" ",P_MUTE),
-    L("d609000: Failed Metadata Summaring",P_ERR),
-    L("d609000-C57: Next Control Time 2026-07-18 03:00:00",P_CTRL),
+    L("d609000-C57: Next Control Time 2026-07-17 03:00:00",P_CTRL),
   ], { x:PX+0.22, y:PY+0.16, w:PW-0.44, h:PH-0.32, fontFace:MONO, fontSize:9.6,
        color:P_TXT, margin:0, valign:"top", lineSpacingMultiple:1.08 });
   // --- annotation column ---
@@ -1301,10 +1301,10 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addText("How to read it", { x:AX, y:1.62, w:AW, h:0.3, fontFace:SANS, bold:true, fontSize:15, color:DEEP, margin:0 });
   const notes = [
     ["Subject", "headline count archived across all periods this run.", INK],
-    ["ERROR", "raw failures, prefixed with the failing target; shown in every mode.", "C0392B"],
+    ["ERROR", "identical repeated failures merge into one \u201CN similar errors\u201D block.", "C0392B"],
     ["SUMMARY", "one combined line per record: M of N + period range.", DEEP],
     ["Roll-up", "no-op re-check periods collapse into one UNCHANGED line.", TEAL],
-    ["R-line", "d609000-R<n>-<remote file>: per-remote-record source status.", AMBER],
+    [">4 files", "more than 4 archived files in one period roll into one summary line with a new/changed/used tally.", AMBER],
   ];
   let ay=2.0;
   notes.forEach(nn=>{
