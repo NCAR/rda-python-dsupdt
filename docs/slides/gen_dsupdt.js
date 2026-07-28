@@ -826,6 +826,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["<M*M>","fraction","per-fraction id: C=A,B,C  c=a,b,c  N=1,2,3"],
     ["<HH>","end hour","2-digit hour for sub-daily cadence"],
     ["<P0> <P1>","runtime","generic values supplied via -GP"],
+    ["<S01:03S>","serial","expand one name into 01,02,03 (padded to start width)"],
   ];
   const rr=[[
     { text:"Pattern", options:{ bold:true, color:LIGHT, fill:{color:DEEP}, fontFace:MONO } },
@@ -837,7 +838,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:r[1], options:{ color:TEAL, bold:true, fill:{color:bg} } },
     { text:r[2], options:{ color:INK, fill:{color:bg} } },
   ]); });
-  s.addTable(rr, { x:0.5, y:2.3, w:8.1, colW:[2.5,1.5,4.1], rowH:0.44,
+  s.addTable(rr, { x:0.5, y:2.3, w:8.1, colW:[2.5,1.5,4.1], rowH:0.39,
     fontFace:SANS, fontSize:12.5, valign:"middle",
     border:{type:"solid", color:LINE, pt:0.5}, margin:[0,0.08,0,0.08] });
 
