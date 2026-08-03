@@ -1205,10 +1205,10 @@ class DsUpdt(PgUpdt, PgSplit):
          if detail_on and self.PGOPT['ACTS']&self.OPTS['AF'][0]:
             if ucnt == pucnt and self.PGLOG['ERRCNT'] == perrcnt:   # nothing archived, no error: collapse re-check detail
                self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
-               if arch_run:   # a run of archived periods ended before this no-op: flush and restart the count
+               if arch_run:   # a run of archived periods ended before this no-op: flush (shifts EMLMSG) and restart the count
                   flush_arch()
                   arch_run.clear()
-               if not noop_list: noop_pos = emlmark
+               if not noop_list: noop_pos = len(self.PGLOG['EMLMSG'])   # re-read: may have shifted by the arch flush above
                noop_list.append(tempinfo['einfo'])
             elif arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): buffer for possible roll-up
                narch = ucnt - pucnt   # files actually archived this period (arch_lines may also hold R- download-status lines)
@@ -1221,10 +1221,10 @@ class DsUpdt(PgUpdt, PgSplit):
                else:
                   txt = "".join(a + "\n" for a in arch_lines) + "\n"
                self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
-               if noop_list:   # a run of no-ops ended before this working period: flush and restart the count
+               if noop_list:   # a run of no-ops ended before this working period: flush (shifts EMLMSG) and restart the count
                   flush_noop()
                   noop_list.clear()
-               if not arch_run: arch_pos = emlmark
+               if not arch_run: arch_pos = len(self.PGLOG['EMLMSG'])   # re-read: may have shifted by the noop flush above
                arch_run.append({'txt': txt, 'einfo': tempinfo['einfo'], 'narch': narch, 'statcnt': dict(statcnt), 'gxerr': gxerr})
             else:   # a real (non-gatherxml) error this period: flush any pending runs, keep this period's own detail as-is
                if noop_list:
