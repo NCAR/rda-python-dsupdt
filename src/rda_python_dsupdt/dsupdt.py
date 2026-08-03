@@ -16,6 +16,7 @@
 import sys
 import os
 import re
+import difflib
 from os import path as op
 from .pg_updt import PgUpdt
 from rda_python_common.pg_split import PgSplit
@@ -147,18 +148,45 @@ class DsUpdt(PgUpdt, PgSplit):
             self.record_dscheck_status("D")
       if self.OPTS[self.PGOPT['CACT']][2]: self.cmdlog()   # log end time if not getting only action
 
-   # collapse repeated identical error bodies (e.g. the same download/gatherxml
-   # failure text recurring for many different remote/local files) into one entry
+   ERRSIMRATIO = 0.85   # similarity threshold (0-1) for treating two error bodies as "the same" error
+
+   # normalize volatile, non-diagnostic tokens (memory addresses, register/hex
+   # dumps, pids, sizes, timestamps, ...) in an error body so structurally
+   # identical errors group together even when the exact bytes differ (e.g. a
+   # crash handler's memory dump, which varies slightly between otherwise
+   # identical crashes)
+   def normalize_error_body(self, body):
+      """Replace volatile tokens in an error body with placeholders.
+
+      Args:
+         body (str): Raw error body text.
+
+      Returns:
+         str: Normalized text, safe to use for similarity comparison.
+      """
+      norm = re.sub(r'0[xX][0-9a-fA-F]+', '0xHEX', body)
+      norm = re.sub(r'\b[0-9a-fA-F]{6,}\b', 'HEX', norm)
+      norm = re.sub(r'\b\d{4,}\b', 'NUM', norm)
+      return norm
+
+   # collapse repeated, near-identical error bodies (e.g. the same download/
+   # gatherxml/crash failure recurring for many different remote/local files
+   # or invocations) into one entry
    def compact_repeated_errors(self, errmsg):
-      """Merge numbered ERROR MESSAGE entries that share the same error body.
+      """Merge numbered ERROR MESSAGE entries that share the same underlying error.
 
       Entries are stored by pg_log.py as "{n}. {header}\\n{body}" blocks separated
       by a blank line. When the same underlying error (e.g. an OpenBao/network
-      failure message) repeats for several different files or commands, only the
-      per-entry header differs while the body text is identical. This groups
-      such entries together into a single "N similar errors:" block listing all
-      the headers once, followed by the shared body - instead of repeating the
-      full error text for every file.
+      failure, or a crash handler's dump) repeats for several different files,
+      commands, or invocations, only the per-entry header differs while the body
+      text is identical or nearly identical (volatile tokens like addresses,
+      pids, or a crash dump's memory/register bytes can differ slightly between
+      otherwise-identical occurrences). Bodies are first normalized
+      (normalize_error_body) and grouped exactly when possible; any remaining
+      near-duplicates are grouped by text similarity (difflib, ERRSIMRATIO
+      threshold). Matched entries are merged into a single "N similar errors:"
+      block listing all the headers once, followed by the (first-seen) body -
+      instead of repeating the full error text for every occurrence.
 
       Args:
          errmsg (str): Current PGLOG['ERRMSG'] content.
@@ -167,25 +195,25 @@ class DsUpdt(PgUpdt, PgSplit):
          str: Possibly-compacted error message text.
       """
       entries = errmsg.split("\n\n")
-      groups = []      # [body, [headers]]
-      index = {}       # normalized body (or full text if single-line) -> group index
+      groups = []      # [body, normalized_body, [headers]]
       for entry in entries:
          m = re.match(r'^\d+\.\s(.*)', entry, re.S)
          text = m.group(1) if m else entry
          (header, body) = text.split('\n', 1) if '\n' in text else (text, '')
          key = body if body else text
-         # segv_handler crash dumps append a volatile memory/register blob that
-         # differs slightly between otherwise-identical crashes; strip it before
-         # grouping so repeated segfaults on the same command still collapse
-         key = re.sub(r'(?im)^(segv_handler\(\):\s*segmentation fault:).*$', r'\1', key)
-         if key in index:
-            groups[index[key]][1].append(header)
+         norm = self.normalize_error_body(key)
+         group = None
+         for g in groups:
+            if norm == g[1] or difflib.SequenceMatcher(None, norm, g[1]).ratio() >= self.ERRSIMRATIO:
+               group = g
+               break
+         if group:
+            group[2].append(header)
          else:
-            index[key] = len(groups)
-            groups.append([body, [header]])
+            groups.append([body, norm, [header]])
       if len(groups) == len(entries): return errmsg   # nothing repeats: leave as is
       out = []
-      for (n, (body, headers)) in enumerate(groups, 1):
+      for (n, (body, norm, headers)) in enumerate(groups, 1):
          if len(headers) > 1:
             out.append("{}. {} similar errors:\n   - {}\n{}".format(n, len(headers), "\n   - ".join(headers), body))
          else:
