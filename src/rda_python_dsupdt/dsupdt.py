@@ -16,6 +16,7 @@
 import sys
 import os
 import re
+import difflib
 from os import path as op
 from .pg_updt import PgUpdt
 from rda_python_common.pg_split import PgSplit
@@ -147,18 +148,45 @@ class DsUpdt(PgUpdt, PgSplit):
             self.record_dscheck_status("D")
       if self.OPTS[self.PGOPT['CACT']][2]: self.cmdlog()   # log end time if not getting only action
 
-   # collapse repeated identical error bodies (e.g. the same download/gatherxml
-   # failure text recurring for many different remote/local files) into one entry
+   ERRSIMRATIO = 0.85   # similarity threshold (0-1) for treating two error bodies as "the same" error
+
+   # normalize volatile, non-diagnostic tokens (memory addresses, register/hex
+   # dumps, pids, sizes, timestamps, ...) in an error body so structurally
+   # identical errors group together even when the exact bytes differ (e.g. a
+   # crash handler's memory dump, which varies slightly between otherwise
+   # identical crashes)
+   def normalize_error_body(self, body):
+      """Replace volatile tokens in an error body with placeholders.
+
+      Args:
+         body (str): Raw error body text.
+
+      Returns:
+         str: Normalized text, safe to use for similarity comparison.
+      """
+      norm = re.sub(r'0[xX][0-9a-fA-F]+', '0xHEX', body)
+      norm = re.sub(r'\b[0-9a-fA-F]{6,}\b', 'HEX', norm)
+      norm = re.sub(r'\b\d{4,}\b', 'NUM', norm)
+      return norm
+
+   # collapse repeated, near-identical error bodies (e.g. the same download/
+   # gatherxml/crash failure recurring for many different remote/local files
+   # or invocations) into one entry
    def compact_repeated_errors(self, errmsg):
-      """Merge numbered ERROR MESSAGE entries that share the same error body.
+      """Merge numbered ERROR MESSAGE entries that share the same underlying error.
 
       Entries are stored by pg_log.py as "{n}. {header}\\n{body}" blocks separated
       by a blank line. When the same underlying error (e.g. an OpenBao/network
-      failure message) repeats for several different files or commands, only the
-      per-entry header differs while the body text is identical. This groups
-      such entries together into a single "N similar errors:" block listing all
-      the headers once, followed by the shared body - instead of repeating the
-      full error text for every file.
+      failure, or a crash handler's dump) repeats for several different files,
+      commands, or invocations, only the per-entry header differs while the body
+      text is identical or nearly identical (volatile tokens like addresses,
+      pids, or a crash dump's memory/register bytes can differ slightly between
+      otherwise-identical occurrences). Bodies are first normalized
+      (normalize_error_body) and grouped exactly when possible; any remaining
+      near-duplicates are grouped by text similarity (difflib, ERRSIMRATIO
+      threshold). Matched entries are merged into a single "N similar errors:"
+      block listing all the headers once, followed by the (first-seen) body -
+      instead of repeating the full error text for every occurrence.
 
       Args:
          errmsg (str): Current PGLOG['ERRMSG'] content.
@@ -167,21 +195,25 @@ class DsUpdt(PgUpdt, PgSplit):
          str: Possibly-compacted error message text.
       """
       entries = errmsg.split("\n\n")
-      groups = []      # [body, [headers]]
-      index = {}       # body (or full text if single-line) -> group index
+      groups = []      # [body, normalized_body, [headers]]
       for entry in entries:
          m = re.match(r'^\d+\.\s(.*)', entry, re.S)
          text = m.group(1) if m else entry
          (header, body) = text.split('\n', 1) if '\n' in text else (text, '')
          key = body if body else text
-         if key in index:
-            groups[index[key]][1].append(header)
+         norm = self.normalize_error_body(key)
+         group = None
+         for g in groups:
+            if norm == g[1] or difflib.SequenceMatcher(None, norm, g[1]).ratio() >= self.ERRSIMRATIO:
+               group = g
+               break
+         if group:
+            group[2].append(header)
          else:
-            index[key] = len(groups)
-            groups.append([body, [header]])
+            groups.append([body, norm, [header]])
       if len(groups) == len(entries): return errmsg   # nothing repeats: leave as is
       out = []
-      for (n, (body, headers)) in enumerate(groups, 1):
+      for (n, (body, norm, headers)) in enumerate(groups, 1):
          if len(headers) > 1:
             out.append("{}. {} similar errors:\n   - {}\n{}".format(n, len(headers), "\n   - ".join(headers), body))
          else:
@@ -988,6 +1020,26 @@ class DsUpdt(PgUpdt, PgSplit):
          else:                     # keep a single line per period for a short run
             txt = "".join("{}: {} - already archived, no newer source file\n\n".format(lpfx, e) for e in noop_list)
          self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:noop_pos] + sep + txt + self.PGLOG['EMLMSG'][noop_pos:]
+      arch_pos = 0                                         # roll-up of consecutive clean-archive periods
+      arch_run = []
+      def flush_arch():
+         if not arch_run: return
+         sep = "\n" if arch_pos > 0 else ''
+         lpfx = "{}-L{}".format(locrec['dsid'], lindex)
+         if len(arch_run) >= 3:   # roll a run of 3+ archived periods into one range line
+            total = sum(r['narch'] for r in arch_run)
+            statcnt_all = {}
+            for r in arch_run:
+               for s, c in r['statcnt'].items(): statcnt_all[s] = statcnt_all.get(s, 0) + c
+            gxerr_all = sum(r['gxerr'] for r in arch_run)
+            statlbl = {"got new file": "new", "got change file": "changed", "local file used": "used"}
+            statparts = ["{} {}".format(statcnt_all[s], statlbl[s]) for s in statlbl if statcnt_all.get(s)]
+            statsuf = " - " + ", ".join(statparts) if statparts else ''
+            gxsuf = " - {} Failed Metadata Gathering".format(gxerr_all) if gxerr_all else ''
+            txt = "{}: {} files ARCHIVED({}) for [{} .. {}]{}{}\n\n".format(lpfx, total, locrec['action'], arch_run[0]['einfo'], arch_run[-1]['einfo'], statsuf, gxsuf)
+         else:                     # keep the already-rendered per-period text for a short run
+            txt = "".join(r['txt'] for r in arch_run)
+         self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:arch_pos] + sep + txt + self.PGLOG['EMLMSG'][arch_pos:]
       for i in range(ecnt):
          if self.ALLCNT > 1 and i > 0:
             tempinfo = self.get_tempinfo(locrec, locinfo, i)
@@ -1181,25 +1233,37 @@ class DsUpdt(PgUpdt, PgSplit):
          if detail_on and self.PGOPT['ACTS']&self.OPTS['AF'][0]:
             if ucnt == pucnt and self.PGLOG['ERRCNT'] == perrcnt:   # nothing archived, no error: collapse re-check detail
                self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
-               if not noop_list: noop_pos = emlmark
+               if arch_run:   # a run of archived periods ended before this no-op: flush (shifts EMLMSG) and restart the count
+                  flush_arch()
+                  arch_run.clear()
+               if not noop_list: noop_pos = len(self.PGLOG['EMLMSG'])   # re-read: may have shifted by the arch flush above
                noop_list.append(tempinfo['einfo'])
-            else:
-               if arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): one line per file, blank line after the list
-                  narch = ucnt - pucnt   # files actually archived this period (arch_lines may also hold R- download-status lines)
-                  if narch > 4:   # too many files for a per-file listing: roll into one compact summary line
-                     statlbl = {"got new file": "new", "got change file": "changed", "local file used": "used"}
-                     statparts = ["{} {}".format(statcnt[s], statlbl[s]) for s in statlbl if statcnt.get(s)]
-                     statsuf = " - " + ", ".join(statparts) if statparts else ''
-                     gxsuf = " - {} Failed Metadata Gathering".format(gxerr) if gxerr else ''
-                     txt = "{}-L{}: {} files ARCHIVED({}) for {}{}{}\n\n".format(locrec['dsid'], lindex, narch, locrec['action'], tempinfo['einfo'], statsuf, gxsuf)
-                  else:
-                     txt = "".join(a + "\n" for a in arch_lines) + "\n"
-                  self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark] + txt
-               if noop_list:   # a run of no-ops ended before this working period: flush and restart the count
+            elif arch_lines and (self.PGLOG['ERRCNT'] - perrcnt) == gxerr:   # archive/re-archive period (gatherxml pass/fail noted inline): buffer for possible roll-up
+               narch = ucnt - pucnt   # files actually archived this period (arch_lines may also hold R- download-status lines)
+               if narch > 4:   # too many files for a per-file listing: roll into one compact summary line
+                  statlbl = {"got new file": "new", "got change file": "changed", "local file used": "used"}
+                  statparts = ["{} {}".format(statcnt[s], statlbl[s]) for s in statlbl if statcnt.get(s)]
+                  statsuf = " - " + ", ".join(statparts) if statparts else ''
+                  gxsuf = " - {} Failed Metadata Gathering".format(gxerr) if gxerr else ''
+                  txt = "{}-L{}: {} files ARCHIVED({}) for {}{}{}\n\n".format(locrec['dsid'], lindex, narch, locrec['action'], tempinfo['einfo'], statsuf, gxsuf)
+               else:
+                  txt = "".join(a + "\n" for a in arch_lines) + "\n"
+               self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
+               if noop_list:   # a run of no-ops ended before this working period: flush (shifts EMLMSG) and restart the count
                   flush_noop()
                   noop_list.clear()
+               if not arch_run: arch_pos = len(self.PGLOG['EMLMSG'])   # re-read: may have shifted by the noop flush above
+               arch_run.append({'txt': txt, 'einfo': tempinfo['einfo'], 'narch': narch, 'statcnt': dict(statcnt), 'gxerr': gxerr})
+            else:   # a real (non-gatherxml) error this period: flush any pending runs, keep this period's own detail as-is
+               if noop_list:
+                  flush_noop()
+                  noop_list.clear()
+               if arch_run:
+                  flush_arch()
+                  arch_run.clear()
          if self.PGOPT['rstat'] < -1 or self.PGOPT['rstat'] < 0 and 'QE' in self.params: break  # unrecoverable errors
       flush_noop()
+      flush_arch()
       if rscnt > 0: self.refresh_metadata(locrec['dsid'])
       if ufile and uinfo and ucnt == 0:
          self.pglog("{}: Last successful update - {}".format(uinfo, ufile), self.PGOPT['emlsum'])
