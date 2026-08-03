@@ -168,12 +168,16 @@ class DsUpdt(PgUpdt, PgSplit):
       """
       entries = errmsg.split("\n\n")
       groups = []      # [body, [headers]]
-      index = {}       # body (or full text if single-line) -> group index
+      index = {}       # normalized body (or full text if single-line) -> group index
       for entry in entries:
          m = re.match(r'^\d+\.\s(.*)', entry, re.S)
          text = m.group(1) if m else entry
          (header, body) = text.split('\n', 1) if '\n' in text else (text, '')
          key = body if body else text
+         # segv_handler crash dumps append a volatile memory/register blob that
+         # differs slightly between otherwise-identical crashes; strip it before
+         # grouping so repeated segfaults on the same command still collapse
+         key = re.sub(r'(?im)^(segv_handler\(\):\s*segmentation fault:).*$', r'\1', key)
          if key in index:
             groups[index[key]][1].append(header)
          else:

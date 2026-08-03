@@ -19,7 +19,7 @@ object that existing callers expect.
 
 from . import PgUpdt
 
-__version__ = "3.0.17"
+__version__ = "3.0.18"
 
 __all__ = [
    "PgUpdt",
