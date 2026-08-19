@@ -27,21 +27,46 @@ const LOGO_W = 2.05, LOGO_H = 0.56;           // aspect 1005:276
 const GDEX_COLOR = "gdex_lockup_color.png";   // full-colour, for light backgrounds (bottom NSF|NCAR cropped off)
 const GDEX_WHITE = "gdex_lockup_white.png";   // white text, for dark backgrounds (bottom NSF|NCAR cropped off)
 const GDEX_W = 1.9, GDEX_H = 0.96;            // aspect 1000:505
+// ---- cover art from the template "Cover - Blue" layout (slideLayout2) ----
+const COVER_EARTH = "cover_earth.jpg";        // GDEX Earth banner, cropped as in template
+const COVER_BLUE  = "cover_blue.png";         // NCAR blue wave panel (transparent right edge)
+// ---- interior background from the template "Bold Statement" layout (slideLayout4) ----
+const INTERIOR_BG = "interior_bg.png";        // cyan wave lines over the dk2 blue field
+// ---- interior background from the template content layouts (slideLayout3 / 8) ----
+const INTERIOR_LIGHT = "interior_light.jpg";  // white field with faint wave art on the right
+const DECK_NAME = "DSUPDT  \u2022  DEVELOPER & GENERAL USAGE GUIDE";
+
+// Chrome of the template interior content slides (slides 11 & 12 / slideLayout3, 8):
+// white field with faint wave art, NSF NCAR logo top-right, GDEX lockup
+// bottom-right, slide number and deck name bottom-left split by a short rule.
+// The static part lives on a master so the artwork is embedded only once.
+p.defineSlideMaster({
+  title: "INTERIOR",
+  background: { path: INTERIOR_LIGHT },
+  objects: [
+    { image: { path: LOGO_COLOR, x:10.59, y:0.44, w:2.07, h:0.57 } },
+    { image: { path: GDEX_COLOR, x:11.61, y:6.70, w:1.05, h:0.53 } },
+    { line:  { x:0.67, y:7.04, w:0, h:0.22, line:{ color:INK, width:0.75 } } },
+  ],
+});
+// Same chrome without the bottom-right GDEX lockup, for slides whose content
+// reaches into that corner (a partly covered logo looks worse than none).
+p.defineSlideMaster({
+  title: "INTERIOR_NG",
+  background: { path: INTERIOR_LIGHT },
+  objects: [
+    { image: { path: LOGO_COLOR, x:10.59, y:0.44, w:2.07, h:0.57 } },
+    { line:  { x:0.67, y:7.04, w:0, h:0.22, line:{ color:INK, width:0.75 } } },
+  ],
+});
 
 let n = 0;
-function logo(s, dark) {
-  s.addImage({ path: dark ? LOGO_WHITE : LOGO_COLOR,
-    x: W-LOGO_W-0.4, y: 0.3, w: LOGO_W, h: LOGO_H });
-}
-function foot(s, dark) {
+function foot(s) {
   n++;
-  logo(s, dark);
-  s.addText("dsupdt  \u2022  Developer & General Usage Guide", {
-    x:0.5, y:H-0.42, w:8, h:0.3, fontFace:SANS, fontSize:9,
-    color: dark?"97999B":MUTE, align:"left", margin:0 });
-  s.addText(String(n), {
-    x:W-0.9, y:H-0.42, w:0.4, h:0.3, fontFace:SANS, fontSize:9,
-    color: dark?"97999B":MUTE, align:"right", margin:0 });
+  s.addText(String(n), { x:0.28, y:7.05, w:0.4, h:0.3, fontFace:SANS,
+    fontSize:9.5, bold:true, color:INK, margin:0 });
+  s.addText(DECK_NAME, { x:0.86, y:7.05, w:6, h:0.3, fontFace:SANS,
+    fontSize:9.5, bold:true, color:INK, margin:0 });
 }
 function kicker(s, txt, color) {
   s.addText(txt.toUpperCase(), { x:0.5, y:0.42, w:9, h:0.3, fontFace:SANS,
@@ -51,6 +76,23 @@ function title(s, txt) {
   s.addText(txt, { x:0.5, y:0.72, w:10.2, h:0.7, fontFace:SERIF,
     fontSize:32, bold:true, color:INK, margin:0 });
 }
+// Chrome of the template "Interior - Bold Statement" layout (slideLayout4):
+// blue field + cyan wave art, GDEX lockup top-left, NSF NCAR logo top-right,
+// slide number and presentation name bottom-left split by a short white rule.
+const BOLD_X = 1.67, BOLD_W = 10.0;   // template title-box left margin / width
+function boldStatement(s) {
+  s.background = { color: DEEP };
+  s.addImage({ path: INTERIOR_BG, x:0, y:0, w:W, h:H });
+  s.addImage({ path: GDEX_WHITE, x:0.67, y:0.40, w:1.12, h:0.57 });
+  s.addImage({ path: LOGO_WHITE, x:10.59, y:0.43, w:2.07, h:0.57 });
+  n++;
+  s.addText(String(n), { x:0.28, y:7.05, w:0.4, h:0.3, fontFace:SANS,
+    fontSize:9.5, bold:true, color:LIGHT, margin:0 });
+  s.addShape(p.ShapeType.line, { x:0.67, y:7.04, w:0, h:0.22,
+    line:{color:LIGHT, width:0.75} });
+  s.addText(DECK_NAME, { x:0.86, y:7.05, w:6, h:0.3, fontFace:SANS,
+    fontSize:9.5, bold:true, color:LIGHT, margin:0 });
+}
 function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   s.addShape(p.ShapeType.ellipse, { x,y,w:d,h:d, fill:{color:fill},
     line:{type:"none"} });
@@ -59,43 +101,50 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 }
 
 // ============================================================ 1 TITLE
+// Follows the "Cover - Blue" cover slide of the official NSF NCAR GDEX 2026
+// template (slide 2 / slideLayout2): Earth banner on the right, blue wave
+// panel on the left, NSF NCAR + GDEX white logos on top, orange accent bar
+// beside a left-aligned text stack divided by a short cyan rule.
 (() => {
   const s = p.addSlide(); s.background = { color: MID };
+  // cover art: Earth banner (right) overlaid by the blue wave panel (left)
+  s.addImage({ path: COVER_EARTH, x:3.37, y:0, w:9.96, h:H });
+  s.addImage({ path: COVER_BLUE,  x:0,    y:0, w:9.50, h:H });
   // official NSF NCAR logo, top-left
-  s.addImage({ path: LOGO_WHITE, x:0.7, y:0.6, w:2.8, h:0.77 });
+  s.addImage({ path: LOGO_WHITE, x:0.92, y:0.83, w:4.15, h:1.14 });
   // official GDEX lockup, top-right (the platform brand)
-  s.addImage({ path: GDEX_WHITE, x:W-GDEX_W-0.6, y:0.7, w:GDEX_W, h:GDEX_H });
-  s.addText("dsupdt", { x:0.7, y:2.35, w:9, h:1.4, fontFace:SERIF,
-    fontSize:78, bold:true, color:LIGHT, margin:0 });
-  s.addText("Periodic Dataset Updates for the GDEX Servers", {
-    x:0.72, y:3.7, w:11.5, h:0.6, fontFace:SANS, fontSize:24,
-    color:"C3D7EE", margin:0 });
-  s.addText([
-    { text:"Download \u2192 Build \u2192 Archive, scheduled and automated", options:{} }
-  ], { x:0.72, y:4.35, w:11, h:0.5, fontFace:SANS, italic:true,
-       fontSize:15, color:"C3D7EE", margin:0 });
-  // meta chips
-  const chips = ["Developer Configuration", "General Usage", "Updated 2026-07"];
-  let cx = 0.72;
-  chips.forEach(c => {
-    const w = 0.28 + c.length*0.098;
-    s.addShape(p.ShapeType.roundRect, { x:cx, y:5.35, w, h:0.5,
-      rectRadius:0.1, fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
-    s.addText(c, { x:cx, y:5.35, w, h:0.5, align:"center", valign:"middle",
-      fontFace:SANS, fontSize:12, bold:true, color:"C3D7EE", margin:0 });
-    cx += w + 0.2;
-  });
-  s.addText([
-    { text:"Zaihua Ji", options:{ bold:true } },
-    { text:"   zji@ucar.edu", options:{} },
-  ], { x:0.72, y:6.05, w:11, h:0.4, fontFace:SANS, fontSize:13, color:"C3D7EE", margin:0 });
-  s.addText("Companion utility to  dsarch  \u2022  orchestrated by the  dscheck  daemon", {
-    x:0.72, y:6.5, w:11, h:0.4, fontFace:MONO, fontSize:12, color:"97999B", margin:0 });
+  s.addImage({ path: GDEX_WHITE, x:9.02, y:0.79, w:2.42, h:1.22 });
+  // brand orange accent bar next to the text stack
+  s.addShape(p.ShapeType.rect, { x:0, y:2.47, w:0.23, h:3.75,
+    fill:{color:"FAA119"}, line:{type:"none"} });
+
+  const TX = 1.01, TW = 5.5;
+  s.addText("UPDATED AUGUST 2026", { x:TX, y:2.19, w:TW, h:0.3,
+    fontFace:SANS, fontSize:11, bold:true, color:LIGHT, charSpacing:1, margin:0 });
+  s.addText("dsupdt: Periodic Dataset Updates for the GDEX Servers", {
+    x:TX, y:2.55, w:TW, h:1.85, fontFace:SERIF, fontSize:29, bold:true,
+    color:LIGHT, lineSpacingMultiple:0.95, margin:0, valign:"top" });
+  s.addText("Download \u2192 Build \u2192 Archive, scheduled and automated", {
+    x:TX, y:4.45, w:TW, h:0.4, fontFace:SANS, fontSize:13, bold:true,
+    color:LIGHT, margin:0 });
+  // short cyan rule, as on the template cover
+  s.addShape(p.ShapeType.line, { x:TX, y:5.01, w:0.88, h:0,
+    line:{color:AMBERLT, width:3} });
+  s.addText("Zaihua Ji", { x:TX, y:5.28, w:TW, h:0.35, fontFace:SANS,
+    fontSize:16, bold:true, color:LIGHT, margin:0 });
+  s.addText("Software Engineer  \u2022  zji@ucar.edu", { x:TX, y:5.63, w:TW, h:0.35,
+    fontFace:SANS, fontSize:16, color:LIGHT, margin:0 });
+  s.addText("DEVELOPER CONFIGURATION \u2022 GENERAL USAGE \u2022 COMPANION UTILITY TO DSARCH", {
+    x:TX, y:6.08, w:TW, h:0.5, fontFace:SANS, fontSize:9.5, color:LIGHT,
+    lineSpacingMultiple:1.1, margin:0 });
+  s.addText("Orchestrated by the dscheck daemon: dsupdt retrieves data from remote servers, assembles archive-ready local files, and hands them to dsarch for archiving onto the GDEX Servers.", {
+    x:TX, y:6.80, w:TW, h:0.45, fontFace:SANS, fontSize:7, italic:true,
+    color:LIGHT, lineSpacingMultiple:1.1, margin:0 });
 })();
 
 // ============================================================ 2 OVERVIEW
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Overview", TEAL); title(s, "What is dsupdt?");
   s.addText([
     { text:"dsupdt", options:{ bold:true, color:DEEP } },
@@ -108,24 +157,29 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
        color:INK, lineSpacingMultiple:1.15, margin:0, valign:"top" });
   s.addShape(p.ShapeType.roundRect, { x:0.5, y:3.55, w:5.3, h:3.05,
     rectRadius:0.1, fill:{color:TINT}, line:{color:LINE, width:1} });
+  s.addShape(p.ShapeType.rect, { x:0.5, y:3.55, w:0.12, h:3.05,
+    fill:{color:DEEP}, line:{type:"none"} });
   s.addText("Configured per dataset in GDEXDB", {
-    x:0.75, y:3.75, w:4.9, h:0.4, fontFace:SANS, bold:true, fontSize:14,
+    x:0.8, y:3.72, w:4.85, h:0.4, fontFace:SANS, bold:true, fontSize:14.5,
     color:DEEP, margin:0 });
+  s.addShape(p.ShapeType.line, { x:0.8, y:4.14, w:4.68, h:0,
+    line:{color:LINE, width:1} });
+  const obul = { indent:15, code:"2022", color:DEEP };
   s.addText([
-    { text:"All operational datasets run under ", options:{} },
+    { text:"All operational datasets run under ", options:{ bullet:obul } },
     { text:"dsupdt / dsarch", options:{ bold:true } },
-    { text:"; configuration spans three record types.", options:{} },
-    { text:"\nEdit records from the CLI (", options:{} },
+    { text:"; configuration spans three record types.", options:{ breakLine:true } },
+    { text:"Edit records from the CLI (", options:{ bullet:obul } },
     { text:"-GA / -SA", options:{ fontFace:MONO, bold:true, color:DEEP } },
-    { text:") or the web Config Editor (next slide).", options:{} },
-    { text:"\nOnly the owning specialist may run an update record (override with ", options:{} },
+    { text:") or the web Config Editor (next slide).", options:{ breakLine:true } },
+    { text:"Only the owning specialist may run an update record (override with ", options:{ bullet:obul } },
     { text:"-MD", options:{ fontFace:MONO, bold:true, color:DEEP } },
-    { text:").", options:{} },
-    { text:"\nInput files must be named ", options:{} },
+    { text:").", options:{ breakLine:true } },
+    { text:"Input files must be named ", options:{ bullet:obul } },
     { text:"dNNNNNN.*", options:{ fontFace:MONO, bold:true, color:DEEP } },
     { text:" to guard against the wrong dataset.", options:{} },
-  ], { x:0.75, y:4.2, w:4.85, h:2.25, fontFace:SANS, fontSize:13,
-       color:INK, lineSpacingMultiple:1.12, margin:0, valign:"top" });
+  ], { x:0.8, y:4.26, w:4.8, h:2.2, fontFace:SANS, fontSize:12.5,
+       color:INK, lineSpacingMultiple:1.06, paraSpaceAfter:7, margin:0, valign:"top" });
 
   const caps = [
     ["\u2699","Configure","update controls, local & remote file records"],
@@ -153,7 +207,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 2B INSTALL & RESOURCES
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Get it & learn it", TEAL); title(s, "Install & Resources");
   const cards = [
     { c:DEEP,  ic:"\u2325", t:"GitHub Repository",
@@ -209,14 +263,14 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"  \u2014 run  ", options:{} },
     { text:"dsupdt -h", options:{ fontFace:MONO, bold:true } },
     { text:"  to get started.", options:{} },
-  ], { x:0.5, y:6.55, w:12.33, h:0.4, fontFace:SANS, fontSize:13, color:INK,
+  ], { x:0.5, y:6.42, w:10.9, h:0.4, fontFace:SANS, fontSize:13, color:INK,
        align:"center", margin:0 });
   foot(s);
 })();
 
 // ============================================================ 3 PIPELINE
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "How it works", TEAL); title(s, "The Five-Stage Update Pipeline");
   const stages = [
     ["1","Server Files","original files on the remote server or a local area", DEEP],
@@ -267,7 +321,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 4 DATA MODEL
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Data model", TEAL); title(s, "Three Record Types in GDEXDB");
   const cards = [
     ["dcupdt","Update Control","-SC / -GC", DEEP,
@@ -304,14 +358,14 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:" dumps all three sections;  ", options:{} },
     { text:"-SA (-SetAll)", options:{ fontFace:MONO, bold:true } },
     { text:" applies an edited file back to GDEXDB.", options:{} },
-  ], { x:0.5, y:6.45, w:12.3, h:0.4, fontFace:SANS, fontSize:13, color:MUTE,
+  ], { x:0.5, y:6.36, w:10.9, h:0.4, fontFace:SANS, fontSize:13, color:MUTE,
        align:"center", margin:0 });
   foot(s);
 })();
 
 // ============================================================ 5 COMMAND ANATOMY
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "General usage", TEAL); title(s, "Anatomy of a Command");
   // command line render
   s.addShape(p.ShapeType.roundRect, { x:0.5, y:1.65, w:12.3, h:0.95,
@@ -360,7 +414,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 6 QUICK START
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "General usage", TEAL); title(s, "Quick Start");
   const cmds = [
     ["Show a single option's help","dsupdt -h -UF", DEEP],
@@ -398,14 +452,14 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:".  Omit  ", options:{} },
     { text:"-DS", options:{ fontFace:MONO, bold:true } },
     { text:"  on Get actions to list records across all of your datasets.", options:{} },
-  ], { x:0.5, y:6.5, w:12.3, h:0.4, fontFace:SANS, fontSize:13, color:INK,
+  ], { x:0.5, y:6.36, w:10.9, h:0.4, fontFace:SANS, fontSize:11.5, color:INK,
        align:"center", margin:0 });
   foot(s);
 })();
 
 // ============================================================ 7 CONFIG WORKFLOW
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Developer configuration", DEEP); title(s, "Configuration Workflow");
   // three-step loop
   const steps = [
@@ -456,7 +510,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 8 WEB CONFIG EDITOR
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Developer configuration", DEEP); title(s, "Web Config Editor");
   s.addText([
     { text:"The same three record types can be edited in a browser \u2014 no ", options:{} },
@@ -514,7 +568,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 9 UPDATE CONTROL -SC
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Developer configuration \u2022 dcupdt", DEEP);
   title(s, "Update Control Record  (-SC)");
   s.addText([
@@ -562,7 +616,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 9 LOCAL FILE -SL
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Developer configuration \u2022 dlupdt", TEAL);
   title(s, "Local File Record  (-SL)");
   s.addText([
@@ -623,7 +677,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 10 REMOTE FILE -SR
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Developer configuration \u2022 drupdt", GREEN);
   title(s, "Remote File Record  (-SR)");
   s.addText("Add a remote record only in these three cases:", {
@@ -672,7 +726,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 11 UPDATE ACTIONS FAMILY
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Update actions", AMBER); title(s, "The Update Action Family");
   const acts = [
     ["-UF","Update File","end-to-end: download \u2192 build \u2192 archive \u2192 clean", AMBER, true],
@@ -716,7 +770,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 12 -UF DEEP DIVE
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Update actions", AMBER); title(s, "-UF Deep Dive: One Command, Full Cycle");
   // left: what it does list
   s.addShape(p.ShapeType.roundRect, { x:0.5, y:1.7, w:6.0, h:4.9, rectRadius:0.1,
@@ -769,7 +823,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 13A ARCHIVING & METADATA
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "How it works", TEAL); title(s, "Archiving & Content Metadata");
   s.addText([
     { text:"Once a local file is built, ", options:{} },
@@ -808,7 +862,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 13 PATTERNS
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Developer configuration", DEEP); title(s, "Temporal & Generic Patterns");
   s.addText([
     { text:"Placeholders in file names, download commands, and descriptions are substituted at update time. Default delimiters ", options:{} },
@@ -868,7 +922,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 13B CUSTOM COMMANDS
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Developer configuration", DEEP); title(s, "Custom Commands with  '!'");
   s.addText([
     { text:"Some fields are shell commands by design ", options:{} },
@@ -917,7 +971,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 14 SCHEDULING
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Execution", TEAL); title(s, "Scheduling & Execution");
   s.addText([
     { text:"In production the whole chain is automated \u2014 currently under ", options:{} },
@@ -977,7 +1031,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 15 VALID INTERVAL / MULTI-PERIOD
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Concepts", TEAL); title(s, "Valid Interval & Multi-Period Updates");
   // left concepts
   const items = [
@@ -1041,7 +1095,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 15B TEMPORAL TIMELINE
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Concepts", TEAL); title(s, "How the Temporal Intervals Fit Together");
   s.addText([
     { text:"Data advances one ", options:{} },
@@ -1189,13 +1243,13 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
   ], { x:0.72, y:5.96, w:11.9, h:0.4, fontFace:SANS, fontSize:10.5, color:INK, margin:0, valign:"top", lineSpacingMultiple:1.0 });
 
   // summary strip
-  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.5, w:12.33, h:0.52, rectRadius:0.08,
+  s.addShape(p.ShapeType.roundRect, { x:0.5, y:6.42, w:10.9, h:0.56, rectRadius:0.08,
     fill:{color:TINT2}, line:{color:LINE, width:1} });
   s.addText([
     { text:"Each run re-checks every period in the VI window: ", options:{ bold:true, color:DEEP } },
     { text:"already-archived periods report \u201Cno newer file\u201D, newly available periods are archived, and periods still within DI of now are left for the next run.  ", options:{} },
     { text:"VI = 0 \u2192 only the most recent period.", options:{ italic:true, color:MUTE } },
-  ], { x:0.75, y:6.5, w:11.85, h:0.52, fontFace:SANS, fontSize:11, color:INK,
+  ], { x:0.72, y:6.42, w:10.46, h:0.56, fontFace:SANS, fontSize:10, color:INK,
        margin:0, valign:"middle", lineSpacingMultiple:1.0 });
 
   foot(s);
@@ -1203,7 +1257,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 16 EMAIL REPORTING
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Reporting", AMBER); title(s, "Email Reporting  (-MC / -EMailControl)");
   const codes = [
     ["A","All","full detailed report, always", GREEN],
@@ -1233,7 +1287,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["Summary","headline count + rolled-up \u201CN files ARCHIVED\u201D range lines", DEEP],
     ["Detail","per-file lines; consecutive no-op re-checks collapse into one range line", TEAL],
   ];
-  let sy=4.4;
+  let sy=4.32;
   secs.forEach(sec=>{
     s.addShape(p.ShapeType.roundRect, { x:0.5, y:sy, w:12.33, h:0.68, rectRadius:0.06,
       fill:{color:TINT}, line:{color:LINE, width:1} });
@@ -1243,7 +1297,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       fontFace:SANS, bold:true, fontSize:14, color:LIGHT, margin:0 });
     s.addText(sec[1], { x:2.6, y:sy, w:10.05, h:0.68, fontFace:SANS, fontSize:13,
       color:INK, margin:0, valign:"middle" });
-    sy += 0.78;
+    sy += 0.74;
   });
   s.addText([
     { text:"Related:  ", options:{ bold:true, color:AMBER } },
@@ -1255,14 +1309,14 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:" (=N),  ", options:{} },
     { text:"-CC", options:{ fontFace:MONO, bold:true } },
     { text:" adds carbon-copy recipients.", options:{} },
-  ], { x:0.5, y:6.85, w:12.3, h:0.3, fontFace:SANS, fontSize:11.5, color:MUTE,
+  ], { x:0.5, y:6.56, w:10.9, h:0.3, fontFace:SANS, fontSize:11.5, color:MUTE,
        align:"center", margin:0 });
   foot(s);
 })();
 
 // ============================================================ 16b EMAIL REPORT EXAMPLE
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Reporting", AMBER); title(s, "Reading the Email Report");
   s.addText("A worked example (-MC A) \u2014 d609000, one 4D valid-interval run", {
     x:0.5, y:1.28, w:12.3, h:0.3, fontFace:SANS, italic:true, fontSize:12.5, color:MUTE, margin:0 });
@@ -1307,16 +1361,16 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["Roll-up", "no-op re-check periods collapse into one UNCHANGED line.", TEAL],
     [">4 files", "more than 4 archived files in one period roll into one summary line with a new/changed/used tally.", AMBER],
   ];
-  let ay=2.0;
+  let ay=1.88;
   notes.forEach(nn=>{
-    s.addShape(p.ShapeType.roundRect, { x:AX, y:ay, w:AW, h:0.66, rectRadius:0.06,
+    s.addShape(p.ShapeType.roundRect, { x:AX, y:ay, w:AW, h:0.64, rectRadius:0.06,
       fill:{color:TINT}, line:{color:LINE, width:1} });
-    s.addShape(p.ShapeType.roundRect, { x:AX, y:ay, w:0.12, h:0.66, rectRadius:0.02, fill:{color:nn[2]}, line:{type:"none"} });
+    s.addShape(p.ShapeType.roundRect, { x:AX, y:ay, w:0.12, h:0.64, rectRadius:0.02, fill:{color:nn[2]}, line:{type:"none"} });
     s.addText([
       {text:nn[0]+"  ",options:{bold:true,color:nn[2]}},
       {text:nn[1],options:{color:INK}},
-    ], { x:AX+0.24, y:ay, w:AW-0.36, h:0.66, fontFace:SANS, fontSize:10.5, margin:0, valign:"middle", lineSpacingMultiple:0.96 });
-    ay += 0.72;
+    ], { x:AX+0.24, y:ay, w:AW-0.36, h:0.64, fontFace:SANS, fontSize:10.5, margin:0, valign:"middle", lineSpacingMultiple:0.96 });
+    ay += 0.70;
   });
   // status legend
   s.addText("Source status", { x:AX, y:ay-0.04, w:AW, h:0.3, fontFace:SANS, bold:true, fontSize:13, color:DEEP, margin:0 });
@@ -1338,13 +1392,13 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     {text:"No remote record?  ",options:{bold:true,color:AMBER}},
     {text:"the status folds into the archived line:   ",options:{color:MUTE}},
     {text:"\u2026 ARCHIVED(AW) for \u2026 - local file used - Metadata Gathered",options:{fontFace:MONO,color:INK}},
-  ], { x:0.5, y:6.82, w:12.3, h:0.32, fontFace:SANS, fontSize:11, margin:0, align:"center" });
+  ], { x:0.5, y:6.72, w:10.9, h:0.32, fontFace:SANS, fontSize:11, margin:0, align:"center" });
   foot(s);
 })();
 
 // ============================================================ 17 KEY MODE OPTIONS
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Reference", TEAL); title(s, "Key Mode Options at a Glance");
   const opts = [
     ["-MU","process all elapsed periods"],
@@ -1380,14 +1434,14 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
       color:INK, margin:0, valign:"middle", lineSpacingMultiple:0.95 });
   });
   s.addText("Most modes can be preset in the control record via -UC (single letters) and -KF / -MC / -EC.", {
-    x:0.5, y:6.85, w:12.3, h:0.3, fontFace:SANS, italic:true, fontSize:12,
+    x:0.5, y:6.32, w:10.9, h:0.3, fontFace:SANS, italic:true, fontSize:12,
     color:MUTE, align:"center", margin:0 });
   foot(s);
 })();
 
 // ============================================================ 18 ENVIRONMENT
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Developer configuration", DEEP); title(s, "Environment & Prerequisites");
   const items = [
     ["\u2318","Under dsarch/dsupdt","All operational datasets run under dsupdt/dsarch control; dsupdt hands its local files to dsarch for archiving onto GDEX.", DEEP],
@@ -1416,7 +1470,7 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 19 TROUBLESHOOTING
 (() => {
-  const s = p.addSlide(); s.background = { color: LIGHT };
+  const s = p.addSlide({ masterName:"INTERIOR" });
   kicker(s, "Operations", AMBER); title(s, "Troubleshooting & Recovery");
   const cards = [
     ["Stuck lock","A crashed run may leave PID/host on a record, blocking reprocessing on another host.",
@@ -1451,65 +1505,59 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 20 CLOSING
 (() => {
-  const s = p.addSlide(); s.background = { color: MID };
-  s.addImage({ path: LOGO_WHITE, x:W-LOGO_W-0.4, y:0.3, w:LOGO_W, h:LOGO_H });
-  s.addImage({ path: GDEX_WHITE, x:W-GDEX_W-0.4, y:0.3+LOGO_H+0.12, w:GDEX_W, h:GDEX_H });
-  [3.0,2.2,1.4].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
-    { x:11.6-d/2, y:6.2-d/2, w:d, h:d, fill:{type:"none"},
-      line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
-  s.addText("Recap", { x:0.7, y:0.75, w:8, h:0.4, fontFace:SANS, bold:true,
+  const s = p.addSlide(); boldStatement(s);
+  s.addText("RECAP", { x:BOLD_X, y:1.30, w:8, h:0.35, fontFace:SANS, bold:true,
     fontSize:13, color:AMBERLT, charSpacing:2, margin:0 });
-  s.addText("From Config to Archive", { x:0.7, y:1.15, w:11, h:0.8, fontFace:SERIF,
-    bold:true, fontSize:38, color:LIGHT, margin:0 });
+  s.addText("From Config to Archive", { x:BOLD_X, y:1.70, w:BOLD_W, h:0.8,
+    fontFace:SERIF, bold:true, fontSize:40, color:LIGHT, margin:0 });
   const points = [
     ["Configure","three record types: control (dcupdt), local (dlupdt), remote (drupdt)"],
     ["Run","-UF drives download \u2192 build \u2192 archive \u2192 clean in one command"],
     ["Automate","link to a control record; dscheck dispatches, retries, and reports"],
     ["Tune","patterns, valid interval, parallelism, and email controls per record"],
   ];
-  let yy=2.3;
+  let yy=2.85;
   points.forEach((pt,i)=>{
-    circ(s, 0.7, yy, 0.55, i%2?TEAL:DEEP, String(i+1), LIGHT, 18);
+    circ(s, BOLD_X, yy, 0.55, INK, String(i+1), AMBERLT, 18);
     s.addText([
       { text:pt[0]+"  ", options:{ bold:true, color:LIGHT } },
-      { text:pt[1], options:{ color:"C3D7EE" } },
-    ], { x:1.45, y:yy, w:9.5, h:0.55, fontFace:SANS, fontSize:15, margin:0, valign:"middle" });
+      { text:pt[1], options:{ color:"D5E8FA" } },
+    ], { x:BOLD_X+0.75, y:yy, w:BOLD_W-0.75, h:0.55, fontFace:SANS, fontSize:15,
+         margin:0, valign:"middle" });
     yy += 0.78;
   });
-  s.addShape(p.ShapeType.roundRect, { x:0.7, y:5.75, w:11.9, h:1.1, rectRadius:0.1,
-    fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
+  s.addShape(p.ShapeType.roundRect, { x:BOLD_X, y:6.05, w:BOLD_W, h:0.75,
+    rectRadius:0.1, fill:{color:INK}, line:{color:AMBERLT, width:1} });
   s.addText([
     { text:"Learn more   ", options:{ bold:true, color:AMBERLT } },
-    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"0097A7" } },
-    { text:"   \u2022   full guide: dsupdt.usg   \u2022   docs: ", options:{ color:"C3D7EE" } },
-    { text:"gdex-docs-dsupdt.readthedocs.io", options:{ color:"C3D7EE", hyperlink:{ url:"https://gdex-docs-dsupdt.readthedocs.io" } } },
-    { text:"   \u2022   repo: ", options:{ color:"C3D7EE" } },
-    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"C3D7EE", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
-  ], { x:0.95, y:5.75, w:11.4, h:1.1, fontFace:SANS, fontSize:13, margin:0,
-       valign:"middle", lineSpacingMultiple:1.1 });
+    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:LIGHT } },
+    { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"D5E8FA" } },
+    { text:"gdex-docs-dsupdt.readthedocs.io", options:{ color:"D5E8FA", hyperlink:{ url:"https://gdex-docs-dsupdt.readthedocs.io" } } },
+    { text:"   \u2022   ", options:{ color:"D5E8FA" } },
+    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"D5E8FA", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
+  ], { x:BOLD_X+0.25, y:6.05, w:BOLD_W-0.5, h:0.75, fontFace:SANS, fontSize:12.5,
+       margin:0, valign:"middle", lineSpacingMultiple:1.1 });
 })();
 
 // ============================================================ 21 QUESTIONS
 (() => {
-  const s = p.addSlide(); s.background = { color: MID };
-  s.addImage({ path: LOGO_WHITE, x:W-LOGO_W-0.4, y:0.3, w:LOGO_W, h:LOGO_H });
-  s.addImage({ path: GDEX_WHITE, x:W-GDEX_W-0.4, y:0.3+LOGO_H+0.12, w:GDEX_W, h:GDEX_H });
-  // concentric motif, centered behind the mark
-  [4.4,3.3,2.2].forEach((d,i)=> s.addShape(p.ShapeType.ellipse,
-    { x:W/2-d/2, y:2.55-d/2, w:d, h:d, fill:{type:"none"},
-      line:{color:i===2?AMBERLT:"2C4E7D", width:i===2?2:1} }));
-  circ(s, W/2-0.55, 2.0, 1.1, AMBERLT, "?", MID, 46);
-  s.addText("Any Questions?", { x:0.5, y:3.55, w:12.33, h:0.9, fontFace:SERIF,
-    bold:true, fontSize:52, color:LIGHT, align:"center", margin:0 });
-  s.addText("Thank you", { x:0.5, y:4.55, w:12.33, h:0.5, fontFace:SANS, italic:true,
-    fontSize:18, color:"C3D7EE", align:"center", margin:0 });
-  s.addShape(p.ShapeType.roundRect, { x:W/2-4.75, y:5.55, w:9.5, h:0.9, rectRadius:0.1,
-    fill:{color:"0B2A63"}, line:{color:"2C4E7D", width:1} });
+  const s = p.addSlide(); boldStatement(s);
+  // template title box: x 1.67, y 1.18, w 10.0, h 5.56, vertically centred
+  s.addText("Any Questions?", { x:BOLD_X, y:1.18, w:BOLD_W, h:3.0, fontFace:SERIF,
+    bold:true, fontSize:54, color:LIGHT, margin:0, valign:"bottom" });
+  s.addShape(p.ShapeType.line, { x:BOLD_X, y:4.55, w:0.88, h:0,
+    line:{color:AMBERLT, width:3} });
+  s.addText("Thank you \u2014 dsupdt keeps the operational datasets current, every day.", {
+    x:BOLD_X, y:4.85, w:BOLD_W, h:0.5, fontFace:SANS, fontSize:16, color:"D5E8FA",
+    margin:0 });
+  s.addShape(p.ShapeType.roundRect, { x:BOLD_X, y:5.65, w:BOLD_W, h:0.75,
+    rectRadius:0.1, fill:{color:INK}, line:{color:AMBERLT, width:1} });
   s.addText([
-    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:"0097A7" } },
-    { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"C3D7EE" } },
-    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"C3D7EE", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
-  ], { x:W/2-4.75, y:5.55, w:9.5, h:0.9, fontFace:SANS, fontSize:13, align:"center",
+    { text:"Zaihua Ji   \u2022   zji@ucar.edu   \u2022   ", options:{ color:"D5E8FA" } },
+    { text:"dsupdt -h <OPT>", options:{ fontFace:MONO, color:LIGHT } },
+    { text:"   \u2022   dsupdt.usg   \u2022   ", options:{ color:"D5E8FA" } },
+    { text:"github.com/NCAR/rda-python-dsupdt", options:{ color:"D5E8FA", hyperlink:{ url:"https://github.com/NCAR/rda-python-dsupdt" } } },
+  ], { x:BOLD_X+0.25, y:5.65, w:BOLD_W-0.5, h:0.75, fontFace:SANS, fontSize:12.5,
        valign:"middle", margin:0 });
 })();
 
