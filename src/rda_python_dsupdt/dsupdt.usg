@@ -67,6 +67,12 @@ publishes the user guide as the 'latest' version at
 https://gdex-docs-dsupdt.readthedocs.io, and creating a GitHub release
 there publishes it as the 'stable' version.
 
+A companion slide deck, 'dsupdt_guide.pptx', presents the same material
+visually for training and review. It is kept under 'docs/slides' in the
+same repository and can be downloaded from
+https://github.com/NCAR/rda-python-dsupdt/blob/main/docs/slides/dsupdt_guide.pptx
+('dsupdt_guide_ppt.pdf' in that directory is the exported PDF).
+
 The remainder of this document is organized as follows. Section 2 covers
 general usage and conventions. Section 3 describes Action options grouped
 by what they manipulate (configuration records, all-information, and update
