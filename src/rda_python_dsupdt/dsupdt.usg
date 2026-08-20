@@ -302,10 +302,13 @@ ControlIndex<:>Specialist<:>ParentIndex<:>Action<:>Frequency<:>ControlOffset<:>C
   O      -(CO|ControlOffset)    time offset for next process, i.e., 2D10H, 3H15N
   T      -(CT|ControlTime)      time to run dsupdt, format: YYYY-MM-DD HH:NN:SS
   R      -(RI|RetryInterval)    retry interval for failed dsupdt, i.e., 1M2D, 2H
-  V      -(VI|ValidInterval)    update valid interval, i.e., 2D, 1M
-  U      -(UC|UpdateControl)    any of B-Begin, C-Current, E-Reset End Date/Time,
-                                F-Future, G-GMT, M-Multi, N-New, O-Miss,
-                                Y-Skip Feb. 29, Z-Allow Zero Filesize
+  V      -(VI|ValidInterval)    validating window for re-checking archived
+                                files, i.e., 2D, 1M
+  U      -(UC|UpdateControl)    any of A-Check All(-CA), B-Begin(-UB),
+                                C-Current(-CP), E-Reset End Date/Time(-RE),
+                                F-Future(-FU), G-GMT(-GZ), M-Multi(-MU),
+                                N-New(-CN), O-Miss(-MO), Y-Skip Feb. 29(-NY),
+                                Z-Allow Zero Filesize(-VS 0)
   J      -(MC|EMailControl)     one of A-All, E-Error, N-No, S-Summary, B-Summary when Error
   E      -(EC|ErrorControl)     one of I-Ignore Error, Q-Quit on Error, N-Neither
   K      -(KF|KeepFile)         one of S-Server File, R-Remote File, B-Keep Both, N-Neither
@@ -444,7 +447,8 @@ LocalIndex<:>LocalFile<:>Action<:>ExecOrder<:>ControlIndex<:>FileArchived<:>Down
   J      -(ED|EndDate)          data end date of next update
   K      -(EH|EndHour)          data end hour of next update
   N      -(DI|DueInterval)      data next due period, i.e., 1M2D
-  V      -(VI|ValidInterval)    update valid interval, i.e., 2D, 1M
+  V      -(VI|ValidInterval)    validating window for re-checking archived
+                                files, i.e., 2D, 1M
   T      -(AT|AgeTime)          remote file age interval, i.e., 2D, 1M
   W      -(WD|WorkDir)          working directory for processing update
   Z      -(CL|CleanCommand)     command for removing data files after update
@@ -1697,8 +1701,10 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
 
   -UC or -UpdateControl — a string of single letters pre-configuring
   Mode options in an update control record:
-  - B: use period begin times for temporal patterns (equivalent to -BT
-    mode);
+  - A: check all remote files instead of stopping at the first missing
+    one (equivalent to -CA);
+  - B: use period begin times for temporal patterns (equivalent to
+    -UB);
   - C: allow updates within the current period before the end time is
     due (equivalent to -CP);
   - E: reset end date/hour when the file timestamp exceeds it by one
@@ -1713,11 +1719,14 @@ Information (Info) options supply values to 'dsupdt'. There are two types:
   - Y: skip February 29 in leap years (equivalent to -NY);
   - Z: treat zero-byte files as valid (equivalent to -VS 0).
 
-  -VI or -ValidInterval sets the number of days or hours that remote
-  files remain valid on the server. If the time difference between the
-  current date/time and the data date/time exceeds the interval
-  configured in GDEXDB by this option, 'dsupdt' will not attempt a
-  download.
+  -VI or -ValidInterval sets a validating window, in days or hours,
+  for re-checking files that are already archived. 'dsupdt' rolls the
+  data end date/hour back to the start of the window (current date/time
+  minus this interval) and re-checks every update period from there
+  through the present, re-archiving a period when a new or changed
+  source file has since become available. Periods older than the window
+  are considered final and are not re-checked. Without this option only
+  the next pending update period is processed.
 
   -WD or -WorkDir — the working directory for staging temporary files
   during download and archive operations. A root path can be set via the
