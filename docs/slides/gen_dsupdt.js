@@ -451,8 +451,8 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     { text:"more", options:{ fontFace:MONO, bold:true } },
     { text:".  Omit  ", options:{} },
     { text:"-DS", options:{ fontFace:MONO, bold:true } },
-    { text:"  on Get actions to list records across all of your datasets.", options:{} },
-  ], { x:0.5, y:6.36, w:10.9, h:0.4, fontFace:SANS, fontSize:11.5, color:INK,
+    { text:"  on Get actions to list records for all your datasets.", options:{} },
+  ], { x:0.5, y:6.58, w:10.9, h:0.34, fontFace:SANS, fontSize:11, color:INK,
        align:"center", margin:0 });
   foot(s);
 })();
@@ -587,9 +587,9 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
     ["-CO","ControlOffset","delay after period end, e.g. 2D10H"],
     ["-CT","ControlTime","next scheduled run  YYYY-MM-DD HH:NN:SS"],
     ["-RI","RetryInterval","wait before retry after a failure"],
-    ["-VI","ValidInterval","how long remote files stay valid"],
+    ["-VI","ValidInterval","validating window for re-checking archived files"],
     ["-PI","ParentIndex","run only after parent control completes"],
-    ["-UC","UpdateControl","preset modes: B C E F G M N O Y Z"],
+    ["-UC","UpdateControl","one letter per preset Mode option: A B C E F G M N O Y Z \u2014 see \u201cKey Mode Options at a Glance\u201d"],
     ["-MC","EMailControl","A / S / E / B / N report level"],
     ["-EC","ErrorControl","I ignore / Q quit / N normal"],
     ["-KF","KeepFile","S / R / B / N which files to keep"],
@@ -1398,44 +1398,94 @@ function circ(s, x, y, d, fill, glyph, gcolor, gsize) {
 
 // ============================================================ 17 KEY MODE OPTIONS
 (() => {
-  const s = p.addSlide({ masterName:"INTERIOR" });
+  const s = p.addSlide({ masterName:"INTERIOR_NG" });
   kicker(s, "Reference", TEAL); title(s, "Key Mode Options at a Glance");
-  const opts = [
-    ["-MU","process all elapsed periods"],
-    ["-FU","force one update even if not due"],
-    ["-CP","allow current, not-yet-due period"],
-    ["-MO","only not-yet-archived periods"],
+  s.addText([
+    { text:"Every mode below can be given on the command line.  The left group can also be ", options:{} },
+    { text:"preset per control record", options:{ bold:true, color:DEEP } },
+    { text:" \u2014 each is one letter of ", options:{} },
+    { text:"-UC", options:{ fontFace:MONO, bold:true, color:DEEP } },
+    { text:" (UpdateControl) on the ", options:{} },
+    { text:"-SC", options:{ fontFace:MONO, bold:true } },
+    { text:" record.", options:{} },
+  ], { x:0.5, y:1.47, w:12.3, h:0.32, fontFace:SANS, fontSize:13, color:INK, margin:0 });
+
+  // -UC letter  ->  equivalent Mode option (pg_updt.py cache_update_control)
+  const preset = [
+    ["A","-CA","check all remote files, not just the first missing"],
+    ["B","-UB","use period begin time for patterns"],
+    ["C","-CP","allow current, not-yet-due period"],
+    ["E","-RE","reset end date/hour from file time"],
+    ["F","-FU","force one update even if not due"],
+    ["G","-GZ","use GMT as controlling time"],
+    ["M","-MU","process all elapsed periods"],
+    ["N","-CN","re-download only if changed on server"],
+    ["O","-MO","only not-yet-archived periods"],
+    ["Y","-NY","skip Feb 29 in leap years"],
+    ["Z","-VS 0","treat zero-byte files as valid"],
+  ];
+  const cmdonly = [
     ["-RA","force re-archive via dsarch"],
     ["-RD","re-download existing remote file"],
-    ["-CN","re-download if changed on server"],
-    ["-RE","reset end date/hour from file time"],
     ["-IE","skip errors, continue (with -MU)"],
     ["-QE","quit dataset on first error"],
-    ["-GZ","use GMT as controlling time"],
-    ["-NY","skip Feb 29 in leap years"],
     ["-KR","keep remote file (copy, not move)"],
     ["-KS","keep server file (copy, not move)"],
-    ["-UB","use period begin time for patterns"],
     ["-UT","force end/next-due time advance"],
     ["-BG","background; suppress screen output"],
     ["-NE","suppress notification email"],
   ];
-  const y0=1.75, cw=4.05, ch=0.62, gapx=0.09, gapy=0.12;
-  opts.forEach((o,i)=>{
-    const col=i%3, row=Math.floor(i/3);
-    const x=0.5+col*(cw+gapx), y=y0+row*(ch+gapy);
-    s.addShape(p.ShapeType.roundRect, { x, y, w:cw, h:ch, rectRadius:0.06,
-      fill:{color: row%2?LIGHT:TINT}, line:{color:LINE, width:1} });
-    s.addShape(p.ShapeType.roundRect, { x:x+0.1, y:y+0.13, w:0.85, h:0.36,
-      rectRadius:0.05, fill:{color:DEEP}, line:{type:"none"} });
-    s.addText(o[0], { x:x+0.1, y:y+0.13, w:0.85, h:0.36, align:"center",
-      valign:"middle", fontFace:MONO, bold:true, fontSize:12, color:LIGHT, margin:0 });
-    s.addText(o[1], { x:x+1.05, y:y, w:cw-1.15, h:ch, fontFace:SANS, fontSize:11.5,
-      color:INK, margin:0, valign:"middle", lineSpacingMultiple:0.95 });
+  const CW=6.05, LX=0.5, RX=6.78, HY=1.90, RY=2.34, RH=0.34, RS=0.38;
+
+  function header(x, txt, fill) {
+    s.addShape(p.ShapeType.roundRect, { x, y:HY, w:CW, h:0.36, rectRadius:0.05,
+      fill:{color:fill}, line:{type:"none"} });
+    s.addText(txt, { x:x+0.14, y:HY, w:CW-0.28, h:0.36, fontFace:SANS, bold:true,
+      fontSize:12, color:LIGHT, margin:0, valign:"middle" });
+  }
+  function pill(x, y, w, txt, fill) {
+    s.addShape(p.ShapeType.roundRect, { x, y:y+0.02, w, h:RH-0.04, rectRadius:0.05,
+      fill:{color:fill}, line:{type:"none"} });
+    s.addText(txt, { x, y:y+0.02, w, h:RH-0.04, align:"center", valign:"middle",
+      fontFace:MONO, bold:true, fontSize:11.5, color:LIGHT, margin:0 });
+  }
+
+  header(LX, "PRESETTABLE VIA  -UC  IN THE CONTROL RECORD", DEEP);
+  preset.forEach((o,i)=>{
+    const y = RY + i*RS;
+    s.addShape(p.ShapeType.roundRect, { x:LX, y, w:CW, h:RH, rectRadius:0.05,
+      fill:{color: i%2?LIGHT:TINT}, line:{color:LINE, width:0.75} });
+    pill(LX+0.09, y, 0.34, o[0], AMBER);
+    s.addText("\u2192", { x:LX+0.47, y, w:0.24, h:RH, align:"center", valign:"middle",
+      fontFace:SANS, bold:true, fontSize:11, color:MUTE, margin:0 });
+    pill(LX+0.74, y, 0.78, o[1], DEEP);
+    s.addText(o[2], { x:LX+1.62, y, w:CW-1.72, h:RH, fontFace:SANS, fontSize:11,
+      color:INK, margin:0, valign:"middle" });
   });
-  s.addText("Most modes can be preset in the control record via -UC (single letters) and -KF / -MC / -EC.", {
-    x:0.5, y:6.32, w:10.9, h:0.3, fontFace:SANS, italic:true, fontSize:12,
-    color:MUTE, align:"center", margin:0 });
+
+  header(RX, "COMMAND LINE ONLY", TEAL);
+  cmdonly.forEach((o,i)=>{
+    const y = RY + i*RS;
+    s.addShape(p.ShapeType.roundRect, { x:RX, y, w:CW, h:RH, rectRadius:0.05,
+      fill:{color: i%2?LIGHT:TINT}, line:{color:LINE, width:0.75} });
+    pill(RX+0.09, y, 0.78, o[0], TEAL);
+    s.addText(o[1], { x:RX+0.97, y, w:CW-1.07, h:RH, fontFace:SANS, fontSize:11,
+      color:INK, margin:0, valign:"middle" });
+  });
+  s.addShape(p.ShapeType.roundRect, { x:RX, y:RY+9*RS+0.06, w:CW, h:2*RS-0.08,
+    rectRadius:0.05, fill:{color:TINT2}, line:{color:LINE, width:1} });
+  s.addText([
+    { text:"Other control-record presets:  ", options:{ bold:true, color:DEEP } },
+    { text:"-MC", options:{ fontFace:MONO, bold:true } },
+    { text:" email level, ", options:{} },
+    { text:"-EC", options:{ fontFace:MONO, bold:true } },
+    { text:" error control, ", options:{} },
+    { text:"-KF", options:{ fontFace:MONO, bold:true } },
+    { text:" keep-file \u2014 set once on ", options:{} },
+    { text:"-SC", options:{ fontFace:MONO, bold:true } },
+    { text:" instead of on every run.", options:{} },
+  ], { x:RX+0.16, y:RY+9*RS+0.06, w:CW-0.32, h:2*RS-0.08, fontFace:SANS,
+       fontSize:11, color:INK, margin:0, valign:"middle", lineSpacingMultiple:1.05 });
   foot(s);
 })();
 
