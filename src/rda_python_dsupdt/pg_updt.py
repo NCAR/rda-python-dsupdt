@@ -1934,12 +1934,14 @@ class PgUpdt(PgOPT, PgCMD):
          elif pgrec['emailcntl'] == "S":
             self.params['SE'] = 1
             self.PGOPT['emllog'] |= self.EMEROL
+            self.PGOPT['emlsep'] |= self.EMEROL   # the separated detail lines are summarized too
          elif pgrec['emailcntl'] == "E":
             self.params['EE'] = 1
          elif pgrec['emailcntl'] == "B":
             self.params['SE'] = 1
             self.params['EE'] = 1
             self.PGOPT['emllog'] |= self.EMEROL
+            self.PGOPT['emlsep'] |= self.EMEROL   # the separated detail lines are summarized too
       if pgrec['errorcntl'] != 'N':
          if pgrec['errorcntl'] == "I":
             self.params['IE'] = 1

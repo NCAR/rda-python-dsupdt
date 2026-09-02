@@ -1008,11 +1008,11 @@ class DsUpdt(PgUpdt, PgSplit):
       rscnt = ucnt = lcnt = 0
       self.PGOPT['sumfirst'] = self.PGOPT['sumlast'] = self.PGOPT['sumact'] = None   # archived-period range for the combined Summary line
       self.PGOPT['sumfail'] = 0   # count of periods that failed archiving (for the combined Summary line)
-      detail_on = not (self.PGOPT['emllog']&self.EMEROL)   # email detail section active for this mode
+      detail_on = not (self.PGOPT['emllog']&self.EMEROL)   # email Detail section wanted (off for email control S and B)
       noop_pos = 0                                         # roll-up of consecutive no-op re-check periods
       noop_list = []
       def flush_noop():
-         if not noop_list: return
+         if not (noop_list and detail_on): return
          sep = "\n" if noop_pos > 0 else ''
          lpfx = "{}-L{}".format(locrec['dsid'], lindex)
          if len(noop_list) >= 3:   # roll a run of 3+ into one range line
@@ -1023,7 +1023,7 @@ class DsUpdt(PgUpdt, PgSplit):
       arch_pos = 0                                         # roll-up of consecutive clean-archive periods
       arch_run = []
       def flush_arch():
-         if not arch_run: return
+         if not (arch_run and detail_on): return
          sep = "\n" if arch_pos > 0 else ''
          lpfx = "{}-L{}".format(locrec['dsid'], lindex)
          if len(arch_run) >= 3:   # roll a run of 3+ archived periods into one range line
@@ -1164,22 +1164,21 @@ class DsUpdt(PgUpdt, PgSplit):
                      ucnt += 1
                      gx = tempinfo.get('gxstat')
                      if gx is not None and not gx: gxerr += 1
-                     if detail_on:
-                        dlmap = {1: "got new file", 2: "got change file", 3: "local file used"}
-                        status = dlmap.get(tempinfo.get('dlstat', 0))
-                        if status: statcnt[status] = statcnt.get(status, 0) + 1
-                        rmt_line = has_rmtrec and ridx is not None and status
-                        if rmt_line:   # a remote file record is involved: report its download status on its own line
-                           rlabel = rfile if rfile else lfile
-                           sname = tempinfo.get('sname')
-                           if sname and sname != rlabel: rlabel += "-" + sname
-                           arch_lines.append("{}-R{}-{}: {}".format(locrec['dsid'], ridx, rlabel, status))
-                        aline = "{}-L{}-{}: {}ARCHIVED({}) for {}".format(locrec['dsid'], lindex, lfile, "RE-" if rearch else "", locrec['action'], tempinfo['einfo'])
-                        if not rmt_line and status:   # no remote file record: fold the status into the archived local file line
-                           aline += " - " + status
-                        if gx is not None:
-                           aline += " - " + ("Metadata Gathered" if gx else "Failed Metadata Gathering")
-                        arch_lines.append(aline)
+                     dlmap = {1: "got new file", 2: "got change file", 3: "local file used"}
+                     status = dlmap.get(tempinfo.get('dlstat', 0))
+                     if status: statcnt[status] = statcnt.get(status, 0) + 1
+                     rmt_line = has_rmtrec and ridx is not None and status
+                     if rmt_line:   # a remote file record is involved: report its download status on its own line
+                        rlabel = rfile if rfile else lfile
+                        sname = tempinfo.get('sname')
+                        if sname and sname != rlabel: rlabel += "-" + sname
+                        arch_lines.append("{}-R{}-{}: {}".format(locrec['dsid'], ridx, rlabel, status))
+                     aline = "{}-L{}-{}: {}ARCHIVED({}) for {}".format(locrec['dsid'], lindex, lfile, "RE-" if rearch else "", locrec['action'], tempinfo['einfo'])
+                     if not rmt_line and status:   # no remote file record: fold the status into the archived local file line
+                        aline += " - " + status
+                     if gx is not None:
+                        aline += " - " + ("Metadata Gathered" if gx else "Failed Metadata Gathering")
+                     arch_lines.append(aline)
                      if tempinfo['RS'] == 1: rscnt += 1
                      if postcnt > -1: postcnt += 1
             elif cnt > 0:
@@ -1230,7 +1229,7 @@ class DsUpdt(PgUpdt, PgSplit):
                self.PGOPT['sumact'] = locrec['action']
             elif (self.PGLOG['ERRCNT'] - perrcnt) > gxerr:   # a real (non-gatherxml) error this period: failed to archive (no-op periods have no error)
                self.PGOPT['sumfail'] += 1
-         if detail_on and self.PGOPT['ACTS']&self.OPTS['AF'][0]:
+         if self.PGOPT['ACTS']&self.OPTS['AF'][0]:
             if ucnt == pucnt and self.PGLOG['ERRCNT'] == perrcnt:   # nothing archived, no error: collapse re-check detail
                self.PGLOG['EMLMSG'] = self.PGLOG['EMLMSG'][:emlmark]
                if arch_run:   # a run of archived periods ended before this no-op: flush (shifts EMLMSG) and restart the count
